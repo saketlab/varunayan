@@ -15,6 +15,7 @@ import math
 import time
 from .config import ensure_cdsapi_config
 
+
 def extract_coords_from_geometry(geometry: Dict) -> List[List[float]]:
     """Extract all coordinates from a GeoJSON geometry object."""
     coords = []
