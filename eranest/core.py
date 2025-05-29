@@ -2054,7 +2054,7 @@ def create_temp_geojson(geojson_data: Dict[str, Any], request_id: str) -> str:
     return output_path
 
 
-def era5ify(
+def era5ify_geojson(
     request_id: str,
     variables: List[str],
     start_date: dt.datetime,
@@ -2117,3 +2117,97 @@ def era5ify(
             if os.path.exists(temp_geojson_file):
                 print(f"Removing temporary GeoJSON file: {temp_geojson_file}")
                 os.remove(temp_geojson_file)
+
+def era5ify_bbox(
+    request_id: str, 
+    variables: List[str], 
+    start_date: dt.datetime,
+    end_date: dt.datetime,
+    north: float,
+    south: float,
+    east: float,
+    west: float,
+    frequency: str = 'hourly',
+    resolution: float = 0.25
+) -> pd.DataFrame:
+    """
+    Process ERA5 data for a specified bounding box without requiring a GeoJSON file.
+    Creates a temporary GeoJSON internally and processes the data using the existing workflow.
+    
+    Args:
+        request_id: Unique identifier for the request
+        variables: List of variables to download
+        start_date: Start date for data retrieval (datetime object)
+        end_date: End date for data retrieval (datetime object)
+        north: Northern latitude boundary
+        south: Southern latitude boundary
+        east: Eastern longitude boundary
+        west: Western longitude boundary
+        frequency: Aggregation frequency ('hourly', 'daily', 'weekly', 'monthly', 'yearly')
+        resolution: Grid resolution in degrees (default: 0.25°)
+    
+    Returns:
+        Filtered and aggregated DataFrame with the processed data
+        
+    Raises:
+        ValueError: If bounding box coordinates are invalid
+    """
+    print(f"\n{'='*60}")
+    print(f"STARTING ERA5 BBOX PROCESSING")
+    print(f"{'='*60}")
+    print(f"Request ID: {request_id}")
+    print(f"Variables: {variables}")
+    print(f"Date Range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+    print(f"Bounding Box: N:{north}, S:{south}, E:{east}, W:{west}")
+    print(f"Frequency: {frequency}")
+    print(f"Resolution: {resolution}°")
+    
+    # Validate bounding box coordinates
+    print("\n--- Bounding Box Validation ---")
+    if north <= south:
+        raise ValueError(f"North ({north}) must be greater than South ({south})")
+    if east <= west:
+        raise ValueError(f"East ({east}) must be greater than West ({west})")
+    if not (-90 <= south <= 90) or not (-90 <= north <= 90):
+        raise ValueError(f"Latitude values must be between -90 and 90. Got North: {north}, South: {south}")
+    if not (-180 <= west <= 180) or not (-180 <= east <= 180):
+        raise ValueError(f"Longitude values must be between -180 and 180. Got East: {east}, West: {west}")
+    
+    print("✓ Bounding box coordinates validated successfully")
+    print(f"  Area: {abs(east-west):.4f}° × {abs(north-south):.4f}°")
+    
+    # Create GeoJSON from bounding box coordinates
+    print("\n--- Creating GeoJSON from Bounding Box ---")
+    geojson_data = create_geojson_from_bbox(west, south, east, north)
+    print("✓ GeoJSON created successfully")
+    
+    # Create temporary GeoJSON file
+    temp_geojson_file = create_temp_geojson(geojson_data, request_id)
+    print(f"✓ Created temporary GeoJSON file: {temp_geojson_file}")
+    
+    try:
+        # Process using the existing ERA5 workflow
+        print("\n--- Delegating to Main Processing Function ---")
+        result_df = process_era5_data(
+            request_id=request_id,
+            variables=variables,
+            start_date=start_date,
+            end_date=end_date,
+            geojson_file=temp_geojson_file,
+            frequency=frequency,
+            resolution=resolution
+        )
+        
+        print(f"\n{'='*60}")
+        print(f"ERA5 BBOX PROCESSING COMPLETED SUCCESSFULLY")
+        print(f"{'='*60}")
+        
+        return result_df
+        
+    finally:
+        # Clean up temporary file
+        if os.path.exists(temp_geojson_file):
+            print(f"\n--- Cleanup ---")
+            print(f"Removing temporary GeoJSON file: {temp_geojson_file}")
+            os.remove(temp_geojson_file)
+            print("✓ Cleanup completed")
