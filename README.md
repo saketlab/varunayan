@@ -12,27 +12,14 @@ pip install eranest
 
 ## Quick Start
 
-```python
-from eranest import ERA5Downloader
-
-# Initialize the downloader
-downloader = ERA5Downloader()
-
-# Download data for a specific region
-data = downloader.download(
-    variable='2m_temperature',
-    start_date='2020-01-01',
-    end_date='2020-01-31',
-    region='india'
-)
-```
+(refer eranest demo notebook, snippet is to be added here)
 
 ## Features
 
-- Download ERA5 climate data for specific regions
+- Download ERA5 climate data for any custom geographical area
 - Process and analyze climate data
 - Support for various climate variables
-- Easy-to-use API
+- ...
 
 ## Documentation
 
