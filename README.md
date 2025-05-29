@@ -14,7 +14,7 @@ pip install eranest
 
 (refer eranest demo notebook, snippet is to be added here)
 
-Quickly download ERA5 reanalysis data using the command line:
+Quickly download ERA5 processed data with the help of *eranest* from the command line:
 1. either by providing a GeoJSON file to define the area of interest
 ```bash
 eranest geojson --request-id "request_name" --variables "var1,var2,etc." --start "yyyy-mm-dd" --end "yyyy-mm-dd" --geojson "your_file.geojson" --freq "hourly" --res 0.25
