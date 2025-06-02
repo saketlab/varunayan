@@ -1309,9 +1309,27 @@ def process_era5_data(
     Returns:
         Filtered and aggregated DataFrame with the processed data
     """
+
+    class Colors:
+        RESET = "\033[0m"
+        # Regular Colors
+        RED = "\033[0;31m"
+        GREEN = "\033[0;32m"
+        YELLOW = "\033[0;33m"
+        BLUE = "\033[0;34m"
+        PURPLE = "\033[0;35m"
+        CYAN = "\033[0;36m"
+        WHITE = "\033[0;37m"
+        # Bright Colors
+        GREEN_BRIGHT = "\033[0;92m"
+        RED_BRIGHT = "\033[0;91m"
+        YELLOW_BRIGHT = "\033[0;93m"
+        BLUE_BRIGHT = "\033[0;94m"
+        CYAN_BRIGHT = "\033[0;96m"
+
     ensure_cdsapi_config()
     print(f"\n{'='*60}")
-    print(f"STARTING ERA5 DATA PROCESSING")
+    print(f"{Colors.BLUE}STARTING ERA5 DATA PROCESSING{Colors.RESET}")
     print(f"{'='*60}")
     print(f"Request ID: {request_id}")
     print(f"Variables: {variables}")
@@ -1330,7 +1348,7 @@ def process_era5_data(
         raise ValueError("Start date cannot be after end date")
     if not os.path.exists(geojson_file):
         raise FileNotFoundError(f"GeoJSON file not found: {geojson_file}")
-    print("✓ All inputs validated successfully")
+    print(f"{Colors.GREEN}✓ All inputs validated successfully{Colors.RESET}")
 
     # Load GeoJSON file with encoding handling
     print("\n--- Loading GeoJSON File ---")
@@ -1345,7 +1363,7 @@ def process_era5_data(
                 print(f"  Trying encoding {i}/{len(encodings)}: {encoding}")
                 with open(geojson_file, "r", encoding=encoding) as f:
                     geojson_data = json.load(f)
-                print(f"✓ Successfully loaded GeoJSON file with {encoding} encoding")
+                print(f"{Colors.GREEN}✓ Successfully loaded GeoJSON file with {encoding} encoding{Colors.RESET}")
                 break
             except UnicodeDecodeError as e:
                 print(f"  ✗ Failed with {encoding}: {str(e)[:50]}...")
@@ -1362,27 +1380,27 @@ def process_era5_data(
         # Validate GeoJSON structure
         if "features" not in geojson_data:
             print(
-                "Warning: GeoJSON doesn't have 'features' key, attempting to process anyway"
+                f"{Colors.YELLOW}Warning: GeoJSON doesn't have 'features' key, attempting to process anyway{Colors.RESET}"
             )
         else:
-            print(f"✓ GeoJSON contains {len(geojson_data['features'])} feature(s)")
+            print(f"{Colors.GREEN}✓ GeoJSON contains {len(geojson_data['features'])} feature(s){Colors.RESET}")
 
     except Exception as e:
-        print(f"✗ Error loading GeoJSON file: {e}", file=sys.stderr)
+        print(f"{Colors.RED}✗ Error loading GeoJSON file: {e}{Colors.RESET}", file=sys.stderr)
         sys.exit(1)
 
     # Get bounding box coordinates
     print("\n--- Calculating Bounding Box ---")
     try:
         west, south, east, north = get_bounding_box(geojson_data)
-        print(f"✓ Bounding Box calculated:")
+        print(f"{Colors.GREEN}✓ Bounding Box calculated:{Colors.RESET}")
         print(f"  North: {north:.4f}°")
         print(f"  South: {south:.4f}°")
         print(f"  East:  {east:.4f}°")
         print(f"  West:  {west:.4f}°")
         print(f"  Area:  {abs(east-west):.4f}° × {abs(north-south):.4f}°")
     except Exception as e:
-        print(f"✗ Error calculating bounding box: {e}", file=sys.stderr)
+        print(f"{Colors.RED}✗ Error calculating bounding box: {e}{Colors.RESET}", file=sys.stderr)
         sys.exit(1)
 
     # Determine processing strategy
@@ -1422,7 +1440,7 @@ def process_era5_data(
         while current_date <= end_date:
             chunk_start_time = time.time()
             print(f"\n{'='*50}")
-            print(f"CHUNK {chunk_number}/{total_chunks}")
+            print(f"{Colors.CYAN}CHUNK {chunk_number}/{total_chunks}{Colors.RESET}")
             print(f"{'='*50}")
 
             # Calculate chunk end date (last day of the chunk)
@@ -1457,11 +1475,11 @@ def process_era5_data(
                     resolution,
                     frequency,
                 )
-                print(f"  ✓ Download completed: {download_file}")
+                print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
 
                 print("  → Extracting files...")
                 nc_files = extract_download(download_file)
-                print(f"  ✓ Extracted {len(nc_files)} files")
+                print(f"  {Colors.GREEN}✓ Extracted {len(nc_files)} files{Colors.RESET}")
 
                 chunk_datasets = []
                 print("  → Processing NetCDF files...")
@@ -1477,10 +1495,10 @@ def process_era5_data(
                         chunk_datasets.append(ds)
                         print(f"    ✓ Loaded dataset with shape: {dict(ds.dims)}")
                     except Exception as e:
-                        print(f"    ✗ Error processing {nc_file}: {e}", file=sys.stderr)
+                        print(f"    {Colors.RED}✗ Error processing {nc_file}: {e}{Colors.RESET}", file=sys.stderr)
 
                 if not chunk_datasets:
-                    print("  ✗ No datasets were successfully processed for this chunk")
+                    print(f"  {Colors.RED}✗ No datasets were successfully processed for this chunk{Colors.RESET}")
                     chunk_number += 1
                     next_month = chunk_end + dt.timedelta(days=1)
                     current_date = next_month
@@ -1492,22 +1510,22 @@ def process_era5_data(
                     if len(chunk_datasets) > 1
                     else chunk_datasets[0]
                 )
-                print(f"  ✓ Merged dataset shape: {dict(merged_chunk_ds.dims)}")
+                print(f"  {Colors.GREEN}✓ Merged dataset shape: {dict(merged_chunk_ds.dims)}{Colors.RESET}")
 
                 print("  → Filtering by shapefile...")
                 filtered_chunk_df = filter_netcdf_by_shapefile(
                     merged_chunk_ds, geojson_data
                 )
-                print(f"  ✓ Filtered data shape: {filtered_chunk_df.shape}")
+                print(f"  {Colors.GREEN}✓ Filtered data shape: {filtered_chunk_df.shape}{Colors.RESET}")
 
                 all_filtered_data.append(filtered_chunk_df)
 
                 chunk_time = time.time() - chunk_start_time
-                print(f"  ✓ Chunk completed in {chunk_time:.2f} seconds")
+                print(f"  {Colors.GREEN}✓ Chunk completed in {chunk_time:.2f} seconds{Colors.RESET}")
 
             except Exception as e:
                 print(
-                    f"  ✗ Error processing chunk {chunk_number}: {e}", file=sys.stderr
+                    f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}", file=sys.stderr
                 )
                 # Continue with next chunk instead of failing completely
 
@@ -1521,13 +1539,13 @@ def process_era5_data(
 
         if not all_filtered_data:
             print(
-                "✗ No data was successfully processed from any chunk", file=sys.stderr
+                f"{Colors.RED}✗ No data was successfully processed from any chunk{Colors.RESET}", file=sys.stderr
             )
             sys.exit(1)
 
         print("\n--- Combining Chunk Results ---")
         filtered_df = pd.concat(all_filtered_data, ignore_index=True)
-        print(f"✓ Combined data shape: {filtered_df.shape}")
+        print(f"{Colors.GREEN}✓ Combined data shape: {filtered_df.shape}{Colors.RESET}")
 
         initial_rows = len(filtered_df)
         filtered_df = filtered_df.drop_duplicates(
@@ -1545,7 +1563,7 @@ def process_era5_data(
         while current_date <= end_date:
             chunk_start_time = time.time()
             print(f"\n{'='*50}")
-            print(f"CHUNK {chunk_number}/{total_chunks}")
+            print(f"{Colors.CYAN}CHUNK {chunk_number}/{total_chunks}{Colors.RESET}")
             print(f"{'='*50}")
 
             chunk_end = min(
@@ -1569,11 +1587,11 @@ def process_era5_data(
                     resolution,
                     frequency,
                 )
-                print(f"  ✓ Download completed: {download_file}")
+                print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
 
                 print("  → Extracting files...")
                 nc_files = extract_download(download_file)
-                print(f"  ✓ Extracted {len(nc_files)} files")
+                print(f"  {Colors.GREEN}✓ Extracted {len(nc_files)} files{Colors.RESET}")
 
                 chunk_datasets = []
                 print("  → Processing NetCDF files...")
@@ -1589,10 +1607,10 @@ def process_era5_data(
                         chunk_datasets.append(ds)
                         print(f"    ✓ Loaded dataset with shape: {dict(ds.dims)}")
                     except Exception as e:
-                        print(f"    ✗ Error processing {nc_file}: {e}", file=sys.stderr)
+                        print(f"    {Colors.RED}✗ Error processing {nc_file}: {e}{Colors.RESET}", file=sys.stderr)
 
                 if not chunk_datasets:
-                    print("  ✗ No datasets were successfully processed for this chunk")
+                    print(f"  {Colors.RED}✗ No datasets were successfully processed for this chunk{Colors.RESET}")
                     chunk_number += 1
                     current_date = chunk_end + dt.timedelta(days=1)
                     continue
@@ -1603,22 +1621,22 @@ def process_era5_data(
                     if len(chunk_datasets) > 1
                     else chunk_datasets[0]
                 )
-                print(f"  ✓ Merged dataset shape: {dict(merged_chunk_ds.dims)}")
+                print(f"  {Colors.GREEN}✓ Merged dataset shape: {dict(merged_chunk_ds.dims)}{Colors.RESET}")
 
                 print("  → Filtering by shapefile...")
                 filtered_chunk_df = filter_netcdf_by_shapefile(
                     merged_chunk_ds, geojson_data
                 )
-                print(f"  ✓ Filtered data shape: {filtered_chunk_df.shape}")
+                print(f"  {Colors.GREEN}✓ Filtered data shape: {filtered_chunk_df.shape}{Colors.RESET}")
 
                 all_filtered_data.append(filtered_chunk_df)
 
                 chunk_time = time.time() - chunk_start_time
-                print(f"  ✓ Chunk completed in {chunk_time:.2f} seconds")
+                print(f"  {Colors.GREEN}✓ Chunk completed in {chunk_time:.2f} seconds{Colors.RESET}")
 
             except Exception as e:
                 print(
-                    f"  ✗ Error processing chunk {chunk_number}: {e}", file=sys.stderr
+                    f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}", file=sys.stderr
                 )
                 # Continue with next chunk instead of failing completely
 
@@ -1631,13 +1649,13 @@ def process_era5_data(
 
         if not all_filtered_data:
             print(
-                "✗ No data was successfully processed from any chunk", file=sys.stderr
+                f"{Colors.RED}✗ No data was successfully processed from any chunk{Colors.RESET}", file=sys.stderr
             )
             sys.exit(1)
 
         print("\n--- Combining Chunk Results ---")
         filtered_df = pd.concat(all_filtered_data, ignore_index=True)
-        print(f"✓ Combined data shape: {filtered_df.shape}")
+        print(f"{Colors.GREEN}✓ Combined data shape: {filtered_df.shape}{Colors.RESET}")
 
         initial_rows = len(filtered_df)
         filtered_df = filtered_df.drop_duplicates(
@@ -1663,11 +1681,11 @@ def process_era5_data(
                 resolution,
                 frequency,
             )
-            print(f"✓ Download completed: {download_file}")
+            print(f"{Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
 
             print("→ Extracting files...")
             nc_files = extract_download(download_file)
-            print(f"✓ Extracted {len(nc_files)} files")
+            print(f"{Colors.GREEN}✓ Extracted {len(nc_files)} files{Colors.RESET}")
 
             all_datasets = []
             print("→ Processing NetCDF files...")
@@ -1683,21 +1701,21 @@ def process_era5_data(
                     all_datasets.append(ds)
                     print(f"  ✓ Loaded dataset with shape: {dict(ds.dims)}")
                 except Exception as e:
-                    print(f"  ✗ Error processing {nc_file}: {e}", file=sys.stderr)
+                    print(f"  {Colors.RED}✗ Error processing {nc_file}: {e}{Colors.RESET}", file=sys.stderr)
 
             if not all_datasets:
-                print("✗ No datasets were successfully processed", file=sys.stderr)
+                print(f"{Colors.RED}✗ No datasets were successfully processed{Colors.RESET}", file=sys.stderr)
                 sys.exit(1)
 
             print("→ Merging datasets...")
             merged_ds = (
                 xr.merge(all_datasets) if len(all_datasets) > 1 else all_datasets[0]
             )
-            print(f"✓ Merged dataset shape: {dict(merged_ds.dims)}")
+            print(f"{Colors.GREEN}✓ Merged dataset shape: {dict(merged_ds.dims)}{Colors.RESET}")
 
             print("→ Filtering by shapefile...")
             filtered_df = filter_netcdf_by_shapefile(merged_ds, geojson_data)
-            print(f"✓ Filtered data shape: {filtered_df.shape}")
+            print(f"{Colors.GREEN}✓ Filtered data shape: {filtered_df.shape}{Colors.RESET}")
 
             initial_rows = len(filtered_df)
             filtered_df = filtered_df.drop_duplicates(
@@ -1706,7 +1724,7 @@ def process_era5_data(
             removed_duplicates = initial_rows - len(filtered_df)
 
         except Exception as e:
-            print(f"✗ Error in single monthly processing: {e}", file=sys.stderr)
+            print(f"{Colors.RED}✗ Error in single monthly processing: {e}{Colors.RESET}", file=sys.stderr)
             sys.exit(1)
 
     else:
@@ -1727,11 +1745,11 @@ def process_era5_data(
                 resolution,
                 frequency,
             )
-            print(f"✓ Download completed: {download_file}")
+            print(f"{Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
 
             print("→ Extracting files...")
             nc_files = extract_download(download_file)
-            print(f"✓ Extracted {len(nc_files)} files")
+            print(f"{Colors.GREEN}✓ Extracted {len(nc_files)} files{Colors.RESET}")
 
             all_datasets = []
             print("→ Processing NetCDF files...")
@@ -1747,21 +1765,21 @@ def process_era5_data(
                     all_datasets.append(ds)
                     print(f"  ✓ Loaded dataset with shape: {dict(ds.dims)}")
                 except Exception as e:
-                    print(f"  ✗ Error processing {nc_file}: {e}", file=sys.stderr)
+                    print(f"  {Colors.RED}✗ Error processing {nc_file}: {e}{Colors.RESET}", file=sys.stderr)
 
             if not all_datasets:
-                print("✗ No datasets were successfully processed", file=sys.stderr)
+                print(f"{Colors.RED}✗ No datasets were successfully processed{Colors.RESET}", file=sys.stderr)
                 sys.exit(1)
 
             print("→ Merging datasets...")
             merged_ds = (
                 xr.merge(all_datasets) if len(all_datasets) > 1 else all_datasets[0]
             )
-            print(f"✓ Merged dataset shape: {dict(merged_ds.dims)}")
+            print(f"{Colors.GREEN}✓ Merged dataset shape: {dict(merged_ds.dims)}{Colors.RESET}")
 
             print("→ Filtering by shapefile...")
             filtered_df = filter_netcdf_by_shapefile(merged_ds, geojson_data)
-            print(f"✓ Filtered data shape: {filtered_df.shape}")
+            print(f"{Colors.GREEN}✓ Filtered data shape: {filtered_df.shape}{Colors.RESET}")
 
             initial_rows = len(filtered_df)
             filtered_df = filtered_df.drop_duplicates(
@@ -1770,7 +1788,7 @@ def process_era5_data(
             removed_duplicates = initial_rows - len(filtered_df)
 
         except Exception as e:
-            print(f"✗ Error in single daily processing: {e}", file=sys.stderr)
+            print(f"{Colors.RED}✗ Error in single daily processing: {e}{Colors.RESET}", file=sys.stderr)
             sys.exit(1)
 
     # Aggregate by frequency (same for all cases)
@@ -1782,11 +1800,11 @@ def process_era5_data(
             filtered_df, frequency
         )
         aggregation_time = time.time() - aggregation_start_time
-        print(f"✓ Aggregation completed in {aggregation_time:.2f} seconds")
-        print(f"✓ Aggregated data shape: {aggregated_df.shape}")
-        print(f"✓ Unique lat/long combinations: {len(unique_latlongs)}")
+        print(f"{Colors.GREEN}✓ Aggregation completed in {aggregation_time:.2f} seconds{Colors.RESET}")
+        print(f"{Colors.GREEN}✓ Aggregated data shape: {aggregated_df.shape}{Colors.RESET}")
+        print(f"{Colors.GREEN}✓ Unique lat/long combinations: {len(unique_latlongs)}{Colors.RESET}")
     except Exception as e:
-        print(f"✗ Error during aggregation: {e}", file=sys.stderr)
+        print(f"{Colors.RED}✗ Error during aggregation: {e}{Colors.RESET}", file=sys.stderr)
         sys.exit(1)
 
     # Save processed data
@@ -1799,20 +1817,20 @@ def process_era5_data(
         # Save aggregated data to CSV
         csv_output = os.path.join(output_dir, f"{request_id}_{frequency}_data.csv")
         aggregated_df.to_csv(csv_output, index=False)
-        print(f"✓ Aggregated data exported to: {csv_output}")
+        print(f"{Colors.GREEN}✓ Aggregated data exported to: {csv_output}{Colors.RESET}")
 
         # Save unique lat/longs to CSV
         csv_output = os.path.join(output_dir, f"{request_id}_unique_latlongs.csv")
         unique_latlongs.to_csv(csv_output, index=False)
-        print(f"✓ Unique lat/longs exported to: {csv_output}")
+        print(f"{Colors.GREEN}✓ Unique lat/longs exported to: {csv_output}{Colors.RESET}")
 
         # Save raw data to CSV
         csv_output = os.path.join(output_dir, f"{request_id}_raw_data.csv")
         filtered_df.to_csv(csv_output, index=False)
-        print(f"✓ Raw data exported to: {csv_output}")
+        print(f"{Colors.GREEN}✓ Raw data exported to: {csv_output}{Colors.RESET}")
 
     except Exception as e:
-        print(f"✗ Error saving results: {e}", file=sys.stderr)
+        print(f"{Colors.RED}✗ Error saving results: {e}{Colors.RESET}", file=sys.stderr)
         # Don't exit here as we still want to return the data
 
     # Calculate and display summary statistics
@@ -1826,11 +1844,11 @@ def process_era5_data(
         print(aggregated_df.head())
 
         print(f"\n{'='*60}")
-        print(f"ERA5 DATA PROCESSING COMPLETED SUCCESSFULLY")
+        print(f"{Colors.BLUE}ERA5 DATA PROCESSING COMPLETED SUCCESSFULLY{Colors.RESET}")
         print(f"{'='*60}")
 
     except Exception as e:
-        print(f"Warning: Error generating summary statistics: {e}", file=sys.stderr)
+        print(f"{Colors.YELLOW}Warning: Error generating summary statistics: {e}{Colors.RESET}", file=sys.stderr)
 
     return aggregated_df
 
