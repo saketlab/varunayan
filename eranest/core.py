@@ -13,7 +13,11 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta
 import math
 import time
-from .config import ensure_cdsapi_config
+try:
+    from .config import ensure_cdsapi_config  # Package-style
+except ImportError:
+    from config import ensure_cdsapi_config   # Notebook/script-style
+
 
 
 def extract_coords_from_geometry(geometry: Dict) -> List[List[float]]:
@@ -555,7 +559,7 @@ def determine_file_type(variables: List[str]) -> tuple:
         return ".zip", "mixed"
 
 
-def download_era5_data(
+def download_era5_single_lvl(
     request_id: str,
     variables: List[str],
     start_date: dt.datetime,
@@ -564,11 +568,11 @@ def download_era5_data(
     west: float,
     south: float,
     east: float,
-    resolution: float = 0.1,
+    resolution: float = 0.25,
     frequency: str = "hourly",
 ) -> str:
     """
-    Download ERA5 data with a custom request ID for the filename.
+    Download ERA5 single levels data with a custom request ID for the filename.
 
     Args:
         request_id: Unique identifier for the request
@@ -576,7 +580,7 @@ def download_era5_data(
         start_date: Start date for data retrieval (datetime object)
         end_date: End date for data retrieval (datetime object)
         north, west, south, east: Bounding box coordinates
-        resolution: Grid resolution for both latitude and longitude (default: 0.1°)
+        resolution: Grid resolution for both latitude and longitude (default: 0.25°)
 
     Returns:
         Path to the downloaded file
@@ -663,6 +667,113 @@ def download_era5_data(
 
     return output_file
 
+def download_era5_pressure_lvl(
+    request_id: str,
+    variables: List[str],
+    start_date: dt.datetime,
+    end_date: dt.datetime,
+    north: float,
+    west: float,
+    south: float,
+    east: float,
+    pressure_levels: List[str],
+    resolution: float = 0.25,
+    frequency: str = "hourly",
+) -> str:
+    """
+    Download ERA5 pressure levels data with a custom request ID for the filename.
+
+    Args:
+        request_id: Unique identifier for the request
+        variables: List of variables to download
+        start_date: Start date for data retrieval (datetime object)
+        end_date: End date for data retrieval (datetime object)
+        north, west, south, east: Bounding box coordinates
+        pressure_levels: List of pressure levels to request (hPa as strings)
+        resolution: Grid resolution for both latitude and longitude (default: 0.25°)
+        frequency: Temporal resolution ('hourly', 'daily', 'monthly', 'yearly')
+
+    Returns:
+        Path to the downloaded netCDF file
+    """
+    frequency = frequency.lower()
+
+    # Choose dataset based on frequency
+    if frequency in ["monthly", "yearly"]:
+        dataset = "reanalysis-era5-pressure-levels-monthly-means"
+    else:
+        dataset = "reanalysis-era5-pressure-levels"
+
+    # Prepare date ranges
+    dates = {}
+    current_date = start_date
+    while current_date <= end_date:
+        year = str(current_date.year)
+        if year not in dates:
+            dates[year] = {}
+        month = str(current_date.month).zfill(2)
+        if month not in dates[year]:
+            dates[year][month] = []
+        dates[year][month].append(str(current_date.day).zfill(2))
+        current_date += dt.timedelta(days=1)
+
+    years = list(dates.keys())
+    months = []
+    days = []
+    for year in dates:
+        for month in dates[year]:
+            if month not in months:
+                months.append(month)
+            for day in dates[year][month]:
+                if day not in days:
+                    days.append(day)
+
+    # Pressure level data always comes as netCDF
+    output_file = f"{request_id}.nc"
+
+    # For monthly means, simplified request
+    if frequency in ["monthly", "yearly"]:
+        request = {
+            "product_type": "monthly_averaged_reanalysis",
+            "variable": variables,
+            "pressure_level": pressure_levels,
+            "year": years,
+            "month": months,
+            "time": ["00:00"],
+            "area": [north, west, south, east],
+            "grid": [resolution, resolution],
+            "format": "netcdf",
+        }
+    else:
+        # For hourly/daily data
+        hours = [f"{h:02d}:00" for h in range(24)]
+        request = {
+            "product_type": "reanalysis",
+            "variable": variables,
+            "pressure_level": pressure_levels,
+            "year": years,
+            "month": months,
+            "day": days,
+            "time": hours,
+            "area": [north, west, south, east],
+            "grid": [resolution, resolution],
+            "format": "netcdf",
+        }
+
+    print(f"Downloading ERA5 pressure levels data for request: {request_id}")
+    print(f"Date range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+    print(f"Area: North: {north}, West: {west}, South: {south}, East: {east}")
+    print(f"Variables: {', '.join(variables)}")
+    print(f"Pressure levels: {', '.join(pressure_levels)}")
+    print(f"Grid Resolution: {resolution}°")
+    print(f"Frequency: {frequency}")
+
+    client = cdsapi.Client()
+    client.retrieve(dataset, request, output_file)
+
+    print(f"Download complete: {output_file}")
+
+    return output_file
 
 def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFrame:
     """
@@ -1283,8 +1394,140 @@ def aggregate_by_frequency(
 
     return result, unique_latlongs
 
+def aggregate_pressure_levels(
+    df: pd.DataFrame,
+    frequency: str = "hourly",
+    keep_original_time: bool = False
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Aggregate ERA5 pressure level data by the specified frequency.
+    
+    All variables are aggregated using mean values (both spatially and temporally).
+    
+    Parameters:
+        df: DataFrame containing ERA5 pressure level data with columns:
+            - latitude, longitude: Spatial coordinates
+            - valid_time or time: Timestamps
+            - pressure_level: Pressure level in hPa
+            - Other columns: Meteorological variables
+        frequency: One of 'hourly', 'daily', 'weekly', 'monthly', 'yearly'
+        keep_original_time: Whether to keep the original time column
+        
+    Returns:
+        Tuple of (aggregated DataFrame, unique lat/lon DataFrame)
+    """
+    print(f"Aggregating pressure level data to {frequency} frequency...")
+    
+    # Store unique lat/lon pairs for reference
+    unique_latlongs = (
+        df[["latitude", "longitude"]].drop_duplicates().reset_index(drop=True)
+    )
+    
+    # Identify time column (handle both valid_time and time)
+    time_col = "valid_time" if "valid_time" in df.columns else "time"
+    
+    # Ensure time column is properly formatted
+    if not np.issubdtype(df[time_col].dtype, np.datetime64):
+        df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
+    
+    # Identify pressure level column if exists
+    has_pressure_level = "pressure_level" in df.columns
+    
+    # Grouping columns - always include time, optionally include pressure_level
+    group_cols = [time_col]
+    if has_pressure_level:
+        group_cols.append("pressure_level")
+    
+    # Columns to exclude from aggregation
+    exclude_cols = {
+        "latitude", "longitude", "date", "time", "hour", 
+        "expver", "number", "valid_time"
+    }
+    
+    # All other columns are variables to be averaged
+    var_cols = [col for col in df.columns if col not in exclude_cols and col not in group_cols]
+    
+    print(f"Variables to average: {var_cols}")
+    if has_pressure_level:
+        print(f"Including pressure_level in aggregation groups")
+    
+    # For hourly data, just do spatial aggregation
+    if frequency == "hourly":
+        # Group by time (and pressure level if present) and average across space
+        agg_df = df.groupby(group_cols, as_index=False)[var_cols].mean()
+        
+        # Add time components
+        agg_df["year"] = agg_df[time_col].dt.year
+        agg_df["month"] = agg_df[time_col].dt.month
+        agg_df["day"] = agg_df[time_col].dt.day
+        agg_df["hour"] = agg_df[time_col].dt.hour
+        
+        if not keep_original_time:
+            agg_df = agg_df.drop(columns=[time_col])
+            
+        return agg_df, unique_latlongs
+    
+    # For other frequencies, first spatial then temporal aggregation
+    
+    # 1. Spatial aggregation - average across lat/lon points
+    spatial_agg = df.groupby(group_cols, as_index=False)[var_cols].mean()
+    
+    # 2. Temporal aggregation
+    freq_map = {
+        "daily": "D",
+        "weekly": "W",
+        "monthly": "MS",
+        "yearly": "AS"
+    }
+    
+    if frequency not in freq_map:
+        raise ValueError(f"Invalid frequency: {frequency}")
+    
+    # Set time as index for resampling
+    temporal_agg = spatial_agg.set_index(time_col)
+    
+    # For pressure levels, we need to group by pressure level before resampling
+    if has_pressure_level:
+        # Get unique pressure levels
+        pressure_levels = df["pressure_level"].unique()
+        
+        # Initialize empty DataFrame for results
+        result_df = pd.DataFrame()
+        
+        # Process each pressure level separately
+        for level in pressure_levels:
+            # Filter data for this pressure level
+            level_data = temporal_agg[temporal_agg["pressure_level"] == level]
+            
+            # Resample and average variables
+            resampled = level_data[var_cols].resample(freq_map[frequency]).mean()
+            
+            # Add pressure level back
+            resampled["pressure_level"] = level
+            
+            # Combine results
+            result_df = pd.concat([result_df, resampled.reset_index()])
+    else:
+        # No pressure levels - simple resample
+        result_df = temporal_agg[var_cols].resample(freq_map[frequency]).mean().reset_index()
+    
+    # Add frequency-specific time components
+    result_df["year"] = result_df[time_col].dt.year
+    
+    if frequency == "daily":
+        result_df["month"] = result_df[time_col].dt.month
+        result_df["day"] = result_df[time_col].dt.day
+    elif frequency == "weekly":
+        result_df["week"] = result_df[time_col].dt.isocalendar().week
+    elif frequency == "monthly":
+        result_df["month"] = result_df[time_col].dt.month
+    
+    if not keep_original_time:
+        result_df = result_df.drop(columns=[time_col])
+    
+    return result_df, unique_latlongs
 
-def process_era5_data(
+def process_era5_single_lvl(
     request_id: str,
     variables: List[str],
     start_date: dt.datetime,
@@ -1463,7 +1706,7 @@ def process_era5_data(
 
             try:
                 print("  → Downloading ERA5 data...")
-                download_file = download_era5_data(
+                download_file = download_era5_single_lvl(
                     f"{request_id}_chunk{chunk_number}",
                     variables,
                     current_date,
@@ -1575,7 +1818,7 @@ def process_era5_data(
 
             try:
                 print("  → Downloading ERA5 data...")
-                download_file = download_era5_data(
+                download_file = download_era5_single_lvl(
                     f"{request_id}_chunk{chunk_number}",
                     variables,
                     current_date,
@@ -1669,7 +1912,7 @@ def process_era5_data(
 
         try:
             print("→ Downloading ERA5 data...")
-            download_file = download_era5_data(
+            download_file = download_era5_single_lvl(
                 request_id,
                 variables,
                 start_date,
@@ -1733,7 +1976,7 @@ def process_era5_data(
 
         try:
             print("→ Downloading ERA5 data...")
-            download_file = download_era5_data(
+            download_file = download_era5_single_lvl(
                 request_id,
                 variables,
                 start_date,
@@ -1852,6 +2095,295 @@ def process_era5_data(
 
     return aggregated_df
 
+def process_era5_pressure_lvl(
+    request_id: str,
+    variables: List[str],
+    start_date: dt.datetime,
+    end_date: dt.datetime,
+    geojson_file: str,
+    pressure_levels: List[str],
+    frequency: str = "hourly",
+    resolution: float = 0.25,
+) -> pd.DataFrame:
+    """
+    Complete workflow for downloading and processing ERA5 pressure level data.
+    Automatically chunks large time range requests for efficient processing.
+
+    Args:
+        request_id: Unique identifier for the request
+        variables: List of variables to download
+        start_date: Start date for data retrieval (datetime object)
+        end_date: End date for data retrieval (datetime object)
+        geojson_file: Path to the GeoJSON file
+        pressure_levels: List of pressure levels to request (hPa as strings)
+        frequency: Aggregation frequency ('hourly', 'daily', 'weekly', 'monthly', 'yearly')
+        resolution: Grid resolution in degrees (default: 0.25°)
+
+    Returns:
+        Filtered and aggregated DataFrame with the processed data
+    """
+    class Colors:
+        RESET = "\033[0m"
+        RED = "\033[0;31m"
+        GREEN = "\033[0;32m"
+        YELLOW = "\033[0;33m"
+        BLUE = "\033[0;34m"
+        PURPLE = "\033[0;35m"
+        CYAN = "\033[0;36m"
+        WHITE = "\033[0;37m"
+        GREEN_BRIGHT = "\033[0;92m"
+        RED_BRIGHT = "\033[0;91m"
+        YELLOW_BRIGHT = "\033[0;93m"
+        BLUE_BRIGHT = "\033[0;94m"
+        CYAN_BRIGHT = "\033[0;96m"
+
+    ensure_cdsapi_config()
+    print(f"\n{'='*60}")
+    print(f"{Colors.BLUE}STARTING ERA5 PRESSURE LEVEL PROCESSING{Colors.RESET}")
+    print(f"{'='*60}")
+    print(f"Request ID: {request_id}")
+    print(f"Variables: {variables}")
+    print(f"Pressure Levels: {pressure_levels}")
+    print(f"Date Range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+    print(f"Frequency: {frequency}")
+    print(f"Resolution: {resolution}°")
+    print(f"GeoJSON File: {geojson_file}")
+
+    # Validate inputs
+    print("\n--- Input Validation ---")
+    if not variables:
+        raise ValueError("Variables list cannot be empty")
+    if start_date > end_date:
+        raise ValueError("Start date cannot be after end date")
+    if not os.path.exists(geojson_file):
+        raise FileNotFoundError(f"GeoJSON file not found: {geojson_file}")
+    if not pressure_levels:
+        raise ValueError("Pressure levels list cannot be empty")
+    print(f"{Colors.GREEN}✓ All inputs validated successfully{Colors.RESET}")
+
+    # Load GeoJSON file
+    print("\n--- Loading GeoJSON File ---")
+    try:
+        geojson_data = load_json_with_encoding(geojson_file)
+        if not is_valid_geojson(geojson_data):
+            geojson_data = convert_to_geojson(geojson_data)
+        print(f"{Colors.GREEN}✓ GeoJSON loaded successfully{Colors.RESET}")
+    except Exception as e:
+        print(f"{Colors.RED}✗ Error loading GeoJSON file: {e}{Colors.RESET}", file=sys.stderr)
+        sys.exit(1)
+
+    # Get bounding box coordinates
+    print("\n--- Calculating Bounding Box ---")
+    try:
+        west, south, east, north = get_bounding_box(geojson_data)
+        print(f"{Colors.GREEN}✓ Bounding Box calculated:{Colors.RESET}")
+        print(f"  North: {north:.4f}°")
+        print(f"  South: {south:.4f}°")
+        print(f"  East:  {east:.4f}°")
+        print(f"  West:  {west:.4f}°")
+        print(f"  Area:  {abs(east-west):.4f}° × {abs(north-south):.4f}°")
+    except Exception as e:
+        print(f"{Colors.RED}✗ Error calculating bounding box: {e}{Colors.RESET}", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine processing strategy
+    print("\n--- Determining Processing Strategy ---")
+    use_monthly = frequency in ["monthly", "yearly"]
+    print(f"Using monthly dataset: {use_monthly}")
+
+    if use_monthly:
+        max_months_per_chunk = 10
+        total_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month) + 1
+        needs_chunking = total_months > max_months_per_chunk
+    else:
+        max_days_per_chunk = 14
+        total_days = (end_date - start_date).days + 1
+        needs_chunking = total_days > max_days_per_chunk
+
+    print(f"Total {'months' if use_monthly else 'days'} to process: {total_months if use_monthly else total_days}")
+    print(f"Max {'months' if use_monthly else 'days'} per chunk: {max_months_per_chunk if use_monthly else max_days_per_chunk}")
+    print(f"Needs chunking: {needs_chunking}")
+
+    all_filtered_data = []
+    processing_start_time = time.time()
+
+    if needs_chunking:
+        # Chunked processing
+        current_date = start_date
+        chunk_number = 1
+        total_chunks = math.ceil(total_months / max_months_per_chunk) if use_monthly else math.ceil(total_days / max_days_per_chunk)
+
+        while current_date <= end_date:
+            chunk_start_time = time.time()
+            print(f"\n{'='*50}")
+            print(f"{Colors.CYAN}CHUNK {chunk_number}/{total_chunks}{Colors.RESET}")
+            print(f"{'='*50}")
+
+            # Calculate chunk end date
+            if use_monthly:
+                chunk_end_year = current_date.year + ((current_date.month - 1 + max_months_per_chunk - 1) // 12)
+                chunk_end_month = ((current_date.month - 1 + max_months_per_chunk - 1) % 12) + 1
+                next_month = dt.datetime(chunk_end_year, chunk_end_month, 28) + dt.timedelta(days=4)
+                chunk_end = min(next_month - dt.timedelta(days=next_month.day), end_date)
+            else:
+                chunk_end = min(current_date + dt.timedelta(days=max_days_per_chunk - 1), end_date)
+
+            print(f"Processing: {current_date.strftime('%Y-%m-%d')} to {chunk_end.strftime('%Y-%m-%d')}")
+
+            try:
+                # Download data for this chunk
+                print("  → Downloading ERA5 pressure level data...")
+                download_file = download_era5_pressure_lvl(
+                    f"{request_id}_chunk{chunk_number}",
+                    variables,
+                    current_date,
+                    chunk_end,
+                    north,
+                    west,
+                    south,
+                    east,
+                    pressure_levels,
+                    resolution,
+                    frequency
+                )
+                print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+
+                # Process the downloaded file
+                print("  → Processing NetCDF file...")
+                ds = xr.open_dataset(download_file)
+                print(f"  ✓ Loaded dataset with shape: {dict(ds.dims)}")
+
+                # Filter by shapefile
+                print("  → Filtering by shapefile...")
+                filtered_chunk_df = filter_netcdf_by_shapefile(ds, geojson_data)
+                print(f"  {Colors.GREEN}✓ Filtered data shape: {filtered_chunk_df.shape}{Colors.RESET}")
+
+                all_filtered_data.append(filtered_chunk_df)
+
+                chunk_time = time.time() - chunk_start_time
+                print(f"  {Colors.GREEN}✓ Chunk completed in {chunk_time:.2f} seconds{Colors.RESET}")
+
+            except Exception as e:
+                print(f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}", file=sys.stderr)
+
+            # Prepare for next chunk
+            chunk_number += 1
+            current_date = chunk_end + dt.timedelta(days=1)
+            
+            if chunk_number <= total_chunks:
+                print("  → Waiting 5 seconds before next chunk...")
+                time.sleep(5)
+
+        if not all_filtered_data:
+            print(f"{Colors.RED}✗ No data was successfully processed from any chunk{Colors.RESET}", file=sys.stderr)
+            sys.exit(1)
+
+        # Combine all chunks
+        print("\n--- Combining Chunk Results ---")
+        filtered_df = pd.concat(all_filtered_data, ignore_index=True)
+        print(f"{Colors.GREEN}✓ Combined data shape: {filtered_df.shape}{Colors.RESET}")
+
+        # Remove duplicates
+        initial_rows = len(filtered_df)
+        filtered_df = filtered_df.drop_duplicates(subset=["valid_time", "latitude", "longitude", "pressure_level"])
+        removed_duplicates = initial_rows - len(filtered_df)
+        if removed_duplicates > 0:
+            print(f"{Colors.YELLOW}✓ Removed {removed_duplicates} duplicate rows{Colors.RESET}")
+
+    else:
+        # Single chunk processing
+        print(f"Processing as a single chunk ({total_months if use_monthly else total_days} {'months' if use_monthly else 'days'})...")
+
+        try:
+            # Download all data at once
+            print("→ Downloading ERA5 pressure level data...")
+            download_file = download_era5_pressure_lvl(
+                request_id,
+                variables,
+                start_date,
+                end_date,
+                north,
+                west,
+                south,
+                east,
+                pressure_levels,
+                resolution,
+                frequency
+            )
+            print(f"{Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+
+            # Process the downloaded file
+            print("→ Processing NetCDF file...")
+            ds = xr.open_dataset(download_file)
+            print(f"✓ Loaded dataset with shape: {dict(ds.dims)}")
+
+            # Filter by shapefile
+            print("→ Filtering by shapefile...")
+            filtered_df = filter_netcdf_by_shapefile(ds, geojson_data)
+            print(f"{Colors.GREEN}✓ Filtered data shape: {filtered_df.shape}{Colors.RESET}")
+
+            # Remove duplicates
+            initial_rows = len(filtered_df)
+            filtered_df = filtered_df.drop_duplicates(subset=["valid_time", "latitude", "longitude", "pressure_level"])
+            removed_duplicates = initial_rows - len(filtered_df)
+            if removed_duplicates > 0:
+                print(f"{Colors.YELLOW}✓ Removed {removed_duplicates} duplicate rows{Colors.RESET}")
+
+        except Exception as e:
+            print(f"{Colors.RED}✗ Error in processing: {e}{Colors.RESET}", file=sys.stderr)
+            sys.exit(1)
+
+    # Aggregate by frequency
+    print(f"\n--- Temporal Aggregation ({frequency}) ---")
+    try:
+        print("→ Performing temporal aggregation...")
+        aggregation_start_time = time.time()
+        (aggregated_df, unique_latlongs) = aggregate_pressure_levels(filtered_df, frequency)
+        aggregation_time = time.time() - aggregation_start_time
+        #debuggin op
+        print(aggregated_df)
+        print(f"{Colors.GREEN}✓ Aggregation completed in {aggregation_time:.2f} seconds{Colors.RESET}")
+        print(f"{Colors.GREEN}✓ Aggregated data shape: {aggregated_df.shape}{Colors.RESET}")
+    except Exception as e:
+        print(f"{Colors.RED}✗ Error during aggregation: {e}{Colors.RESET}", file=sys.stderr)
+        sys.exit(1)
+
+    # Save processed data
+    print(f"\n--- Saving Results ---")
+    try:
+        output_dir = f"{request_id}_output"
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"→ Created output directory: {output_dir}")
+
+        # Save aggregated data to CSV
+        csv_output = os.path.join(output_dir, f"{request_id}_{frequency}_data.csv")
+        aggregated_df.to_csv(csv_output, index=False)
+        print(f"{Colors.GREEN}✓ Aggregated data exported to: {csv_output}{Colors.RESET}")
+
+        # Save unique lat/longs to CSV
+        csv_output = os.path.join(output_dir, f"{request_id}_unique_latlongs.csv")
+        unique_latlongs.to_csv(csv_output, index=False)
+        print(f"{Colors.GREEN}✓ Unique lat/longs exported to: {csv_output}{Colors.RESET}")
+
+        # Save raw data to CSV
+        csv_output = os.path.join(output_dir, f"{request_id}_raw_data.csv")
+        filtered_df.to_csv(csv_output, index=False)
+        print(f"{Colors.GREEN}✓ Raw data exported to: {csv_output}{Colors.RESET}")
+
+    except Exception as e:
+        print(f"{Colors.RED}✗ Error saving results: {e}{Colors.RESET}", file=sys.stderr)
+
+    # Final summary
+    print(f"\n--- Summary Statistics ---")
+    total_processing_time = time.time() - processing_start_time
+    print(f"Total processing time: {total_processing_time:.2f} seconds")
+    print(f"Final dataset shape: {aggregated_df.shape}")
+
+    print(f"\n{'='*60}")
+    print(f"{Colors.BLUE}ERA5 PRESSURE LEVEL PROCESSING COMPLETED SUCCESSFULLY{Colors.RESET}")
+    print(f"{'='*60}")
+
+    return aggregated_df
 
 import json
 import os
@@ -2078,11 +2610,14 @@ def era5ify_geojson(
     start_date: dt.datetime,
     end_date: dt.datetime,
     json_file: str,
+    dataset_type: str = "single",  # "single" or "pressure"
+    pressure_levels: Optional[List[str]] = None,
     frequency: str = "hourly",
     resolution: float = 0.25,
 ) -> pd.DataFrame:
     """
-    Wrapper function that handles different JSON formats before passing to process_era5_data.
+    Wrapper function that handles different JSON formats before processing ERA5 data.
+    Supports both single-level and pressure-level datasets.
 
     Args:
         request_id: Unique identifier for the request
@@ -2090,51 +2625,69 @@ def era5ify_geojson(
         start_date: Start date for data retrieval (datetime object)
         end_date: End date for data retrieval (datetime object)
         json_file: Path to the JSON or GeoJSON file
+        dataset_type: Type of ERA5 data ("single" or "pressure")
+        pressure_levels: List of pressure levels (required for "pressure" type)
         frequency: Aggregation frequency ('hourly', 'daily', 'weekly', 'monthly', 'yearly')
         resolution: Grid resolution in degrees (default: 0.25°)
 
     Returns:
         Filtered and aggregated DataFrame with the processed data
+
+    Raises:
+        ValueError: If invalid dataset_type or missing pressure_levels for pressure data
     """
+    # Validate dataset type
+    dataset_type = dataset_type.lower()
+    if dataset_type not in ["single", "pressure"]:
+        raise ValueError(f"Invalid dataset_type: {dataset_type}. Must be 'single' or 'pressure'")
+
+    # Validate pressure levels if needed
+    if dataset_type == "pressure" and not pressure_levels:
+        raise ValueError("pressure_levels must be provided for pressure level data")
+
     # Handle different file encodings
     json_data = load_json_with_encoding(json_file)
 
     # Check if it's valid GeoJSON
     if is_valid_geojson(json_data):
         print(f"Valid GeoJSON detected: {json_file}")
-        # Use the original file directly since it's already valid GeoJSON
-        return process_era5_data(
-            request_id,
-            variables,
-            start_date,
-            end_date,
-            json_file,
-            frequency,
-            resolution,
-        )
+        geojson_data = json_data
     else:
         print(f"Converting JSON to GeoJSON format...")
-        # Convert to GeoJSON and save to a temporary file
         geojson_data = convert_to_geojson(json_data)
-        temp_geojson_file = create_temp_geojson(geojson_data, request_id)
-        print(f"Created temporary GeoJSON file: {temp_geojson_file}")
 
-        try:
-            # Process with the converted GeoJSON
-            return process_era5_data(
-                request_id,
-                variables,
-                start_date,
-                end_date,
-                temp_geojson_file,
-                frequency,
-                resolution,
+    # Create temporary GeoJSON file (even if original was valid, for consistent processing)
+    temp_geojson_file = create_temp_geojson(geojson_data, request_id)
+    print(f"Using GeoJSON file: {temp_geojson_file}")
+
+    try:
+        # Route to appropriate processor
+        if dataset_type == "pressure":
+            return process_era5_pressure_lvl(
+                request_id=request_id,
+                variables=variables,
+                start_date=start_date,
+                end_date=end_date,
+                geojson_file=temp_geojson_file,
+                pressure_levels=pressure_levels,
+                frequency=frequency,
+                resolution=resolution
             )
-        finally:
-            # Clean up temporary file after processing
-            if os.path.exists(temp_geojson_file):
-                print(f"Removing temporary GeoJSON file: {temp_geojson_file}")
-                os.remove(temp_geojson_file)
+        else:
+            return process_era5_single_lvl(
+                request_id=request_id,
+                variables=variables,
+                start_date=start_date,
+                end_date=end_date,
+                geojson_file=temp_geojson_file,
+                frequency=frequency,
+                resolution=resolution
+            )
+    finally:
+        # Clean up temporary file if we created it
+        if os.path.exists(temp_geojson_file) and temp_geojson_file != json_file:
+            print(f"Removing temporary GeoJSON file: {temp_geojson_file}")
+            os.remove(temp_geojson_file)
 
 def era5ify_bbox(
     request_id: str, 
@@ -2145,13 +2698,15 @@ def era5ify_bbox(
     south: float,
     east: float,
     west: float,
+    dataset_type: str = "single",  # "single" or "pressure"
+    pressure_levels: Optional[List[str]] = None,
     frequency: str = 'hourly',
     resolution: float = 0.25
 ) -> pd.DataFrame:
     """
     Process ERA5 data for a specified bounding box without requiring a GeoJSON file.
-    Creates a temporary GeoJSON internally and processes the data using the existing workflow.
-    
+    Supports both single-level and pressure-level datasets.
+
     Args:
         request_id: Unique identifier for the request
         variables: List of variables to download
@@ -2161,25 +2716,38 @@ def era5ify_bbox(
         south: Southern latitude boundary
         east: Eastern longitude boundary
         west: Western longitude boundary
+        dataset_type: Type of ERA5 data ("single" or "pressure")
+        pressure_levels: List of pressure levels (required for "pressure" type)
         frequency: Aggregation frequency ('hourly', 'daily', 'weekly', 'monthly', 'yearly')
         resolution: Grid resolution in degrees (default: 0.25°)
-    
+
     Returns:
         Filtered and aggregated DataFrame with the processed data
-        
+
     Raises:
-        ValueError: If bounding box coordinates are invalid
+        ValueError: If bounding box coordinates are invalid or missing pressure levels for pressure data
     """
+    # Validate dataset type
+    dataset_type = dataset_type.lower()
+    if dataset_type not in ["single", "pressure"]:
+        raise ValueError(f"Invalid dataset_type: {dataset_type}. Must be 'single' or 'pressure'")
+
+    # Validate pressure levels if needed
+    if dataset_type == "pressure" and not pressure_levels:
+        raise ValueError("pressure_levels must be provided for pressure level data")
+
     print(f"\n{'='*60}")
-    print(f"STARTING ERA5 BBOX PROCESSING")
+    print(f"STARTING ERA5 {dataset_type.upper()} LEVEL BBOX PROCESSING")
     print(f"{'='*60}")
     print(f"Request ID: {request_id}")
     print(f"Variables: {variables}")
+    if dataset_type == "pressure":
+        print(f"Pressure Levels: {pressure_levels}")
     print(f"Date Range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
     print(f"Bounding Box: N:{north}, S:{south}, E:{east}, W:{west}")
     print(f"Frequency: {frequency}")
     print(f"Resolution: {resolution}°")
-    
+
     # Validate bounding box coordinates
     print("\n--- Bounding Box Validation ---")
     if north <= south:
@@ -2193,35 +2761,46 @@ def era5ify_bbox(
     
     print("✓ Bounding box coordinates validated successfully")
     print(f"  Area: {abs(east-west):.4f}° × {abs(north-south):.4f}°")
-    
+
     # Create GeoJSON from bounding box coordinates
     print("\n--- Creating GeoJSON from Bounding Box ---")
     geojson_data = create_geojson_from_bbox(west, south, east, north)
     print("✓ GeoJSON created successfully")
-    
+
     # Create temporary GeoJSON file
     temp_geojson_file = create_temp_geojson(geojson_data, request_id)
     print(f"✓ Created temporary GeoJSON file: {temp_geojson_file}")
-    
+
     try:
-        # Process using the existing ERA5 workflow
-        print("\n--- Delegating to Main Processing Function ---")
-        result_df = process_era5_data(
-            request_id=request_id,
-            variables=variables,
-            start_date=start_date,
-            end_date=end_date,
-            geojson_file=temp_geojson_file,
-            frequency=frequency,
-            resolution=resolution
-        )
-        
+        # Route to appropriate processor
+        if dataset_type == "pressure":
+            result_df = process_era5_pressure_lvl(
+                request_id=request_id,
+                variables=variables,
+                start_date=start_date,
+                end_date=end_date,
+                geojson_file=temp_geojson_file,
+                pressure_levels=pressure_levels,
+                frequency=frequency,
+                resolution=resolution
+            )
+        else:
+            result_df = process_era5_single_lvl(
+                request_id=request_id,
+                variables=variables,
+                start_date=start_date,
+                end_date=end_date,
+                geojson_file=temp_geojson_file,
+                frequency=frequency,
+                resolution=resolution
+            )
+
         print(f"\n{'='*60}")
-        print(f"ERA5 BBOX PROCESSING COMPLETED SUCCESSFULLY")
+        print(f"ERA5 {dataset_type.upper()} LEVEL BBOX PROCESSING COMPLETED SUCCESSFULLY")
         print(f"{'='*60}")
-        
+
         return result_df
-        
+
     finally:
         # Clean up temporary file
         if os.path.exists(temp_geojson_file):
