@@ -1525,7 +1525,7 @@ def process_era5_single_lvl(
         YELLOW_BRIGHT = "\033[0;93m"
         BLUE_BRIGHT = "\033[0;94m"
         CYAN_BRIGHT = "\033[0;96m"
-
+        
     ensure_cdsapi_config()
     print(f"\n{'='*60}")
     print(f"{Colors.BLUE}STARTING ERA5 DATA PROCESSING{Colors.RESET}")
@@ -2051,6 +2051,527 @@ def process_era5_single_lvl(
 
     return aggregated_df
 
+def process_era5_single_lvl_no_filter(
+    request_id: str,
+    variables: List[str],
+    start_date: dt.datetime,
+    end_date: dt.datetime,
+    north: float,
+    south: float,
+    east: float,
+    west: float,
+    frequency: str = "hourly",
+    resolution: float = 0.25,
+) -> pd.DataFrame:
+    """
+    Complete workflow for downloading and processing ERA5 data with time range support.
+    Automatically chunks large time range requests for efficient processing.
+
+    Args:
+        request_id: Unique identifier for the request
+        variables: List of variables to download
+        start_date: Start date for data retrieval (datetime object)
+        end_date: End date for data retrieval (datetime object)
+        geojson_file: Path to the GeoJSON file
+        frequency: Aggregation frequency ('hourly', 'daily', 'weekly', 'monthly', 'yearly')
+        resolution: Grid resolution in degrees (default: 0.25°)
+
+    Returns:
+        Filtered and aggregated DataFrame with the processed data
+    """
+
+    class Colors:
+        RESET = "\033[0m"
+        # Regular Colors
+        RED = "\033[0;31m"
+        GREEN = "\033[0;32m"
+        YELLOW = "\033[0;33m"
+        BLUE = "\033[0;34m"
+        PURPLE = "\033[0;35m"
+        CYAN = "\033[0;36m"
+        WHITE = "\033[0;37m"
+        # Bright Colors
+        GREEN_BRIGHT = "\033[0;92m"
+        RED_BRIGHT = "\033[0;91m"
+        YELLOW_BRIGHT = "\033[0;93m"
+        BLUE_BRIGHT = "\033[0;94m"
+        CYAN_BRIGHT = "\033[0;96m"
+        
+    ensure_cdsapi_config()
+    print(f"\n{'='*60}")
+    print(f"{Colors.BLUE}STARTING ERA5 DATA PROCESSING{Colors.RESET}")
+    print(f"{'='*60}")
+    print(f"Request ID: {request_id}")
+    print(f"Variables: {variables}")
+    print(
+        f"Date Range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+    )
+    print(f"Frequency: {frequency}")
+    print(f"Resolution: {resolution}°")
+
+    # Validate inputs
+    print("\n--- Input Validation ---")
+    if not variables:
+        raise ValueError("Variables list cannot be empty")
+    if start_date > end_date:
+        raise ValueError("Start date cannot be after end date")
+    print(f"{Colors.GREEN}✓ All inputs validated successfully{Colors.RESET}")
+
+    # Get bounding box coordinates
+    print("\n--- Calculating Bounding Box ---")
+    try:
+        west, south, east, north = west, south, east, north
+        print(f"{Colors.GREEN}✓ Bounding Box calculated:{Colors.RESET}")
+        print(f"  North: {north:.4f}°")
+        print(f"  South: {south:.4f}°")
+        print(f"  East:  {east:.4f}°")
+        print(f"  West:  {west:.4f}°")
+        print(f"  Area:  {abs(east-west):.4f}° × {abs(north-south):.4f}°")
+    except Exception as e:
+        print(f"{Colors.RED}✗ Error calculating bounding box: {e}{Colors.RESET}", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine processing strategy
+    print("\n--- Determining Processing Strategy ---")
+    use_monthly = frequency in ["monthly", "yearly"]
+    print(f"Using monthly dataset: {use_monthly}")
+
+    if use_monthly:
+        max_months_per_chunk = 10
+        total_months = (
+            (end_date.year - start_date.year) * 12
+            + (end_date.month - start_date.month)
+            + 1
+        )
+        needs_chunking = total_months > max_months_per_chunk
+        print(f"Total months to process: {total_months}")
+        print(f"Max months per chunk: {max_months_per_chunk}")
+        print(f"Needs chunking: {needs_chunking}")
+    else:
+        max_days_per_chunk = 14
+        total_days = (end_date - start_date).days + 1
+        needs_chunking = total_days > max_days_per_chunk
+        print(f"Total days to process: {total_days}")
+        print(f"Max days per chunk: {max_days_per_chunk}")
+        print(f"Needs chunking: {needs_chunking}")
+
+    all_filtered_data = []
+    processing_start_time = time.time()
+
+    if needs_chunking and use_monthly:
+        # --- Case 1: Needs chunking, needs monthly dataset ---
+        current_date = start_date
+        chunk_number = 1
+        total_chunks = math.ceil(total_months / max_months_per_chunk)
+        print(f"Will process {total_chunks} chunks C1")
+
+        while current_date <= end_date:
+            chunk_start_time = time.time()
+            print(f"\n{'='*50}")
+            print(f"{Colors.CYAN}CHUNK {chunk_number}/{total_chunks}{Colors.RESET}")
+            print(f"{'='*50}")
+
+            # Calculate chunk end date (last day of the chunk)
+            chunk_end_year = current_date.year + (
+                (current_date.month - 1 + max_months_per_chunk - 1) // 12
+            )
+            chunk_end_month = (
+                (current_date.month - 1 + max_months_per_chunk - 1) % 12
+            ) + 1
+            # Last day of chunk_end_month
+            next_month = dt.datetime(
+                chunk_end_year, chunk_end_month, 28
+            ) + dt.timedelta(days=4)
+            last_day = next_month - dt.timedelta(days=next_month.day)
+            chunk_end = min(last_day, end_date)
+
+            print(
+                f"Processing: {current_date.strftime('%Y-%m-%d')} to {chunk_end.strftime('%Y-%m-%d')}"
+            )
+
+            try:
+                print("  → Downloading ERA5 data...")
+                download_file = download_era5_single_lvl(
+                    f"{request_id}_chunk{chunk_number}",
+                    variables,
+                    current_date,
+                    chunk_end,
+                    north,
+                    west,
+                    south,
+                    east,
+                    resolution,
+                    frequency,
+                )
+                print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+
+                print("  → Extracting files...")
+                nc_files = extract_download(download_file)
+                print(f"  {Colors.GREEN}✓ Extracted {len(nc_files)} files{Colors.RESET}")
+
+                chunk_datasets = []
+                print("  → Processing NetCDF files...")
+                for i, nc_file in enumerate(nc_files, 1):
+                    if not nc_file.lower().endswith(".nc"):
+                        print(f"    Skipping non-NetCDF file: {nc_file}")
+                        continue
+                    try:
+                        print(
+                            f"    Processing file {i}/{len(nc_files)}: {os.path.basename(nc_file)}"
+                        )
+                        ds = xr.open_dataset(nc_file)
+                        chunk_datasets.append(ds)
+                        print(f"    ✓ Loaded dataset with shape: {dict(ds.dims)}")
+                    except Exception as e:
+                        print(f"    {Colors.RED}✗ Error processing {nc_file}: {e}{Colors.RESET}", file=sys.stderr)
+
+                if not chunk_datasets:
+                    print(f"  {Colors.RED}✗ No datasets were successfully processed for this chunk{Colors.RESET}")
+                    chunk_number += 1
+                    next_month = chunk_end + dt.timedelta(days=1)
+                    current_date = next_month
+                    continue
+
+                print("  → Merging datasets...")
+                merged_chunk_ds = (
+                    xr.merge(chunk_datasets)
+                    if len(chunk_datasets) > 1
+                    else chunk_datasets[0]
+                )
+                print(f"  {Colors.GREEN}✓ Merged dataset shape: {dict(merged_chunk_ds.dims)}{Colors.RESET}")
+
+                filtered_chunk_df = merged_chunk_ds.to_dataframe().reset_index()
+                print(f"  {Colors.GREEN}✓ Dataframe shape: {filtered_chunk_df.shape}{Colors.RESET}")
+
+                all_filtered_data.append(filtered_chunk_df)
+
+                chunk_time = time.time() - chunk_start_time
+                print(f"  {Colors.GREEN}✓ Chunk completed in {chunk_time:.2f} seconds{Colors.RESET}")
+
+            except Exception as e:
+                print(
+                    f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}", file=sys.stderr
+                )
+                # Continue with next chunk instead of failing completely
+
+            chunk_number += 1
+            next_month = chunk_end + dt.timedelta(days=1)
+            current_date = next_month
+
+            if chunk_number <= total_chunks:
+                print("  → Waiting 5 seconds before next chunk...")
+                time.sleep(5)
+
+        if not all_filtered_data:
+            print(
+                f"{Colors.RED}✗ No data was successfully processed from any chunk{Colors.RESET}", file=sys.stderr
+            )
+            sys.exit(1)
+
+        print("\n--- Combining Chunk Results ---")
+        filtered_df = pd.concat(all_filtered_data, ignore_index=True)
+        print(f"{Colors.GREEN}✓ Combined data shape: {filtered_df.shape}{Colors.RESET}")
+
+        initial_rows = len(filtered_df)
+        filtered_df = filtered_df.drop_duplicates(
+            subset=["valid_time", "latitude", "longitude"]
+        )
+        removed_duplicates = initial_rows - len(filtered_df)
+
+    elif needs_chunking and not use_monthly:
+        # --- Case 2: Needs chunking, does NOT need monthly dataset ---
+        current_date = start_date
+        chunk_number = 1
+        total_chunks = math.ceil(total_days / max_days_per_chunk)
+        print(f"Will process {total_chunks} chunks C2")
+
+        while current_date <= end_date:
+            chunk_start_time = time.time()
+            print(f"\n{'='*50}")
+            print(f"{Colors.CYAN}CHUNK {chunk_number}/{total_chunks}{Colors.RESET}")
+            print(f"{'='*50}")
+
+            chunk_end = min(
+                current_date + dt.timedelta(days=max_days_per_chunk - 1), end_date
+            )
+            print(
+                f"Processing: {current_date.strftime('%Y-%m-%d')} to {chunk_end.strftime('%Y-%m-%d')}"
+            )
+
+            try:
+                print("  → Downloading ERA5 data...")
+                download_file = download_era5_single_lvl(
+                    f"{request_id}_chunk{chunk_number}",
+                    variables,
+                    current_date,
+                    chunk_end,
+                    north,
+                    west,
+                    south,
+                    east,
+                    resolution,
+                    frequency,
+                )
+                print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+
+                print("  → Extracting files...")
+                nc_files = extract_download(download_file)
+                print(f"  {Colors.GREEN}✓ Extracted {len(nc_files)} files{Colors.RESET}")
+
+                chunk_datasets = []
+                print("  → Processing NetCDF files...")
+                for i, nc_file in enumerate(nc_files, 1):
+                    if not nc_file.lower().endswith(".nc"):
+                        print(f"    Skipping non-NetCDF file: {nc_file}")
+                        continue
+                    try:
+                        print(
+                            f"    Processing file {i}/{len(nc_files)}: {os.path.basename(nc_file)}"
+                        )
+                        ds = xr.open_dataset(nc_file)
+                        chunk_datasets.append(ds)
+                        print(f"    ✓ Loaded dataset with shape: {dict(ds.dims)}")
+                    except Exception as e:
+                        print(f"    {Colors.RED}✗ Error processing {nc_file}: {e}{Colors.RESET}", file=sys.stderr)
+
+                if not chunk_datasets:
+                    print(f"  {Colors.RED}✗ No datasets were successfully processed for this chunk{Colors.RESET}")
+                    chunk_number += 1
+                    current_date = chunk_end + dt.timedelta(days=1)
+                    continue
+
+                print("  → Merging datasets...")
+                merged_chunk_ds = (
+                    xr.merge(chunk_datasets)
+                    if len(chunk_datasets) > 1
+                    else chunk_datasets[0]
+                )
+                print(f"  {Colors.GREEN}✓ Merged dataset shape: {dict(merged_chunk_ds.dims)}{Colors.RESET}")
+
+                filtered_chunk_df = merged_chunk_ds.to_dataframe().reset_index()
+                print(f"  {Colors.GREEN}✓ Dataframe shape: {filtered_chunk_df.shape}{Colors.RESET}")
+
+                all_filtered_data.append(filtered_chunk_df)
+
+                chunk_time = time.time() - chunk_start_time
+                print(f"  {Colors.GREEN}✓ Chunk completed in {chunk_time:.2f} seconds{Colors.RESET}")
+
+            except Exception as e:
+                print(
+                    f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}", file=sys.stderr
+                )
+                # Continue with next chunk instead of failing completely
+
+            chunk_number += 1
+            current_date = chunk_end + dt.timedelta(days=1)
+
+            if chunk_number <= total_chunks:
+                print("  → Waiting 5 seconds before next chunk...")
+                time.sleep(5)
+
+        if not all_filtered_data:
+            print(
+                f"{Colors.RED}✗ No data was successfully processed from any chunk{Colors.RESET}", file=sys.stderr
+            )
+            sys.exit(1)
+
+        print("\n--- Combining Chunk Results ---")
+        filtered_df = pd.concat(all_filtered_data, ignore_index=True)
+        print(f"{Colors.GREEN}✓ Combined data shape: {filtered_df.shape}{Colors.RESET}")
+
+        initial_rows = len(filtered_df)
+        filtered_df = filtered_df.drop_duplicates(
+            subset=["valid_time", "latitude", "longitude"]
+        )
+        removed_duplicates = initial_rows - len(filtered_df)
+
+    elif not needs_chunking and use_monthly:
+        # --- Case 3: Does NOT need chunking, needs monthly dataset ---
+        print(f"Processing as a single chunk ({total_months} months)... C3")
+
+        try:
+            print("→ Downloading ERA5 data...")
+            download_file = download_era5_single_lvl(
+                request_id,
+                variables,
+                start_date,
+                end_date,
+                north,
+                west,
+                south,
+                east,
+                resolution,
+                frequency,
+            )
+            print(f"{Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+
+            print("→ Extracting files...")
+            nc_files = extract_download(download_file)
+            print(f"{Colors.GREEN}✓ Extracted {len(nc_files)} files{Colors.RESET}")
+
+            all_datasets = []
+            print("→ Processing NetCDF files...")
+            for i, nc_file in enumerate(nc_files, 1):
+                if not nc_file.lower().endswith(".nc"):
+                    print(f"  Skipping non-NetCDF file: {nc_file}")
+                    continue
+                try:
+                    print(
+                        f"  Processing file {i}/{len(nc_files)}: {os.path.basename(nc_file)}"
+                    )
+                    ds = xr.open_dataset(nc_file)
+                    all_datasets.append(ds)
+                    print(f"  ✓ Loaded dataset with shape: {dict(ds.dims)}")
+                except Exception as e:
+                    print(f"  {Colors.RED}✗ Error processing {nc_file}: {e}{Colors.RESET}", file=sys.stderr)
+
+            if not all_datasets:
+                print(f"{Colors.RED}✗ No datasets were successfully processed{Colors.RESET}", file=sys.stderr)
+                sys.exit(1)
+
+            print("→ Merging datasets...")
+            merged_ds = (
+                xr.merge(all_datasets) if len(all_datasets) > 1 else all_datasets[0]
+            )
+            print(f"{Colors.GREEN}✓ Merged dataset shape: {dict(merged_ds.dims)}{Colors.RESET}")
+
+            filtered_df = merged_ds.to_dataframe().reset_index()
+            print(f"{Colors.GREEN}✓ Dataframe shape: {filtered_df.shape}{Colors.RESET}")
+
+            initial_rows = len(filtered_df)
+            filtered_df = filtered_df.drop_duplicates(
+                subset=["valid_time", "latitude", "longitude"]
+            )
+            removed_duplicates = initial_rows - len(filtered_df)
+
+        except Exception as e:
+            print(f"{Colors.RED}✗ Error in single monthly processing: {e}{Colors.RESET}", file=sys.stderr)
+            sys.exit(1)
+
+    else:
+        # --- Case 4: Does NOT need chunking, does NOT need monthly dataset ---
+        print(f"Processing as a single chunk ({total_days} days)... C4")
+
+        try:
+            print("→ Downloading ERA5 data...")
+            download_file = download_era5_single_lvl(
+                request_id,
+                variables,
+                start_date,
+                end_date,
+                north,
+                west,
+                south,
+                east,
+                resolution,
+                frequency,
+            )
+            print(f"{Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+
+            print("→ Extracting files...")
+            nc_files = extract_download(download_file)
+            print(f"{Colors.GREEN}✓ Extracted {len(nc_files)} files{Colors.RESET}")
+
+            all_datasets = []
+            print("→ Processing NetCDF files...")
+            for i, nc_file in enumerate(nc_files, 1):
+                if not nc_file.lower().endswith(".nc"):
+                    print(f"  Skipping non-NetCDF file: {nc_file}")
+                    continue
+                try:
+                    print(
+                        f"  Processing file {i}/{len(nc_files)}: {os.path.basename(nc_file)}"
+                    )
+                    ds = xr.open_dataset(nc_file)
+                    all_datasets.append(ds)
+                    print(f"  ✓ Loaded dataset with shape: {dict(ds.dims)}")
+                except Exception as e:
+                    print(f"  {Colors.RED}✗ Error processing {nc_file}: {e}{Colors.RESET}", file=sys.stderr)
+
+            if not all_datasets:
+                print(f"{Colors.RED}✗ No datasets were successfully processed{Colors.RESET}", file=sys.stderr)
+                sys.exit(1)
+
+            print("→ Merging datasets...")
+            merged_ds = (
+                xr.merge(all_datasets) if len(all_datasets) > 1 else all_datasets[0]
+            )
+            print(f"{Colors.GREEN}✓ Merged dataset shape: {dict(merged_ds.dims)}{Colors.RESET}")
+
+            filtered_df = merged_ds.to_dataframe().reset_index()
+            print(f"{Colors.GREEN}✓ Dataframe shape: {filtered_df.shape}{Colors.RESET}")
+
+            initial_rows = len(filtered_df)
+            filtered_df = filtered_df.drop_duplicates(
+                subset=["valid_time", "latitude", "longitude"]
+            )
+            removed_duplicates = initial_rows - len(filtered_df)
+
+        except Exception as e:
+            print(f"{Colors.RED}✗ Error in single daily processing: {e}{Colors.RESET}", file=sys.stderr)
+            sys.exit(1)
+
+    # Aggregate by frequency (same for all cases)
+    print(f"\n--- Temporal Aggregation ({frequency}) ---")
+    try:
+        print("→ Performing temporal aggregation...")
+        aggregation_start_time = time.time()
+        (aggregated_df, unique_latlongs) = aggregate_by_frequency(
+            filtered_df, frequency
+        )
+        aggregation_time = time.time() - aggregation_start_time
+        print(f"{Colors.GREEN}✓ Aggregation completed in {aggregation_time:.2f} seconds{Colors.RESET}")
+        print(f"{Colors.GREEN}✓ Aggregated data shape: {aggregated_df.shape}{Colors.RESET}")
+        print(f"{Colors.GREEN}✓ Unique lat/long combinations: {len(unique_latlongs)}{Colors.RESET}")
+    except Exception as e:
+        print(f"{Colors.RED}✗ Error during aggregation: {e}{Colors.RESET}", file=sys.stderr)
+        sys.exit(1)
+
+    # Save processed data
+    print(f"\n--- Saving Results ---")
+    try:
+        output_dir = f"{request_id}_output"
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"→ Created output directory: {output_dir}")
+
+        # Save aggregated data to CSV
+        csv_output = os.path.join(output_dir, f"{request_id}_{frequency}_data.csv")
+        aggregated_df.to_csv(csv_output, index=False)
+        print(f"{Colors.GREEN}✓ Aggregated data exported to: {csv_output}{Colors.RESET}")
+
+        # Save unique lat/longs to CSV
+        csv_output = os.path.join(output_dir, f"{request_id}_unique_latlongs.csv")
+        unique_latlongs.to_csv(csv_output, index=False)
+        print(f"{Colors.GREEN}✓ Unique lat/longs exported to: {csv_output}{Colors.RESET}")
+
+        # Save raw data to CSV
+        csv_output = os.path.join(output_dir, f"{request_id}_raw_data.csv")
+        filtered_df.to_csv(csv_output, index=False)
+        print(f"{Colors.GREEN}✓ Raw data exported to: {csv_output}{Colors.RESET}")
+
+    except Exception as e:
+        print(f"{Colors.RED}✗ Error saving results: {e}{Colors.RESET}", file=sys.stderr)
+        # Don't exit here as we still want to return the data
+
+    # Calculate and display summary statistics
+    print(f"\n--- Summary Statistics ---")
+    try:
+        total_processing_time = time.time() - processing_start_time
+        print(f"Total processing time: {total_processing_time:.2f} seconds")
+        print(f"Final dataset shape: {aggregated_df.shape}")
+
+        print("\nFirst 5 rows of aggregated data:")
+        print(aggregated_df.head())
+
+        print(f"\n{'='*60}")
+        print(f"{Colors.BLUE}ERA5 DATA PROCESSING COMPLETED SUCCESSFULLY{Colors.RESET}")
+        print(f"{'='*60}")
+
+    except Exception as e:
+        print(f"{Colors.YELLOW}Warning: Error generating summary statistics: {e}{Colors.RESET}", file=sys.stderr)
+
+    return aggregated_df
+
 def process_era5_pressure_lvl(
     request_id: str,
     variables: List[str],
@@ -2277,6 +2798,281 @@ def process_era5_pressure_lvl(
             print("→ Filtering by shapefile...")
             filtered_df = filter_netcdf_by_shapefile(ds, geojson_data)
             print(f"{Colors.GREEN}✓ Filtered data shape: {filtered_df.shape}{Colors.RESET}")
+
+            # Remove duplicates
+            initial_rows = len(filtered_df)
+            filtered_df = filtered_df.drop_duplicates(subset=["valid_time", "latitude", "longitude", "pressure_level"])
+            removed_duplicates = initial_rows - len(filtered_df)
+            if removed_duplicates > 0:
+                print(f"{Colors.YELLOW}✓ Removed {removed_duplicates} duplicate rows{Colors.RESET}")
+
+        except Exception as e:
+            print(f"{Colors.RED}✗ Error in processing: {e}{Colors.RESET}", file=sys.stderr)
+            sys.exit(1)
+
+    # Aggregate by frequency
+    print(f"\n--- Temporal Aggregation ({frequency}) ---")
+    try:
+        print("→ Performing temporal aggregation...")
+        aggregation_start_time = time.time()
+        (aggregated_df, unique_latlongs) = aggregate_pressure_levels(filtered_df, frequency)
+        aggregation_time = time.time() - aggregation_start_time
+        #debuggin op
+        print(aggregated_df)
+        print(f"{Colors.GREEN}✓ Aggregation completed in {aggregation_time:.2f} seconds{Colors.RESET}")
+        print(f"{Colors.GREEN}✓ Aggregated data shape: {aggregated_df.shape}{Colors.RESET}")
+    except Exception as e:
+        print(f"{Colors.RED}✗ Error during aggregation: {e}{Colors.RESET}", file=sys.stderr)
+        sys.exit(1)
+
+    # Save processed data
+    print(f"\n--- Saving Results ---")
+    try:
+        output_dir = f"{request_id}_output"
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"→ Created output directory: {output_dir}")
+
+        # Save aggregated data to CSV
+        csv_output = os.path.join(output_dir, f"{request_id}_{frequency}_data.csv")
+        aggregated_df.to_csv(csv_output, index=False)
+        print(f"{Colors.GREEN}✓ Aggregated data exported to: {csv_output}{Colors.RESET}")
+
+        # Save unique lat/longs to CSV
+        csv_output = os.path.join(output_dir, f"{request_id}_unique_latlongs.csv")
+        unique_latlongs.to_csv(csv_output, index=False)
+        print(f"{Colors.GREEN}✓ Unique lat/longs exported to: {csv_output}{Colors.RESET}")
+
+        # Save raw data to CSV
+        csv_output = os.path.join(output_dir, f"{request_id}_raw_data.csv")
+        filtered_df.to_csv(csv_output, index=False)
+        print(f"{Colors.GREEN}✓ Raw data exported to: {csv_output}{Colors.RESET}")
+
+    except Exception as e:
+        print(f"{Colors.RED}✗ Error saving results: {e}{Colors.RESET}", file=sys.stderr)
+
+    # Final summary
+    print(f"\n--- Summary Statistics ---")
+    total_processing_time = time.time() - processing_start_time
+    print(f"Total processing time: {total_processing_time:.2f} seconds")
+    print(f"Final dataset shape: {aggregated_df.shape}")
+
+    print(f"\n{'='*60}")
+    print(f"{Colors.BLUE}ERA5 PRESSURE LEVEL PROCESSING COMPLETED SUCCESSFULLY{Colors.RESET}")
+    print(f"{'='*60}")
+
+    return aggregated_df
+
+def process_era5_pressure_lvl_no_filter(
+    request_id: str,
+    variables: List[str],
+    start_date: dt.datetime,
+    end_date: dt.datetime,
+    north: float,
+    south: float,
+    east: float,
+    west: float,
+    pressure_levels: List[str],
+    frequency: str = "hourly",
+    resolution: float = 0.25,
+) -> pd.DataFrame:
+    """
+    Complete workflow for downloading and processing ERA5 pressure level data.
+    Automatically chunks large time range requests for efficient processing.
+
+    Args:
+        request_id: Unique identifier for the request
+        variables: List of variables to download
+        start_date: Start date for data retrieval (datetime object)
+        end_date: End date for data retrieval (datetime object)
+        geojson_file: Path to the GeoJSON file
+        pressure_levels: List of pressure levels to request (hPa as strings)
+        frequency: Aggregation frequency ('hourly', 'daily', 'weekly', 'monthly', 'yearly')
+        resolution: Grid resolution in degrees (default: 0.25°)
+
+    Returns:
+        Filtered and aggregated DataFrame with the processed data
+    """
+    class Colors:
+        RESET = "\033[0m"
+        RED = "\033[0;31m"
+        GREEN = "\033[0;32m"
+        YELLOW = "\033[0;33m"
+        BLUE = "\033[0;34m"
+        PURPLE = "\033[0;35m"
+        CYAN = "\033[0;36m"
+        WHITE = "\033[0;37m"
+        GREEN_BRIGHT = "\033[0;92m"
+        RED_BRIGHT = "\033[0;91m"
+        YELLOW_BRIGHT = "\033[0;93m"
+        BLUE_BRIGHT = "\033[0;94m"
+        CYAN_BRIGHT = "\033[0;96m"
+
+    ensure_cdsapi_config()
+    print(f"\n{'='*60}")
+    print(f"{Colors.BLUE}STARTING ERA5 PRESSURE LEVEL PROCESSING{Colors.RESET}")
+    print(f"{'='*60}")
+    print(f"Request ID: {request_id}")
+    print(f"Variables: {variables}")
+    print(f"Pressure Levels: {pressure_levels}")
+    print(f"Date Range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+    print(f"Frequency: {frequency}")
+    print(f"Resolution: {resolution}°")
+
+    # Validate inputs
+    print("\n--- Input Validation ---")
+    if not variables:
+        raise ValueError("Variables list cannot be empty")
+    if start_date > end_date:
+        raise ValueError("Start date cannot be after end date")
+    if not pressure_levels:
+        raise ValueError("Pressure levels list cannot be empty")
+    print(f"{Colors.GREEN}✓ All inputs validated successfully{Colors.RESET}")
+
+    # Get bounding box coordinates
+    print("\n--- Calculating Bounding Box ---")
+    try:
+        west, south, east, north = west, south, east, north
+        print(f"{Colors.GREEN}✓ Bounding Box calculated:{Colors.RESET}")
+        print(f"  North: {north:.4f}°")
+        print(f"  South: {south:.4f}°")
+        print(f"  East:  {east:.4f}°")
+        print(f"  West:  {west:.4f}°")
+        print(f"  Area:  {abs(east-west):.4f}° × {abs(north-south):.4f}°")
+    except Exception as e:
+        print(f"{Colors.RED}✗ Error calculating bounding box: {e}{Colors.RESET}", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine processing strategy
+    print("\n--- Determining Processing Strategy ---")
+    use_monthly = frequency in ["monthly", "yearly"]
+    print(f"Using monthly dataset: {use_monthly}")
+
+    if use_monthly:
+        max_months_per_chunk = 10
+        total_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month) + 1
+        needs_chunking = total_months > max_months_per_chunk
+    else:
+        max_days_per_chunk = 14
+        total_days = (end_date - start_date).days + 1
+        needs_chunking = total_days > max_days_per_chunk
+
+    print(f"Total {'months' if use_monthly else 'days'} to process: {total_months if use_monthly else total_days}")
+    print(f"Max {'months' if use_monthly else 'days'} per chunk: {max_months_per_chunk if use_monthly else max_days_per_chunk}")
+    print(f"Needs chunking: {needs_chunking}")
+
+    all_filtered_data = []
+    processing_start_time = time.time()
+
+    if needs_chunking:
+        # Chunked processing
+        current_date = start_date
+        chunk_number = 1
+        total_chunks = math.ceil(total_months / max_months_per_chunk) if use_monthly else math.ceil(total_days / max_days_per_chunk)
+
+        while current_date <= end_date:
+            chunk_start_time = time.time()
+            print(f"\n{'='*50}")
+            print(f"{Colors.CYAN}CHUNK {chunk_number}/{total_chunks}{Colors.RESET}")
+            print(f"{'='*50}")
+
+            # Calculate chunk end date
+            if use_monthly:
+                chunk_end_year = current_date.year + ((current_date.month - 1 + max_months_per_chunk - 1) // 12)
+                chunk_end_month = ((current_date.month - 1 + max_months_per_chunk - 1) % 12) + 1
+                next_month = dt.datetime(chunk_end_year, chunk_end_month, 28) + dt.timedelta(days=4)
+                chunk_end = min(next_month - dt.timedelta(days=next_month.day), end_date)
+            else:
+                chunk_end = min(current_date + dt.timedelta(days=max_days_per_chunk - 1), end_date)
+
+            print(f"Processing: {current_date.strftime('%Y-%m-%d')} to {chunk_end.strftime('%Y-%m-%d')}")
+
+            try:
+                # Download data for this chunk
+                print("  → Downloading ERA5 pressure level data...")
+                download_file = download_era5_pressure_lvl(
+                    f"{request_id}_chunk{chunk_number}",
+                    variables,
+                    current_date,
+                    chunk_end,
+                    north,
+                    west,
+                    south,
+                    east,
+                    pressure_levels,
+                    resolution,
+                    frequency
+                )
+                print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+
+                # Process the downloaded file
+                print("  → Processing NetCDF file...")
+                ds = xr.open_dataset(download_file)
+                print(f"  ✓ Loaded dataset with shape: {dict(ds.dims)}")
+
+                filtered_chunk_df = ds.to_dataframe().reset_index()
+                print(f"  {Colors.GREEN}✓ Dataframe shape: {filtered_chunk_df.shape}{Colors.RESET}")
+
+                all_filtered_data.append(filtered_chunk_df)
+
+                chunk_time = time.time() - chunk_start_time
+                print(f"  {Colors.GREEN}✓ Chunk completed in {chunk_time:.2f} seconds{Colors.RESET}")
+
+            except Exception as e:
+                print(f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}", file=sys.stderr)
+
+            # Prepare for next chunk
+            chunk_number += 1
+            current_date = chunk_end + dt.timedelta(days=1)
+            
+            if chunk_number <= total_chunks:
+                print("  → Waiting 5 seconds before next chunk...")
+                time.sleep(5)
+
+        if not all_filtered_data:
+            print(f"{Colors.RED}✗ No data was successfully processed from any chunk{Colors.RESET}", file=sys.stderr)
+            sys.exit(1)
+
+        # Combine all chunks
+        print("\n--- Combining Chunk Results ---")
+        filtered_df = pd.concat(all_filtered_data, ignore_index=True)
+        print(f"{Colors.GREEN}✓ Combined data shape: {filtered_df.shape}{Colors.RESET}")
+
+        # Remove duplicates
+        initial_rows = len(filtered_df)
+        filtered_df = filtered_df.drop_duplicates(subset=["valid_time", "latitude", "longitude", "pressure_level"])
+        removed_duplicates = initial_rows - len(filtered_df)
+        if removed_duplicates > 0:
+            print(f"{Colors.YELLOW}✓ Removed {removed_duplicates} duplicate rows{Colors.RESET}")
+
+    else:
+        # Single chunk processing
+        print(f"Processing as a single chunk ({total_months if use_monthly else total_days} {'months' if use_monthly else 'days'})...")
+
+        try:
+            # Download all data at once
+            print("→ Downloading ERA5 pressure level data...")
+            download_file = download_era5_pressure_lvl(
+                request_id,
+                variables,
+                start_date,
+                end_date,
+                north,
+                west,
+                south,
+                east,
+                pressure_levels,
+                resolution,
+                frequency
+            )
+            print(f"{Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+
+            # Process the downloaded file
+            print("→ Processing NetCDF file...")
+            ds = xr.open_dataset(download_file)
+            print(f"✓ Loaded dataset with shape: {dict(ds.dims)}")
+
+            filtered_df = ds.to_dataframe().reset_index()
+            print(f"{Colors.GREEN}✓ Dataframe shape: {filtered_df.shape}{Colors.RESET}")
 
             # Remove duplicates
             initial_rows = len(filtered_df)
@@ -2730,23 +3526,29 @@ def era5ify_bbox(
     try:
         # Route to appropriate processor
         if dataset_type == "pressure":
-            result_df = process_era5_pressure_lvl(
+            result_df = process_era5_pressure_lvl_no_filter(
                 request_id=request_id,
                 variables=variables,
                 start_date=start_date,
                 end_date=end_date,
-                geojson_file=temp_geojson_file,
+                north=north,
+                south=south,
+                east=east,
+                west=west,
                 pressure_levels=pressure_levels,
                 frequency=frequency,
                 resolution=resolution
             )
         else:
-            result_df = process_era5_single_lvl(
+            result_df = process_era5_single_lvl_no_filter(
                 request_id=request_id,
                 variables=variables,
                 start_date=start_date,
                 end_date=end_date,
-                geojson_file=temp_geojson_file,
+                north=north,
+                south=south,
+                east=east,
+                west=west,
                 frequency=frequency,
                 resolution=resolution
             )
