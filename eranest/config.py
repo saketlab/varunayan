@@ -72,7 +72,7 @@ def _setup_notebook_widget():
     """Setup interactive widget for notebook environment."""
     try:
         import ipywidgets as widgets
-        from IPython.display import display, HTML
+        from IPython.display import HTML, display
     except ImportError:
         return None
 

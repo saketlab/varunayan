@@ -5,13 +5,13 @@ This module contains all constants used throughout the package,
 including variable mappings, pressure levels, and dataset configurations.
 """
 
-from typing import Dict, List, Tuple
 from enum import Enum
+from typing import Dict, List, Tuple
 
 # ERA5 to Aurora variable name mappings
 ERA5_TO_AURORA_SURFACE = {
     "2m_temperature": "2t",
-    "10m_u_component_of_wind": "10u", 
+    "10m_u_component_of_wind": "10u",
     "10m_v_component_of_wind": "10v",
     "mean_sea_level_pressure": "msl",
 }
@@ -32,14 +32,25 @@ ERA5_TO_AURORA_STATIC = {
 
 # Aurora standard pressure levels (hPa)
 AURORA_PRESSURE_LEVELS = [
-    "50", "100", "150", "200", "250", "300", "400", "500", 
-    "600", "700", "850", "925", "1000"
+    "50",
+    "100",
+    "150",
+    "200",
+    "250",
+    "300",
+    "400",
+    "500",
+    "600",
+    "700",
+    "850",
+    "925",
+    "1000",
 ]
 
 # Default variable sets
 DEFAULT_SURFACE_VARIABLES = [
     "2m_temperature",
-    "10m_u_component_of_wind", 
+    "10m_u_component_of_wind",
     "10m_v_component_of_wind",
     "mean_sea_level_pressure",
 ]
@@ -47,14 +58,14 @@ DEFAULT_SURFACE_VARIABLES = [
 DEFAULT_ATMOSPHERIC_VARIABLES = [
     "temperature",
     "u_component_of_wind",
-    "v_component_of_wind", 
+    "v_component_of_wind",
     "specific_humidity",
     "geopotential",
 ]
 
 DEFAULT_STATIC_VARIABLES = [
     "geopotential",
-    "land_sea_mask", 
+    "land_sea_mask",
     "soil_type",
 ]
 
@@ -65,9 +76,9 @@ ERA5_DATASETS = {
         "monthly": "reanalysis-era5-single-levels-monthly-means",
     },
     "pressure": {
-        "hourly": "reanalysis-era5-pressure-levels", 
+        "hourly": "reanalysis-era5-pressure-levels",
         "monthly": "reanalysis-era5-pressure-levels-monthly-means",
-    }
+    },
 }
 
 # File format configurations
@@ -95,25 +106,32 @@ MAX_PRESSURE_LEVEL = 1100.0
 DEFAULT_TIME_FORMAT = "%Y-%m-%d"
 ISO_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
+
 class DataFrequency(Enum):
     """Supported data frequencies."""
+
     HOURLY = "hourly"
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"
     YEARLY = "yearly"
 
+
 class DatasetType(Enum):
     """ERA5 dataset types."""
+
     SURFACE = "surface"
     PRESSURE = "pressure"
     STATIC = "static"
 
+
 class VariableType(Enum):
     """Variable categories."""
+
     SURFACE = "surface"
     ATMOSPHERIC = "atmospheric"
     STATIC = "static"
+
 
 # Legacy variable mappings for backward compatibility
 LEGACY_VARIABLE_MAPPING = {

@@ -7,12 +7,14 @@ filtering, aggregation, and format conversion.
 
 from .data import (
     DataProcessor,
-    process_netcdf_dataset,
     aggregate_temporal_data,
+    process_netcdf_dataset,
+    process_era5_data,
 )
 
 __all__ = [
     "DataProcessor",
     "process_netcdf_dataset",
+    "process_era5_data",
     "aggregate_temporal_data",
 ]
