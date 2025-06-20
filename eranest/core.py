@@ -517,48 +517,6 @@ cds_variable_mapping = {
     "mean_wave_period": "mwp",
 }
 
-
-def determine_file_type(variables: List[str]) -> tuple:
-    """
-    Determine the expected file type based on the requested variables.
-
-    Args:
-        variables: List of variable names (in CDS API format)
-
-    Returns:
-        Tuple of (file_extension, variable_group_name)
-    """
-    # Convert CDS variable names to ERA5 netCDF variable names if needed
-    era5_vars = []
-    for var in variables:
-        if var in cds_variable_mapping:
-            era5_vars.append(cds_variable_mapping[var])
-        else:
-            era5_vars.append(var)
-
-    # Check which group(s) the variables belong to
-    instant_count = sum(1 for var in era5_vars if var in instantaneous_vars)
-    accum_count = sum(1 for var in era5_vars if var in accumulated_vars)
-    avg_count = sum(1 for var in era5_vars if var in time_averaged_vars)
-    max_count = sum(1 for var in era5_vars if var in maximum_vars)
-    wave_count = sum(1 for var in era5_vars if var in wave_vars)
-
-    # If all variables are from a single group, return .nc
-    if len(era5_vars) == instant_count and instant_count > 0:
-        return ".nc", "instantaneous"
-    elif len(era5_vars) == accum_count and accum_count > 0:
-        return ".nc", "accumulated"
-    elif len(era5_vars) == avg_count and avg_count > 0:
-        return ".nc", "time-averaged"
-    elif len(era5_vars) == max_count and max_count > 0:
-        return ".nc", "maximum"
-    elif len(era5_vars) == wave_count and wave_count > 0:
-        return ".nc", "wave"
-    # If variables come from multiple groups, return .zip
-    else:
-        return ".zip", "mixed"
-
-
 def download_era5_single_lvl(
     request_id: str,
     variables: List[str],
@@ -618,9 +576,7 @@ def download_era5_single_lvl(
                 if day not in days:
                     days.append(day)
 
-    # Determine output file extension based on variables
-    file_extension, group_type = determine_file_type(variables)
-    output_file = f"{request_id}{file_extension}"
+    output_file = f"{request_id}.zip"
 
     # For monthly means, no need for hours or days
     if frequency in ["monthly", "yearly"]:
@@ -631,7 +587,8 @@ def download_era5_single_lvl(
             "time": ["00:00"],
             "variable": variables,
             "area": [north, west, south, east],
-            "format": "netcdf",
+            "data_format": "netcdf",
+            "download_format": "zip",
             "grid": [resolution, resolution],
         }
         # Remove 'day' and 'time' from request
@@ -644,7 +601,7 @@ def download_era5_single_lvl(
             "day": days,
             "time": hours,
             "data_format": "netcdf",
-            "download_format": "unarchived",
+            "download_format": "zip",
             "variable": variables,
             "area": [north, west, south, east],
             "grid": [resolution, resolution],
@@ -656,8 +613,7 @@ def download_era5_single_lvl(
     )
     print(f"Area: North: {north}, West: {west}, South: {south}, East: {east}")
     print(f"Variables: {', '.join(variables)}")
-    print(f"Variable group: {group_type}")
-    print(f"Output format: {file_extension}")
+    print(f"Output format: .zip")
     print(f"Grid Resolution: {resolution}°")
 
     client = cdsapi.Client()
@@ -840,7 +796,7 @@ def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFra
 
     # Filter points that are within the polygon
     inside_coords = gdf_unique_points[
-        gdf_unique_points.geometry.within(unified_polygon)
+        gdf_unique_points.geometry.intersects(unified_polygon)
     ].copy()
 
     # Drop the geometry column and keep only lat/lon
@@ -978,7 +934,7 @@ def get_unique_coordinates_in_polygon(
         for lon, lat in zip(unique_coords["longitude"], unique_coords["latitude"])
     ]
     gdf_points = gpd.GeoDataFrame(unique_coords, geometry="geometry", crs="EPSG:4326")
-    inside_coords = gdf_points[gdf_points.geometry.within(unified_polygon)]
+    inside_coords = gdf_points[gdf_points.geometry.intersects(unified_polygon)]
 
     return inside_coords[["latitude", "longitude"]].copy()
 
