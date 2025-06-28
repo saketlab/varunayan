@@ -3359,8 +3359,8 @@ def create_temp_geojson(geojson_data: Dict[str, Any], request_id: str) -> str:
 def era5ify_geojson(
     request_id: str,
     variables: List[str],
-    start_date: dt.datetime,
-    end_date: dt.datetime,
+    start_date: str,
+    end_date: str,
     json_file: str,
     dataset_type: str = "single",  # "single" or "pressure"
     pressure_levels: Optional[List[str]] = None,
@@ -3388,6 +3388,25 @@ def era5ify_geojson(
     Raises:
         ValueError: If invalid dataset_type or missing pressure_levels for pressure data
     """
+
+    try:
+        parts = start_date.split('-')
+        if len(parts) == 3:
+            start_dt = dt.datetime(int(parts[0]), int(parts[1]), int(parts[2]))
+        else:
+            raise ValueError
+    except (ValueError, IndexError):
+        raise ValueError(f"Invalid start_date format: {start_date}. Expected 'YYYY-M-D' or 'YYYY-MM-DD'")
+    
+    try:
+        parts = end_date.split('-')
+        if len(parts) == 3:
+            end_dt = dt.datetime(int(parts[0]), int(parts[1]), int(parts[2]))
+        else:
+            raise ValueError
+    except (ValueError, IndexError):
+        raise ValueError(f"Invalid end_date format: {end_date}. Expected 'YYYY-M-D' or 'YYYY-MM-DD'")
+
     # Validate dataset type
     dataset_type = dataset_type.lower()
     if dataset_type not in ["single", "pressure"]:
@@ -3418,8 +3437,8 @@ def era5ify_geojson(
             return process_era5_pressure_lvl(
                 request_id=request_id,
                 variables=variables,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=start_dt,
+                end_date=end_dt,
                 geojson_file=temp_geojson_file,
                 pressure_levels=pressure_levels,
                 frequency=frequency,
@@ -3429,8 +3448,8 @@ def era5ify_geojson(
             return process_era5_single_lvl(
                 request_id=request_id,
                 variables=variables,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=start_dt,
+                end_date=end_dt,
                 geojson_file=temp_geojson_file,
                 frequency=frequency,
                 resolution=resolution
@@ -3444,8 +3463,8 @@ def era5ify_geojson(
 def era5ify_bbox(
     request_id: str, 
     variables: List[str], 
-    start_date: dt.datetime,
-    end_date: dt.datetime,
+    start_date: str,
+    end_date: str,
     north: float,
     south: float,
     east: float,
@@ -3479,6 +3498,25 @@ def era5ify_bbox(
     Raises:
         ValueError: If bounding box coordinates are invalid or missing pressure levels for pressure data
     """
+
+    try:
+        parts = start_date.split('-')
+        if len(parts) == 3:
+            start_dt = dt.datetime(int(parts[0]), int(parts[1]), int(parts[2]))
+        else:
+            raise ValueError
+    except (ValueError, IndexError):
+        raise ValueError(f"Invalid start_date format: {start_date}. Expected 'YYYY-M-D' or 'YYYY-MM-DD'")
+    
+    try:
+        parts = end_date.split('-')
+        if len(parts) == 3:
+            end_dt = dt.datetime(int(parts[0]), int(parts[1]), int(parts[2]))
+        else:
+            raise ValueError
+    except (ValueError, IndexError):
+        raise ValueError(f"Invalid end_date format: {end_date}. Expected 'YYYY-M-D' or 'YYYY-MM-DD'")
+
     # Validate dataset type
     dataset_type = dataset_type.lower()
     if dataset_type not in ["single", "pressure"]:
@@ -3495,7 +3533,7 @@ def era5ify_bbox(
     print(f"Variables: {variables}")
     if dataset_type == "pressure":
         print(f"Pressure Levels: {pressure_levels}")
-    print(f"Date Range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+    print(f"Date Range: {start_dt.strftime('%Y-%m-%d')} to {end_dt.strftime('%Y-%m-%d')}")
     print(f"Bounding Box: N:{north}, S:{south}, E:{east}, W:{west}")
     print(f"Frequency: {frequency}")
     print(f"Resolution: {resolution}°")
@@ -3529,8 +3567,8 @@ def era5ify_bbox(
             result_df = process_era5_pressure_lvl_no_filter(
                 request_id=request_id,
                 variables=variables,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=start_dt,
+                end_date=end_dt,
                 north=north,
                 south=south,
                 east=east,
@@ -3543,8 +3581,8 @@ def era5ify_bbox(
             result_df = process_era5_single_lvl_no_filter(
                 request_id=request_id,
                 variables=variables,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=start_dt,
+                end_date=end_dt,
                 north=north,
                 south=south,
                 east=east,
