@@ -3,6 +3,19 @@ import datetime as dt
 from .core import era5ify_geojson
 from .core import era5ify_bbox
 
+def parse_flexible_date(date_string):
+    """Parse date string in either YYYY-M-D or YYYY-MM-DD format"""
+    try:
+        # Try YYYY-MM-DD format first
+        return dt.datetime.strptime(date_string, "%Y-%m-%d")
+    except ValueError:
+        try:
+            # Try YYYY-M-D format
+            return dt.datetime.strptime(date_string, "%Y-%m-%d")
+        except ValueError:
+            # If both fail, raise a more informative error
+            raise ValueError(f"Date '{date_string}' must be in YYYY-MM-DD or YYYY-M-D format")
+
 def main():
     parser = argparse.ArgumentParser(description="ERA5ify your climate data.")
     
@@ -16,13 +29,24 @@ def main():
         subparser.add_argument(
             "--variables", required=True, help="Comma-separated variable names"
         )
-        subparser.add_argument("--start", required=True, help="Start date (YYYY-MM-DD)")
-        subparser.add_argument("--end", required=True, help="End date (YYYY-MM-DD)")
+        subparser.add_argument("--start", required=True, help="Start date (YYYY-MM-DD or YYYY-M-D)")
+        subparser.add_argument("--end", required=True, help="End date (YYYY-MM-DD or YYYY-M-D)")
         subparser.add_argument(
-            "--freq", default="hourly", help="Frequency (hourly, daily, weekly, monthly, yearly)"
+            "--dataset-type", default="single", choices=["single", "pressure"],
+            help="Type of dataset: single (single level) or pressure (pressure level) - default: single"
         )
         subparser.add_argument(
-            "--res", type=float, default=0.25, help="Grid resolution in degrees (default: 0.25)"
+            "--pressure-levels", default="", 
+            help="Comma-separated pressure levels (e.g., '1000,925,850') - only used with pressure dataset type"
+        )
+        subparser.add_argument(
+            "--freq", default="hourly", 
+            choices=["hourly", "daily", "weekly", "monthly", "yearly"],
+            help="Frequency (hourly, daily, weekly, monthly, yearly) - default: hourly"
+        )
+        subparser.add_argument(
+            "--res", type=float, default=0.25, 
+            help="Grid resolution in degrees (e.g., 0.1, 0.25) - default: 0.25"
         )
     
     # GeoJSON/JSON file mode
@@ -42,14 +66,18 @@ def main():
     
     # Parse common arguments
     try:
-        start = dt.datetime.strptime(args.start, "%Y-%m-%d")
-        end = dt.datetime.strptime(args.end, "%Y-%m-%d")
+        start = parse_flexible_date(args.start)
+        end = parse_flexible_date(args.end)
     except ValueError as e:
         print(f"Error parsing dates: {e}")
-        print("Please use YYYY-MM-DD format for dates")
         return
     
     variables = [v.strip() for v in args.variables.split(",")]
+    
+    # Parse pressure levels if provided
+    pressure_levels = []
+    if args.pressure_levels.strip():
+        pressure_levels = [level.strip() for level in args.pressure_levels.split(",")]
     
     # Process based on mode
     if args.mode == 'geojson':
@@ -57,9 +85,11 @@ def main():
         df = era5ify_geojson(
             request_id=args.request_id,
             variables=variables,
-            start_date=start,
-            end_date=end,
+            start_date=args.start,  # Pass as string to match function signature
+            end_date=args.end,      # Pass as string to match function signature
             json_file=args.geojson,
+            dataset_type=args.dataset_type,
+            pressure_levels=pressure_levels,
             frequency=args.freq,
             resolution=args.res,
         )
@@ -69,19 +99,17 @@ def main():
         df = era5ify_bbox(
             request_id=args.request_id,
             variables=variables,
-            start_date=start,
-            end_date=end,
+            start_date=args.start,  # Pass as string to match function signature
+            end_date=args.end,      # Pass as string to match function signature
             north=args.north,
             south=args.south,
             east=args.east,
             west=args.west,
+            dataset_type=args.dataset_type,
+            pressure_levels=pressure_levels,
             frequency=args.freq,
             resolution=args.res,
         )
-    
-    print("\nDone. Sample output:")
-    print(df.head())
-
 
 def main_legacy():
     """
@@ -94,9 +122,17 @@ def main_legacy():
     parser.add_argument(
         "--variables", required=True, help="Comma-separated variable names"
     )
-    parser.add_argument("--start", required=True, help="Start date (YYYY-MM-DD)")
-    parser.add_argument("--end", required=True, help="End date (YYYY-MM-DD)")
+    parser.add_argument("--start", required=True, help="Start date (YYYY-MM-DD or YYYY-M-D)")
+    parser.add_argument("--end", required=True, help="End date (YYYY-MM-DD or YYYY-M-D)")
     parser.add_argument("--geojson", required=True, help="Path to GeoJSON or JSON file")
+    parser.add_argument(
+        "--dataset-type", default="single", choices=["single", "pressure"],
+        help="Type of dataset: single (single level) or pressure (pressure level) - default: single"
+    )
+    parser.add_argument(
+        "--pressure-levels", default="", 
+        help="Comma-separated pressure levels (e.g., '1000,925,850') - only used with pressure dataset type"
+    )
     parser.add_argument(
         "--freq", default="hourly", help="Frequency (hourly, daily, etc.)"
     )
@@ -106,23 +142,28 @@ def main_legacy():
 
     args = parser.parse_args()
 
-    start = dt.datetime.strptime(args.start, "%Y-%m-%d")
-    end = dt.datetime.strptime(args.end, "%Y-%m-%d")
+    try:
+        start = parse_flexible_date(args.start)
+        end = parse_flexible_date(args.end)
+    except ValueError as e:
+        print(f"Error parsing dates: {e}")
+        return
+    
     variables = [v.strip() for v in args.variables.split(",")]
+    
+    # Parse pressure levels if provided
+    pressure_levels = []
+    if args.pressure_levels.strip():
+        pressure_levels = [level.strip() for level in args.pressure_levels.split(",")]
 
     df = era5ify_geojson(
         request_id=args.request_id,
         variables=variables,
-        start_date=start,
-        end_date=end,
+        start_date=args.start,  # Pass as string to match function signature
+        end_date=args.end,      # Pass as string to match function signature
         json_file=args.geojson,
+        dataset_type=args.dataset_type,
+        pressure_levels=pressure_levels,
         frequency=args.freq,
         resolution=args.res,
     )
-
-    print("\nDone. Sample output:")
-    print(df.head())
-
-
-if __name__ == "__main__":
-    main()
