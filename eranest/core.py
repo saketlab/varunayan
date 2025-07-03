@@ -32,6 +32,47 @@ from .util import (
     Colors
 )
 
+def download_with_retry(chunk_id, variables, start_dt, end_dt, north, west, south, east, resolution, frequency):
+    """Helper function to download ERA5 data with retry logic"""
+    max_retries = 5
+    retry_delay = 30
+    for attempt in range(max_retries + 1):
+        try:
+            print(f"  → Downloading ERA5 data (attempt {attempt + 1}/{max_retries + 1})...")
+            download_file = download_era5_single_lvl(
+                chunk_id,
+                variables,
+                start_dt,
+                end_dt,
+                north,
+                west,
+                south,
+                east,
+                resolution,
+                frequency,
+            )
+            print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+            return download_file
+        except Exception as e:
+            error_msg = str(e)
+            print(f"  {Colors.RED}✗ Download attempt {attempt + 1} failed: {error_msg}{Colors.RESET}")
+                
+            # Check if it's a connection-related error
+            is_connection_error = any(keyword in error_msg.lower() for keyword in [
+                'httpsconnectionpool', 'max retries exceeded', 'connection', 
+                'timeout', 'network', 'ssl', 'certificate'
+            ])
+                
+            if attempt < max_retries:
+                if is_connection_error:
+                    print(f"  {Colors.YELLOW}→ Connection error detected. Retrying in {retry_delay} seconds...{Colors.RESET}")
+                else:
+                    print(f"  {Colors.YELLOW}→ Error encountered. Retrying in {retry_delay} seconds...{Colors.RESET}")
+                time.sleep(retry_delay)
+            else:
+                print(f"  {Colors.RED}✗ All {max_retries + 1} download attempts failed{Colors.RESET}")
+                raise e
+
 def process_era5_single_lvl(
     request_id: str,
     variables: List[str],
@@ -139,7 +180,7 @@ def process_era5_single_lvl(
     print(f"Using monthly dataset: {use_monthly}")
 
     if use_monthly:
-        max_months_per_chunk = 10
+        max_months_per_chunk = 100
         total_months = (
             (end_date.year - start_date.year) * 12
             + (end_date.month - start_date.month)
@@ -192,8 +233,7 @@ def process_era5_single_lvl(
             )
 
             try:
-                print("  → Downloading ERA5 data...")
-                download_file = download_era5_single_lvl(
+                download_file = download_with_retry(
                     f"{request_id}_chunk{chunk_number}",
                     variables,
                     current_date,
@@ -205,7 +245,6 @@ def process_era5_single_lvl(
                     resolution,
                     frequency,
                 )
-                print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
 
                 print("  → Extracting files...")
                 nc_files = extract_download(download_file)
@@ -255,7 +294,7 @@ def process_era5_single_lvl(
 
             except Exception as e:
                 print(
-                    f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}", file=sys.stderr
+                    f"  {Colors.RED}✗ Error processing chunk {chunk_number} after all retries: {e}{Colors.RESET}", file=sys.stderr
                 )
                 # Continue with next chunk instead of failing completely
 
@@ -264,8 +303,8 @@ def process_era5_single_lvl(
             current_date = next_month
 
             if chunk_number <= total_chunks:
-                print("  → Waiting 5 seconds before next chunk...")
-                time.sleep(5)
+                print("  → Waiting 10 seconds before next chunk...")
+                time.sleep(10)
 
         if not all_filtered_data:
             print(
@@ -304,8 +343,7 @@ def process_era5_single_lvl(
             )
 
             try:
-                print("  → Downloading ERA5 data...")
-                download_file = download_era5_single_lvl(
+                download_file = download_with_retry(
                     f"{request_id}_chunk{chunk_number}",
                     variables,
                     current_date,
@@ -317,7 +355,6 @@ def process_era5_single_lvl(
                     resolution,
                     frequency,
                 )
-                print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
 
                 print("  → Extracting files...")
                 nc_files = extract_download(download_file)
@@ -366,7 +403,7 @@ def process_era5_single_lvl(
 
             except Exception as e:
                 print(
-                    f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}", file=sys.stderr
+                    f"  {Colors.RED}✗ Error processing chunk {chunk_number} after all retries: {e}{Colors.RESET}", file=sys.stderr
                 )
                 # Continue with next chunk instead of failing completely
 
@@ -374,8 +411,8 @@ def process_era5_single_lvl(
             current_date = chunk_end + dt.timedelta(days=1)
 
             if chunk_number <= total_chunks:
-                print("  → Waiting 5 seconds before next chunk...")
-                time.sleep(5)
+                print("  → Waiting 10 seconds before next chunk...")
+                time.sleep(10)
 
         if not all_filtered_data:
             print(
@@ -398,8 +435,7 @@ def process_era5_single_lvl(
         print(f"Processing as a single chunk ({total_months} months)... C3")
 
         try:
-            print("→ Downloading ERA5 data...")
-            download_file = download_era5_single_lvl(
+            download_file = download_with_retry(
                 request_id,
                 variables,
                 start_date,
@@ -411,7 +447,6 @@ def process_era5_single_lvl(
                 resolution,
                 frequency,
             )
-            print(f"{Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
 
             print("→ Extracting files...")
             nc_files = extract_download(download_file)
@@ -454,7 +489,7 @@ def process_era5_single_lvl(
             removed_duplicates = initial_rows - len(filtered_df)
 
         except Exception as e:
-            print(f"{Colors.RED}✗ Error in single monthly processing: {e}{Colors.RESET}", file=sys.stderr)
+            print(f"{Colors.RED}✗ Error in single monthly processing after all retries: {e}{Colors.RESET}", file=sys.stderr)
             sys.exit(1)
 
     else:
@@ -462,8 +497,7 @@ def process_era5_single_lvl(
         print(f"Processing as a single chunk ({total_days} days)... C4")
 
         try:
-            print("→ Downloading ERA5 data...")
-            download_file = download_era5_single_lvl(
+            download_file = download_with_retry(
                 request_id,
                 variables,
                 start_date,
@@ -475,7 +509,6 @@ def process_era5_single_lvl(
                 resolution,
                 frequency,
             )
-            print(f"{Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
 
             print("→ Extracting files...")
             nc_files = extract_download(download_file)
@@ -518,7 +551,7 @@ def process_era5_single_lvl(
             removed_duplicates = initial_rows - len(filtered_df)
 
         except Exception as e:
-            print(f"{Colors.RED}✗ Error in single daily processing: {e}{Colors.RESET}", file=sys.stderr)
+            print(f"{Colors.RED}✗ Error in single daily processing after all retries: {e}{Colors.RESET}", file=sys.stderr)
             sys.exit(1)
 
     # Aggregate by frequency (same for all cases)
@@ -610,23 +643,6 @@ def process_era5_single_lvl_no_filter(
     Returns:
         Filtered and aggregated DataFrame with the processed data
     """
-
-    class Colors:
-        RESET = "\033[0m"
-        # Regular Colors
-        RED = "\033[0;31m"
-        GREEN = "\033[0;32m"
-        YELLOW = "\033[0;33m"
-        BLUE = "\033[0;34m"
-        PURPLE = "\033[0;35m"
-        CYAN = "\033[0;36m"
-        WHITE = "\033[0;37m"
-        # Bright Colors
-        GREEN_BRIGHT = "\033[0;92m"
-        RED_BRIGHT = "\033[0;91m"
-        YELLOW_BRIGHT = "\033[0;93m"
-        BLUE_BRIGHT = "\033[0;94m"
-        CYAN_BRIGHT = "\033[0;96m"
         
     ensure_cdsapi_config()
     print(f"\n{'='*60}")
@@ -668,7 +684,7 @@ def process_era5_single_lvl_no_filter(
     print(f"Using monthly dataset: {use_monthly}")
 
     if use_monthly:
-        max_months_per_chunk = 10
+        max_months_per_chunk = 100
         total_months = (
             (end_date.year - start_date.year) * 12
             + (end_date.month - start_date.month)
@@ -722,7 +738,7 @@ def process_era5_single_lvl_no_filter(
 
             try:
                 print("  → Downloading ERA5 data...")
-                download_file = download_era5_single_lvl(
+                download_file = download_with_retry(
                     f"{request_id}_chunk{chunk_number}",
                     variables,
                     current_date,
@@ -790,8 +806,8 @@ def process_era5_single_lvl_no_filter(
             current_date = next_month
 
             if chunk_number <= total_chunks:
-                print("  → Waiting 5 seconds before next chunk...")
-                time.sleep(5)
+                print("  → Waiting 10 seconds before next chunk...")
+                time.sleep(10)
 
         if not all_filtered_data:
             print(
@@ -831,7 +847,7 @@ def process_era5_single_lvl_no_filter(
 
             try:
                 print("  → Downloading ERA5 data...")
-                download_file = download_era5_single_lvl(
+                download_file = download_with_retry(
                     f"{request_id}_chunk{chunk_number}",
                     variables,
                     current_date,
@@ -897,8 +913,8 @@ def process_era5_single_lvl_no_filter(
             current_date = chunk_end + dt.timedelta(days=1)
 
             if chunk_number <= total_chunks:
-                print("  → Waiting 5 seconds before next chunk...")
-                time.sleep(5)
+                print("  → Waiting 10 seconds before next chunk...")
+                time.sleep(10)
 
         if not all_filtered_data:
             print(
@@ -922,7 +938,7 @@ def process_era5_single_lvl_no_filter(
 
         try:
             print("→ Downloading ERA5 data...")
-            download_file = download_era5_single_lvl(
+            download_file = download_with_retry(
                 request_id,
                 variables,
                 start_date,
@@ -985,7 +1001,7 @@ def process_era5_single_lvl_no_filter(
 
         try:
             print("→ Downloading ERA5 data...")
-            download_file = download_era5_single_lvl(
+            download_file = download_with_retry(
                 request_id,
                 variables,
                 start_date,
@@ -1102,6 +1118,49 @@ def process_era5_single_lvl_no_filter(
         print(f"{Colors.YELLOW}Warning: Error generating summary statistics: {e}{Colors.RESET}", file=sys.stderr)
 
     return aggregated_df
+
+def download_pr_with_retry(chunk_id, variables, start_dt, end_dt, north, west, south, east, pressure_levels, resolution, frequency):
+    """Helper function to download ERA5 data with retry logic"""
+    max_retries = 5
+    retry_delay = 30
+    for attempt in range(max_retries + 1):
+        try:
+            print(f"  → Downloading ERA5 data (attempt {attempt + 1}/{max_retries + 1})...")
+            download_file = download_era5_pressure_lvl(
+                chunk_id,
+                variables,
+                start_dt,
+                end_dt,
+                north,
+                west,
+                south,
+                east,
+                pressure_levels,
+                resolution,
+                frequency,
+            )
+            print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+            return download_file
+        except Exception as e:
+            error_msg = str(e)
+            print(f"  {Colors.RED}✗ Download attempt {attempt + 1} failed: {error_msg}{Colors.RESET}")
+                
+            # Check if it's a connection-related error
+            is_connection_error = any(keyword in error_msg.lower() for keyword in [
+                'httpsconnectionpool', 'max retries exceeded', 'connection', 
+                'timeout', 'network', 'ssl', 'certificate'
+            ])
+                
+            if attempt < max_retries:
+                if is_connection_error:
+                    print(f"  {Colors.YELLOW}→ Connection error detected. Retrying in {retry_delay} seconds...{Colors.RESET}")
+                else:
+                    print(f"  {Colors.YELLOW}→ Error encountered. Retrying in {retry_delay} seconds...{Colors.RESET}")
+                time.sleep(retry_delay)
+            else:
+                print(f"  {Colors.RED}✗ All {max_retries + 1} download attempts failed{Colors.RESET}")
+                raise e
+
 
 def process_era5_pressure_lvl(
     request_id: str,
@@ -1200,7 +1259,7 @@ def process_era5_pressure_lvl(
     print(f"Using monthly dataset: {use_monthly}")
 
     if use_monthly:
-        max_months_per_chunk = 10
+        max_months_per_chunk = 100
         total_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month) + 1
         needs_chunking = total_months > max_months_per_chunk
     else:
@@ -1241,7 +1300,7 @@ def process_era5_pressure_lvl(
             try:
                 # Download data for this chunk
                 print("  → Downloading ERA5 pressure level data...")
-                download_file = download_era5_pressure_lvl(
+                download_file = download_pr_with_retry(
                     f"{request_id}_chunk{chunk_number}",
                     variables,
                     current_date,
@@ -1279,8 +1338,8 @@ def process_era5_pressure_lvl(
             current_date = chunk_end + dt.timedelta(days=1)
             
             if chunk_number <= total_chunks:
-                print("  → Waiting 5 seconds before next chunk...")
-                time.sleep(5)
+                print("  → Waiting 10 seconds before next chunk...")
+                time.sleep(10)
 
         if not all_filtered_data:
             print(f"{Colors.RED}✗ No data was successfully processed from any chunk{Colors.RESET}", file=sys.stderr)
@@ -1305,7 +1364,7 @@ def process_era5_pressure_lvl(
         try:
             # Download all data at once
             print("→ Downloading ERA5 pressure level data...")
-            download_file = download_era5_pressure_lvl(
+            download_file = download_pr_with_retry(
                 request_id,
                 variables,
                 start_date,
@@ -1479,7 +1538,7 @@ def process_era5_pressure_lvl_no_filter(
     print(f"Using monthly dataset: {use_monthly}")
 
     if use_monthly:
-        max_months_per_chunk = 10
+        max_months_per_chunk = 100
         total_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month) + 1
         needs_chunking = total_months > max_months_per_chunk
     else:
@@ -1520,7 +1579,7 @@ def process_era5_pressure_lvl_no_filter(
             try:
                 # Download data for this chunk
                 print("  → Downloading ERA5 pressure level data...")
-                download_file = download_era5_pressure_lvl(
+                download_file = download_pr_with_retry(
                     f"{request_id}_chunk{chunk_number}",
                     variables,
                     current_date,
@@ -1556,8 +1615,8 @@ def process_era5_pressure_lvl_no_filter(
             current_date = chunk_end + dt.timedelta(days=1)
             
             if chunk_number <= total_chunks:
-                print("  → Waiting 5 seconds before next chunk...")
-                time.sleep(5)
+                print("  → Waiting 10 seconds before next chunk...")
+                time.sleep(10)
 
         if not all_filtered_data:
             print(f"{Colors.RED}✗ No data was successfully processed from any chunk{Colors.RESET}", file=sys.stderr)
@@ -1582,7 +1641,7 @@ def process_era5_pressure_lvl_no_filter(
         try:
             # Download all data at once
             print("→ Downloading ERA5 pressure level data...")
-            download_file = download_era5_pressure_lvl(
+            download_file = download_pr_with_retry(
                 request_id,
                 variables,
                 start_date,
@@ -1671,9 +1730,8 @@ def process_era5_pressure_lvl_no_filter(
 import json
 import os
 import datetime as dt
-from typing import List, Dict, Any, Union
+from typing import List
 import pandas as pd
-import tempfile
 
 def era5ify_geojson(
     request_id: str,
