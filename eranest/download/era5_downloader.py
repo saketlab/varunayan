@@ -1,5 +1,7 @@
 import datetime as dt
 import cdsapi
+import tempfile
+import os
 from typing import List
 
 def download_era5_single_lvl(
@@ -44,7 +46,9 @@ def download_era5_single_lvl(
                 if day not in days:
                     days.append(day)
 
-    output_file = f"{request_id}.zip"
+    # Save to temporary directory
+    temp_dir = tempfile.gettempdir()
+    output_file = os.path.join(temp_dir, f"{request_id}.zip")
 
     if frequency in ["monthly", "yearly"]:
         request = {
@@ -121,7 +125,9 @@ def download_era5_pressure_lvl(
                 if day not in days:
                     days.append(day)
 
-    output_file = f"{request_id}.nc"
+    # Save to temporary directory
+    temp_dir = tempfile.gettempdir()
+    output_file = os.path.join(temp_dir, f"{request_id}.nc")
 
     if frequency in ["monthly", "yearly"]:
         request = {

@@ -6,6 +6,7 @@ import pandas as pd
 from typing import List, Optional
 import datetime as dt
 import math
+import glob, tempfile, shutil
 import time
 try:
     from .config import ensure_cdsapi_config  # Package-style
@@ -1832,10 +1833,21 @@ def era5ify_geojson(
                 resolution=resolution
             )
     finally:
-        # Clean up temporary file if we created it
+        # Clean up temporary files
         if os.path.exists(temp_geojson_file) and temp_geojson_file != json_file:
             print(f"Removing temporary GeoJSON file: {temp_geojson_file}")
             os.remove(temp_geojson_file)
+        temp_dir = tempfile.gettempdir()
+        zip_pattern = os.path.join(temp_dir, f"*{request_id}*.zip")
+        for zip_file in glob.glob(zip_pattern):
+            if os.path.exists(zip_file):
+                print(f"Removing ERA5 zip file: {zip_file}")
+                os.remove(zip_file)
+        dir_pattern = os.path.join(temp_dir, f"*{request_id}*")
+        for item in glob.glob(dir_pattern):
+            if os.path.isdir(item):
+                print(f"Removing extraction directory: {item}")
+                shutil.rmtree(item)
 
 def era5ify_bbox(
     request_id: str, 
@@ -1975,9 +1987,25 @@ def era5ify_bbox(
         return result_df
 
     finally:
-        # Clean up temporary file
+        # Clean up temporary files
         if os.path.exists(temp_geojson_file):
             print(f"\n--- Cleanup ---")
             print(f"Removing temporary GeoJSON file: {temp_geojson_file}")
             os.remove(temp_geojson_file)
             print("✓ Cleanup completed")
+        temp_dir = tempfile.gettempdir()
+        zip_pattern = os.path.join(temp_dir, f"*{request_id}*.zip")
+        for zip_file in glob.glob(zip_pattern):
+            if os.path.exists(zip_file):
+                print(f"Removing ERA5 zip file: {zip_file}")
+                os.remove(zip_file)
+        nc_pattern = os.path.join(temp_dir, f"*{request_id}*.nc")
+        for nc_file in glob.glob(nc_pattern):
+            if os.path.exists(nc_file):
+                print(f"Removing ERA5 nc file: {nc_file}")
+                os.remove(nc_file)
+        dir_pattern = os.path.join(temp_dir, f"*{request_id}*")
+        for item in glob.glob(dir_pattern):
+            if os.path.isdir(item):
+                print(f"Removing extraction directory: {item}")
+                shutil.rmtree(item)
