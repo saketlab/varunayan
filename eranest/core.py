@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+from calendar import monthrange
 import xarray as xr
 import pandas as pd
 from typing import List, Optional
@@ -32,6 +33,87 @@ from .util import (
     create_temp_geojson,
     Colors
 )
+
+sum_vars = [
+    "tp",
+    "total_precipitation",
+    "cp",
+    "convective_precipitation",
+    "lsp",
+    "large_scale_precipitation",
+    "sf",
+    "snowfall",
+    "csf",
+    "convective_snowfall",
+    "lsf",
+    "large_scale_snowfall",
+    "ssr",
+    "surface_net_solar_radiation",
+    "str",
+    "surface_net_thermal_radiation",
+    "tsr",
+    "top_net_solar_radiation",
+    "ttr",
+    "top_net_thermal_radiation",
+    "ssrd",
+    "surface_solar_radiation_downward",
+    "strd",
+    "surface_thermal_radiation_downward",
+    "tisr",
+    "toa_incident_solar_radiation",
+    "slhf",
+    "surface_latent_heat_flux",
+    "sshf",
+    "surface_sensible_heat_flux",
+    "ewss",
+    "eastward_turbulent_surface_stress",
+    "nsss",
+    "northward_turbulent_surface_stress",
+    "ro",
+    "runoff",
+    "sro",
+    "surface_runoff",
+    "ssro",
+    "sub_surface_runoff",
+    "e",
+    "evaporation",
+    "pev",
+    "potential_evaporation",
+    "es",
+    "snow_evaporation",
+    "smlt",
+    "snowmelt",
+    "bld",
+    "boundary_layer_dissipation",
+    "gwd",
+    "gravity_wave_dissipation",
+    "cdir",
+    "clear_sky_direct_solar_radiation",
+    "uvb",
+    "downward_uv_radiation",
+    "lgws",
+    "eastward_gravity_wave_surface_stress",
+    "lspf",
+    "large_scale_precipitation_fraction",
+    "mgws",
+    "meridional_gravity_wave_surface_stress",
+    "ssrc",
+    "surface_net_solar_radiation_clear_sky",
+    "strc",
+    "surface_net_thermal_radiation_clear_sky",
+    "ssrdc",
+    "surface_solar_radiation_downward_clear_sky",
+    "strdc",
+    "surface_thermal_radiation_downward_clear_sky",
+    "tsrc",
+    "top_net_solar_radiation_clear_sky",
+    "ttrc",
+    "top_net_thermal_radiation_clear_sky",
+    "fdir",
+    "total_sky_direct_solar_radiation",
+    "vimd",
+    "vertically_integrated_moisture_divergence",
+]
 
 def download_with_retry(chunk_id, variables, start_dt, end_dt, north, west, south, east, resolution, frequency):
     """Helper function to download ERA5 data with retry logic"""
@@ -570,6 +652,35 @@ def process_era5_single_lvl(
     except Exception as e:
         print(f"{Colors.RED}✗ Error during aggregation: {e}{Colors.RESET}", file=sys.stderr)
         sys.exit(1)
+    
+    if frequency in ['monthly', 'yearly']:
+        # Check if any of the variables are in SUM_VARS
+        sum_vars_present = [col for col in aggregated_df.columns if col in sum_vars]
+        
+        if sum_vars_present:
+            print(f"\n--- Adjusting Sum Variables ({frequency}) ---")
+            print(f"→ Variables needing sum adjustment: {', '.join(sum_vars_present)}")
+            
+            try:
+                if frequency == 'monthly':
+                    # Multiply by number of days in each month
+                    aggregated_df['days_in_month'] = aggregated_df['month'].apply(
+                        lambda m: monthrange(aggregated_df['year'].iloc[0], m)[1]
+                    )
+                    for var in sum_vars_present:
+                        if var in aggregated_df.columns:
+                            aggregated_df[var] = aggregated_df[var] * aggregated_df['days_in_month']
+                    aggregated_df.drop('days_in_month', axis=1, inplace=True)
+                    print(f"{Colors.GREEN}✓ Monthly values adjusted by days in month{Colors.RESET}")
+                
+                elif frequency == 'yearly':
+                    for var in sum_vars_present:
+                        if var in aggregated_df.columns:
+                            aggregated_df[var] = aggregated_df[var] * 30.4375
+                    print(f"{Colors.GREEN}✓ Yearly values adjusted by days in year{Colors.RESET}")
+            
+            except Exception as e:
+                print(f"{Colors.YELLOW}Warning: Error adjusting sum variables: {e}{Colors.RESET}", file=sys.stderr)
 
     # Save processed data
     print(f"\n--- Saving Results ---")
@@ -1074,6 +1185,35 @@ def process_era5_single_lvl_no_filter(
     except Exception as e:
         print(f"{Colors.RED}✗ Error during aggregation: {e}{Colors.RESET}", file=sys.stderr)
         sys.exit(1)
+
+    if frequency in ['monthly', 'yearly']:
+        # Check if any of the variables are in SUM_VARS
+        sum_vars_present = [col for col in aggregated_df.columns if col in sum_vars]
+        
+        if sum_vars_present:
+            print(f"\n--- Adjusting Sum Variables ({frequency}) ---")
+            print(f"→ Variables needing sum adjustment: {', '.join(sum_vars_present)}")
+            
+            try:
+                if frequency == 'monthly':
+                    # Multiply by number of days in each month
+                    aggregated_df['days_in_month'] = aggregated_df['month'].apply(
+                        lambda m: monthrange(aggregated_df['year'].iloc[0], m)[1]
+                    )
+                    for var in sum_vars_present:
+                        if var in aggregated_df.columns:
+                            aggregated_df[var] = aggregated_df[var] * aggregated_df['days_in_month']
+                    aggregated_df.drop('days_in_month', axis=1, inplace=True)
+                    print(f"{Colors.GREEN}✓ Monthly values adjusted by days in month{Colors.RESET}")
+                
+                elif frequency == 'yearly':
+                    for var in sum_vars_present:
+                        if var in aggregated_df.columns:
+                            aggregated_df[var] = aggregated_df[var] * 30.4375
+                    print(f"{Colors.GREEN}✓ Yearly values adjusted by days in year{Colors.RESET}")
+            
+            except Exception as e:
+                print(f"{Colors.YELLOW}Warning: Error adjusting sum variables: {e}{Colors.RESET}", file=sys.stderr)
 
     # Save processed data
     print(f"\n--- Saving Results ---")
