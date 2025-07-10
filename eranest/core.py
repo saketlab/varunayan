@@ -636,6 +636,125 @@ def era5ify_bbox(
     finally:
         cleanup_temp_files(request_id, temp_geojson_file)
 
+def era5ify_point(
+    request_id: str,
+    variables: List[str],
+    start_date: str,
+    end_date: str,
+    latitude: float,
+    longitude: float,
+    dataset_type: str = "single",
+    pressure_levels: Optional[List[str]] = None,
+    frequency: str = "hourly",
+) -> pd.DataFrame:
+    
+    # Validate coordinates
+    if not (-90 <= latitude <= 90):
+        raise ValueError(f"Invalid latitude: {latitude}. Must be between -90 and 90")
+    if not (-180 <= longitude <= 180):
+        raise ValueError(f"Invalid longitude: {longitude}. Must be between -180 and 180")
+    
+    # Create a small circular GeoJSON around the point
+    # Using 0.06 degree radius (0.12 degree diameter) to capture nearest ERA5 grid point
+    radius_degrees = 0.06
+    
+    # Generate circle points (simple approximation)
+    import math
+    num_points = 16  # Number of points to approximate the circle
+    circle_coords = []
+    
+    # Handle antimeridian crossing by shifting longitude away from ±180°
+    working_longitude = longitude
+    if abs(longitude) > 179.9:  # Very close to antimeridian
+        # Shift slightly away from the antimeridian for circle calculation
+        if longitude > 0:
+            working_longitude = 179.9  # Use 179.9° instead of 180°
+        else:
+            working_longitude = -179.9  # Use -179.9° instead of -180°
+
+    # Handle polar regions (within 1 degree of poles)
+    if abs(latitude) > 89.0:
+        # Near poles: create a small square instead of circle to avoid singularity
+        # This ensures we capture nearby grid points without mathematical issues
+        lat_offset = radius_degrees
+        lon_offset = radius_degrees * 2  # Wider longitude range near poles
+        
+        # Create a square around the pole
+        square_coords = [
+            [longitude - lon_offset, latitude - lat_offset],
+            [longitude + lon_offset, latitude - lat_offset],
+            [longitude + lon_offset, min(latitude + lat_offset, 90.0)],
+            [longitude - lon_offset, min(latitude + lat_offset, 90.0)],
+            [longitude - lon_offset, latitude - lat_offset]  # Close the polygon
+        ]
+        
+        # Ensure longitudes are within valid range
+        circle_coords = []
+        for lon, lat in square_coords:
+            # Normalize longitude to [-180, 180]
+            while lon > 180:
+                lon -= 360
+            while lon < -180:
+                lon += 360
+            # Clamp latitude to valid range
+            lat = max(-90, min(90, lat))
+            circle_coords.append([lon, lat])
+    else:
+        # Normal case: create circular polygon
+        for i in range(num_points + 1):  # +1 to close the polygon
+            angle = 2 * math.pi * i / num_points
+            lat_offset = radius_degrees * math.cos(angle)
+            lon_offset = radius_degrees * math.sin(angle) / math.cos(math.radians(latitude))
+            
+            circle_lat = max(-90, min(90, latitude + lat_offset))
+            circle_lon = working_longitude + lon_offset
+            
+            # Normalize longitude to [-180, 180]
+            while circle_lon > 180:
+                circle_lon -= 360
+            while circle_lon < -180:
+                circle_lon += 360
+                
+            circle_coords.append([circle_lon, circle_lat])
+    
+    # Create GeoJSON structure
+    geojson_data = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "id": f"point_{request_id}",
+                    "center_lat": latitude,
+                    "center_lon": longitude
+                },
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [circle_coords]
+                }
+            }
+        ]
+    }
+    
+    # Create temporary GeoJSON file
+    temp_geojson_file = create_temp_geojson(geojson_data, f"{request_id}_point")
+    
+    try:
+        # Call the existing geojson function with high resolution to get nearest point
+        return era5ify_geojson(
+            request_id=f"{request_id}",
+            variables=variables,
+            start_date=start_date,
+            end_date=end_date,
+            json_file=temp_geojson_file,
+            dataset_type=dataset_type,
+            pressure_levels=pressure_levels,
+            frequency=frequency,
+            resolution=0.1  # High resolution to get the nearest grid point
+        )
+    finally:
+        pass
+
 def parse_date(date_str: str) -> dt.datetime:
     """Parse date string into datetime object"""
     try:
