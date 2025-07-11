@@ -14,10 +14,7 @@ import time
 import logging
 from shapely.geometry import shape, Polygon, MultiPolygon, Point
 from dataclasses import dataclass
-try:
-    from .config import ensure_cdsapi_config  # Package-style
-except ImportError:
-    from config import ensure_cdsapi_config   # Notebook/script-style
+from .config import ensure_cdsapi_config 
 
 from .download import download_era5_single_lvl, download_era5_pressure_lvl
 from .processing import (
@@ -130,6 +127,7 @@ class ProcessingParams:
     end_date: dt.datetime
     frequency: str = "hourly"
     resolution: float = 0.25
+    dataset_type: str = "single"
     pressure_levels: Optional[List[str]] = None
     north: Optional[float] = None
     south: Optional[float] = None
@@ -325,8 +323,9 @@ def adjust_sum_variables(df: pd.DataFrame, frequency: str):
     
     try:
         if frequency == 'monthly':
-            df['days_in_month'] = df['month'].apply(
-                lambda m: monthrange(df['year'].iloc[0], m)[1]
+            df['days_in_month'] = df.apply(
+                lambda row: monthrange(int(row['year']), int(row['month']))[1],
+                axis=1
             )
             for var in sum_vars_present:
                 if var in df.columns:
@@ -337,7 +336,8 @@ def adjust_sum_variables(df: pd.DataFrame, frequency: str):
                 if var in df.columns:
                     df[var] = df[var] * 30.4375
     except Exception as e:
-        logger.warning(f"{Colors.YELLOW}Warning: Error adjusting sum variables: {e}{Colors.RESET}")
+        error_msg = f"Error adjusting sum variables: {str(e)}"
+        logger.warning(error_msg)
 
 def save_results(params: ProcessingParams, aggregated_df: pd.DataFrame, 
                 unique_latlongs: pd.DataFrame, raw_df: pd.DataFrame):
@@ -419,7 +419,7 @@ def validate_inputs(params: ProcessingParams):
         raise ValueError("Variables list cannot be empty")
     if params.start_date > params.end_date:
         raise ValueError("Start date cannot be after end date")
-    if params.pressure_levels and not params.pressure_levels:
+    if params.dataset_type=="pressure" and not params.pressure_levels:
         raise ValueError("pressure_levels must be provided for pressure level data")
     if params.geojson_file and not os.path.exists(params.geojson_file):
         raise FileNotFoundError(f"GeoJSON file not found: {params.geojson_file}")
@@ -580,6 +580,7 @@ def era5ify_geojson(
             end_date=end_dt,
             frequency=frequency,
             resolution=resolution,
+            dataset_type=dataset_type,
             pressure_levels=pressure_levels if dataset_type == "pressure" else None,
             geojson_file=temp_geojson_file,
             geojson_data=geojson_data
@@ -628,6 +629,7 @@ def era5ify_bbox(
             end_date=end_dt,
             frequency=frequency,
             resolution=resolution,
+            dataset_type=dataset_type,
             pressure_levels=pressure_levels if dataset_type == "pressure" else None,
             north=north,
             south=south,

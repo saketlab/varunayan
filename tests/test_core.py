@@ -2,6 +2,8 @@ import pytest
 import datetime as dt
 import pandas as pd
 import xarray as xr
+import pandas as pd
+from calendar import monthrange
 import os
 import sys
 from unittest.mock import MagicMock, patch, Mock
@@ -21,7 +23,9 @@ from eranest.core import (
     era5ify_bbox,
     era5ify_point,
     parse_date,
-    validate_inputs
+    validate_inputs,
+    adjust_sum_variables,
+    SUM_VARS,
 )
 
 # Import the download functions
@@ -82,6 +86,36 @@ def test_validate_inputs(basic_params):
         )
         validate_inputs(invalid_params)
 
+    # Test invalid case - no pressure levels for pressure level data
+    with pytest.raises(ValueError):
+        invalid_params = ProcessingParams(
+            request_id="test",
+            variables=basic_params.variables,
+            start_date=dt.datetime(2020, 1, 1),
+            end_date=dt.datetime(2020, 1, 2),
+            frequency=basic_params.frequency,
+            resolution=basic_params.resolution,
+            north=basic_params.north,
+            south=basic_params.south,
+            east=basic_params.east,
+            west=basic_params.west,
+            dataset_type="pressure"
+        )
+        validate_inputs(invalid_params)
+    
+    # Test invalid case - no geojson file at directory location
+    with pytest.raises(FileNotFoundError):
+        invalid_params = ProcessingParams(
+            request_id="test",
+            variables=basic_params.variables,
+            start_date=dt.datetime(2020, 1, 1),
+            end_date=dt.datetime(2020, 1, 2),
+            frequency=basic_params.frequency,
+            resolution=basic_params.resolution,
+            geojson_file="yay.json"
+        )
+        validate_inputs(invalid_params)
+
 
 def test_download_with_retry_success(basic_params, tmp_path):
     # Setup test file
@@ -98,6 +132,36 @@ def test_download_with_retry_success(basic_params, tmp_path):
     # Verification
     assert result == str(test_file)
 
+def test_download_with_retry_success_mo(basic_params_mo, tmp_path):
+    # Setup test file
+    test_file = tmp_path / "test_request.zip"
+    test_file.touch()
+
+    # Create a mock download function that returns the test file path
+    def mock_download_func(**kwargs):
+        return str(test_file)
+
+    # Test the download with retry
+    result = download_with_retry(mock_download_func, basic_params_mo)
+    
+    # Verification
+    assert result == str(test_file)
+
+def test_download_with_retry_success_pr(pressure_params, tmp_path):
+    # Setup test file
+    test_file = tmp_path / "test_request.zip"
+    test_file.touch()
+
+    # Create a mock download function that returns the test file path
+    def mock_download_func(**kwargs):
+        return str(test_file)
+
+    # Test the download with retry
+    result = download_with_retry(mock_download_func, pressure_params)
+    
+    # Verification
+    assert result == str(test_file)
+
 @patch('time.sleep')  # Mock sleep to avoid waiting
 def test_download_with_retry_failure(mock_sleep, basic_params):
     def failing_download(**kwargs):
@@ -106,7 +170,6 @@ def test_download_with_retry_failure(mock_sleep, basic_params):
     with pytest.raises(Exception):
         download_with_retry(failing_download, basic_params)
     
-    # Should have tried to sleep between retries
     assert mock_sleep.call_count > 0
 
 
@@ -219,3 +282,64 @@ def test_era5ify_point(mock_process):
     
     assert isinstance(result, pd.DataFrame)
     mock_process.assert_called_once()
+
+def test_adjust_sum_variables_monthly():
+    """Test monthly adjustment of sum variables"""
+    # Create test DataFrame
+    test_df = pd.DataFrame({
+        'year': [2020, 2020, 2021],  # 2020 is a leap year
+        'month': [1, 2, 2],          # January, February (leap), February (non-leap)
+        'tp': [10, 15, 20],          # Sum variable (precipitation)
+        't2m': [280, 281, 282]       # Non-sum variable (temperature)
+    })
+    
+    # Make a copy for comparison
+    original_df = test_df.copy()
+    
+    # Call the function
+    adjust_sum_variables(test_df, 'monthly')
+    
+    # Verify adjustments
+    jan_days = monthrange(2020, 1)[1]  # 31 days
+    feb_leap_days = monthrange(2020, 2)[1]  # 29 days (leap year)
+    feb_normal_days = monthrange(2021, 2)[1]  # 28 days
+    print(test_df)
+    assert test_df['tp'][0] == original_df['tp'][0] * jan_days
+    assert test_df['tp'][1] == original_df['tp'][1] * feb_leap_days
+    assert test_df['tp'][2] == original_df['tp'][2] * feb_normal_days
+    assert test_df['t2m'][0] == original_df['t2m'][0]  # Should remain unchanged
+    assert 'days_in_month' not in test_df.columns  # Column should be removed
+
+def test_adjust_sum_variables_yearly():
+    """Test yearly adjustment of sum variables"""
+    test_df = pd.DataFrame({
+        'year': [2020, 2021],
+        'month': [1, 1],
+        'tp': [10, 15],
+        'ssr': [100, 150]  # Another sum variable (solar radiation)
+    })
+    
+    original_df = test_df.copy()
+    
+    adjust_sum_variables(test_df, 'yearly')
+    
+    # Verify yearly adjustment factor (30.4375 days/month average)
+    assert test_df['tp'][0] == original_df['tp'][0] * 30.4375
+    assert test_df['ssr'][0] == original_df['ssr'][0] * 30.4375
+    assert test_df['month'][0] == original_df['month'][0]  # Month column unchanged
+
+def test_adjust_sum_variables_no_sum_vars():
+    """Test with DataFrame containing no sum variables"""
+    test_df = pd.DataFrame({
+        'year': [2020],
+        'month': [1],
+        't2m': [280]  # Not in SUM_VARS
+    })
+    
+    original_df = test_df.copy()
+    
+    adjust_sum_variables(test_df, 'monthly')
+    
+    # DataFrame should remain unchanged
+    pd.testing.assert_frame_equal(test_df, original_df)
+

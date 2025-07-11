@@ -62,6 +62,22 @@ def basic_params():
     )
 
 @pytest.fixture
+def basic_params_mo():
+    """Basic ProcessingParams for testing monthly processes"""
+    return ProcessingParams(
+        request_id="test_request_mo",
+        variables=["2m_temperature", "total_precipitation"],
+        start_date=dt.datetime(2020, 1, 1),
+        end_date=dt.datetime(2020, 12, 31),
+        frequency="monthly",
+        resolution=0.25,
+        north=21.0,
+        south=20.5,
+        east=80.0,
+        west=80.5
+    )
+
+@pytest.fixture
 def pressure_params():
     """ProcessingParams with pressure levels for testing"""
     return ProcessingParams(
