@@ -96,10 +96,9 @@ def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFra
     if points_inside_count == 0:
         logger.warning("\n!!! WARNING: No points found inside the shapefile !!!")
         logger.warning("Possible reasons:")
-        logger.warning("1. Region described is too small or not covered by the dataset")
-        logger.warning("2. Coordinate system mismatch")
-        logger.warning("3. Incorrect shapefile")
-        logger.warning("4. Grid points are outside the shapefile")
+        logger.warning("1. The selected variable may not have valid values in the specified region.")
+        logger.warning("2. The region is too small or falls outside the spatial coverage of the dataset.")
+        logger.warning("3. All dataset grid points fall outside the shapefile boundaries.")
 
         # Additional debugging info
         logger.info(f"\nDataset coordinate ranges:")
