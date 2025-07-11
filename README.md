@@ -23,6 +23,10 @@ eranest geojson --request-id "request_name" --variables "var1,var2,etc." --start
 ```bash
 eranest bbox --request-id "request_name" --variables "var1,var2,etc." --start "yyyy-mm-dd" --end "yyyy-mm-dd" --north "north_bound" --south "south_bound" --east "east_bound" --west "west_bound" --dataset-type "dataset_type" --pressure-levels "pressure_level_1,pressure_level_2,etc." --freq "frequency" --res "resolution"
 ```
+3. or by providing coordinates of the location
+```bash
+eranest point --request-id "request_name" --variables "var1,var2,etc." --start "yyyy-mm-dd" --end "yyyy-mm-dd" --lat "latitude" --lon "longitude" --dataset-type "dataset_type" --pressure-levels "pressure_level_1,pressure_level_2,etc." --freq "frequency"
+```
 The arguments dataset-type (single by default), pressure-levels (empty by default), freq (hourly by default) and res (0.25 by default) are optional.
 
 Example command for extracting pressure-level data for a bounding box
