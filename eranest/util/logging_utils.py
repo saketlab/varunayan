@@ -21,7 +21,7 @@ class ColorFormatter(logging.Formatter):
     """Custom formatter to add colors to log output."""
     LEVEL_COLORS = {
         logging.DEBUG: Colors.BLUE,
-        logging.INFO: Colors.WHITE,
+        logging.INFO: Colors.RESET,
         logging.WARNING: Colors.YELLOW_BRIGHT,
         logging.ERROR: Colors.RED_BRIGHT,
         logging.CRITICAL: Colors.RED,
