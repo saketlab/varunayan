@@ -7,7 +7,7 @@ from .geojson_utils import (
     create_geojson_from_bbox,
     create_temp_geojson
 )
-from .logging_utils import Colors
+from .logging_utils import Colors, get_logger
 
 __all__ = [
     'extract_coords_from_geometry',
@@ -17,5 +17,6 @@ __all__ = [
     'convert_to_geojson',
     'create_geojson_from_bbox',
     'create_temp_geojson',
-    'Colors'
+    'Colors',
+    'get_logger'
 ]

@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
+import logging
 from .variable_lists import sum_vars, max_vars, min_vars, rate_vars, exclude_cols
+from ..util.logging_utils import get_logger
+
+logger = get_logger(level=logging.INFO)
 
 def aggregate_by_frequency(
     df: pd.DataFrame, frequency: str, keep_original_time: bool = False
@@ -19,7 +23,7 @@ def aggregate_by_frequency(
     Returns:
         Tuple of (aggregated DataFrame, unique lat/lon DataFrame)
     """
-    print(f"Aggregating data to {frequency} frequency...")
+    logger.info(f"Aggregating data to {frequency} frequency...")
 
     frequency = frequency.lower()
 
@@ -38,7 +42,7 @@ def aggregate_by_frequency(
     else:
         # If no valid_time, assume date and time columns exist
         if "date" not in df.columns or "time" not in df.columns:
-            print(
+            logger.warning(
                 "Warning: No proper time columns found in DataFrame. Skipping aggregation."
             )
             return df, unique_latlongs
@@ -93,11 +97,11 @@ def aggregate_by_frequency(
     special_cols = sum_cols + max_cols + min_cols + rate_cols
     avg_cols = [col for col in var_cols if col not in special_cols]
 
-    print(f"Sum columns: {sum_cols}")
-    print(f"Max columns: {max_cols}")
-    print(f"Min columns: {min_cols}")
-    print(f"Rate columns: {rate_cols}")
-    print(f"Average columns: {avg_cols}")
+    logger.info(f"Sum columns: {sum_cols}")
+    logger.info(f"Max columns: {max_cols}")
+    logger.info(f"Min columns: {min_cols}")
+    logger.info(f"Rate columns: {rate_cols}")
+    logger.info(f"Average columns: {avg_cols}")
 
     # Return original data if hourly frequency requested
     if frequency == "hourly":
@@ -233,7 +237,7 @@ def aggregate_pressure_levels(
     Returns:
         Tuple of (aggregated DataFrame, unique lat/lon DataFrame)
     """
-    print(f"Aggregating pressure level data to {frequency} frequency...")
+    logger.info(f"Aggregating pressure level data to {frequency} frequency...")
     
     # Store unique lat/lon pairs for reference
     unique_latlongs = (
@@ -264,9 +268,9 @@ def aggregate_pressure_levels(
     # All other columns are variables to be averaged
     var_cols = [col for col in df.columns if col not in exclude_cols and col not in group_cols]
     
-    print(f"Variables to average: {var_cols}")
+    logger.info(f"Variables to average: {var_cols}")
     if has_pressure_level:
-        print(f"Including pressure_level in aggregation groups")
+        logger.info(f"Including pressure_level in aggregation groups")
     
     # For hourly data, just do spatial aggregation
     if frequency == "hourly":

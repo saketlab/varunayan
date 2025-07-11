@@ -2,6 +2,10 @@ import argparse
 import datetime as dt
 from .core import era5ify_geojson
 from .core import era5ify_bbox
+import logging
+from .util.logging_utils import get_logger
+
+logger = get_logger(level=logging.INFO)
 
 def parse_flexible_date(date_string):
     """Parse date string in either YYYY-M-D or YYYY-MM-DD format"""
@@ -69,7 +73,7 @@ def main():
         start = parse_flexible_date(args.start)
         end = parse_flexible_date(args.end)
     except ValueError as e:
-        print(f"Error parsing dates: {e}")
+        logger.error(f"Error parsing dates: {e}")
         return
     
     variables = [v.strip() for v in args.variables.split(",")]
@@ -81,7 +85,7 @@ def main():
     
     # Process based on mode
     if args.mode == 'geojson':
-        print("Processing with GeoJSON/JSON file...")
+        logger.info("Processing with GeoJSON/JSON file...")
         df = era5ify_geojson(
             request_id=args.request_id,
             variables=variables,
@@ -95,7 +99,7 @@ def main():
         )
     
     elif args.mode == 'bbox':
-        print("Processing with bounding box coordinates...")
+        logger.info("Processing with bounding box coordinates...")
         df = era5ify_bbox(
             request_id=args.request_id,
             variables=variables,
@@ -146,7 +150,7 @@ def main_legacy():
         start = parse_flexible_date(args.start)
         end = parse_flexible_date(args.end)
     except ValueError as e:
-        print(f"Error parsing dates: {e}")
+        logger.error(f"Error parsing dates: {e}")
         return
     
     variables = [v.strip() for v in args.variables.split(",")]

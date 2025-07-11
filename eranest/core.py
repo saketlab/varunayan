@@ -11,6 +11,7 @@ import glob
 import tempfile
 import shutil
 import time
+import logging
 from shapely.geometry import shape, Polygon, MultiPolygon, Point
 from dataclasses import dataclass
 try:
@@ -35,8 +36,11 @@ from .util import (
     convert_to_geojson,
     create_geojson_from_bbox,
     create_temp_geojson,
-    Colors
+    Colors,
+    get_logger
 )
+
+logger = get_logger(level=logging.INFO)
 
 SUM_VARS = [
     "tp",
@@ -158,18 +162,18 @@ def download_with_retry(download_func, params: ProcessingParams, chunk_id: Optio
 
     for attempt in range(max_retries + 1):
         try:
-            print(f"  → Downloading ERA5 data (attempt {attempt + 1}/{max_retries + 1})...")
+            logger.info(f"  → Downloading ERA5 data (attempt {attempt + 1}/{max_retries + 1})...")
             download_file = download_func(**download_args)
-            print(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
+            logger.info(f"  {Colors.GREEN}✓ Download completed: {download_file}{Colors.RESET}")
             return download_file
         except Exception as e:
             error_msg = str(e)
-            print(f"  {Colors.RED}✗ Download attempt {attempt + 1} failed: {error_msg}{Colors.RESET}")
+            logger.error(f"  {Colors.RED}✗ Download attempt {attempt + 1} failed: {error_msg}{Colors.RESET}")
             
             if attempt < max_retries:
                 time.sleep(retry_delay)
             else:
-                print(f"  {Colors.RED}✗ All {max_retries + 1} download attempts failed{Colors.RESET}")
+                logger.error(f"  {Colors.RED}✗ All {max_retries + 1} download attempts failed{Colors.RESET}")
                 raise e
 
 def process_time_chunks(params: ProcessingParams, download_func, process_func):
@@ -213,7 +217,7 @@ def process_time_chunks(params: ProcessingParams, download_func, process_func):
         )
         if params.pressure_levels:
             chunk_msg += f"\nLevels:     {', '.join(params.pressure_levels)}"
-        print(chunk_msg)
+        logger.info(chunk_msg)
 
         chunk_params.start_date = current_date
         chunk_params.end_date = chunk_end
@@ -222,10 +226,10 @@ def process_time_chunks(params: ProcessingParams, download_func, process_func):
             start_time = time.time()
             chunk_data = process_func(chunk_params, chunk_number, total_chunks)
             elapsed = time.time() - start_time
-            print(f"{Colors.GREEN}✓ Chunk completed in {elapsed:.1f} seconds{Colors.RESET}")
+            logger.info(f"{Colors.GREEN}✓ Chunk completed in {elapsed:.1f} seconds{Colors.RESET}")
             all_data.append(chunk_data)
         except Exception as e:
-            print(f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}")
+            logger.error(f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}")
         
         # Prepare for next chunk
         chunk_number += 1
@@ -255,19 +259,19 @@ def process_era5_data(params: ProcessingParams, chunk_info: Optional[Tuple[int, 
     nc_files = extract_download(download_file)
     datasets = []
 
-    print(f"\nProcessing downloaded data:")
-    print(f"- Found {len(nc_files)} file(s)")
+    logger.info(f"\nProcessing downloaded data:")
+    logger.info(f"- Found {len(nc_files)} file(s)")
     
     for i, nc_file in enumerate(nc_files, 1):
         if not nc_file.lower().endswith(".nc"):
             continue
-        print(f"  Processing file {i}/{len(nc_files)}: {os.path.basename(nc_file)}")
+        logger.info(f"  Processing file {i}/{len(nc_files)}: {os.path.basename(nc_file)}")
         try:
             ds = xr.open_dataset(nc_file)
-            print(f"  ✓ Loaded: Dimensions: {ds.sizes}")
+            logger.info(f"  ✓ Loaded: Dimensions: {ds.sizes}")
             datasets.append(ds)
         except Exception as e:
-            print(f"    {Colors.RED}✗ Error processing {nc_file}: {e}{Colors.RESET}")
+            logger.error(f"    {Colors.RED}✗ Error processing {nc_file}: {e}{Colors.RESET}")
     
     if not datasets:
         raise ValueError("No valid datasets were processed")
@@ -289,20 +293,20 @@ def process_era5_data(params: ProcessingParams, chunk_info: Optional[Tuple[int, 
     initial_rows = len(df)
     df = df.drop_duplicates(subset=dup_cols)
     if initial_rows - len(df) > 0:
-        print(f"  {Colors.YELLOW}✓ Removed {initial_rows - len(df)} duplicate rows{Colors.RESET}")
+        logger.info(f"  {Colors.YELLOW}✓ Removed {initial_rows - len(df)} duplicate rows{Colors.RESET}")
     
     return df
 
 def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame):
     """Handle aggregation and saving of results"""
     # Temporal aggregation
-    print(f"{Colors.BLUE}AGGREGATING DATA ({params.frequency.upper()}){Colors.RESET}")
+    logger.info(f"{Colors.BLUE}AGGREGATING DATA ({params.frequency.upper()}){Colors.RESET}")
 
     start_time = time.time()
     agg_func = aggregate_pressure_levels if params.pressure_levels else aggregate_by_frequency
     aggregated_df, unique_latlongs = agg_func(df, params.frequency)
     elapsed = time.time() - start_time
-    print(f"Aggregation completed in:   {elapsed:.2f} seconds")
+    logger.info(f"Aggregation completed in:   {elapsed:.2f} seconds")
 
     # Adjust sum variables if needed
     if params.frequency in ['monthly', 'yearly']:
@@ -334,30 +338,30 @@ def adjust_sum_variables(df: pd.DataFrame, frequency: str):
                 if var in df.columns:
                     df[var] = df[var] * 30.4375
     except Exception as e:
-        print(f"{Colors.YELLOW}Warning: Error adjusting sum variables: {e}{Colors.RESET}")
+        logger.warning(f"{Colors.YELLOW}Warning: Error adjusting sum variables: {e}{Colors.RESET}")
 
 def save_results(params: ProcessingParams, aggregated_df: pd.DataFrame, 
                 unique_latlongs: pd.DataFrame, raw_df: pd.DataFrame):
     """Save all results to files"""
 
     output_dir = f"{params.request_id}_output"
-    print(f"\nSaving files to output directory: {output_dir}")
+    logger.info(f"\nSaving files to output directory: {output_dir}")
     os.makedirs(output_dir, exist_ok=True)
     
     # Save aggregated data
     csv_output = os.path.join(output_dir, f"{params.request_id}_{params.frequency}_data.csv")
     aggregated_df.to_csv(csv_output, index=False)
-    print(f"  Saved final data to: {csv_output}")
+    logger.info(f"  Saved final data to: {csv_output}")
     
     # Save unique coordinates
     csv_output = os.path.join(output_dir, f"{params.request_id}_unique_latlongs.csv")
     unique_latlongs.to_csv(csv_output, index=False)
-    print(f"  Saved unique coordinates to: {csv_output}")
+    logger.info(f"  Saved unique coordinates to: {csv_output}")
     
     # Save raw data
     csv_output = os.path.join(output_dir, f"{params.request_id}_raw_data.csv")
     raw_df.to_csv(csv_output, index=False)
-    print(f"  Saved raw data to: {csv_output}")
+    logger.info(f"  Saved raw data to: {csv_output}")
 
 def process_era5(params: ProcessingParams):
     """Main entry point for ERA5 processing"""
@@ -397,18 +401,18 @@ def process_era5(params: ProcessingParams):
 def print_processing_header(params: ProcessingParams):
     """Print processing header information"""
     dataset_type = "PRESSURE LEVEL" if params.pressure_levels else "SINGLE LEVEL"
-    print(f"\n{'='*60}")
-    print(f"{Colors.BLUE}STARTING ERA5 {dataset_type} PROCESSING{Colors.RESET}")
-    print(f"{'='*60}")
-    print(f"Request ID: {params.request_id}")
-    print(f"Variables: {params.variables}")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"{Colors.BLUE}STARTING ERA5 {dataset_type} PROCESSING{Colors.RESET}")
+    logger.info(f"{'='*60}")
+    logger.info(f"Request ID: {params.request_id}")
+    logger.info(f"Variables: {params.variables}")
     if params.pressure_levels:
-        print(f"Pressure Levels: {params.pressure_levels}")
-    print(f"Date Range: {params.start_date.strftime('%Y-%m-%d')} to {params.end_date.strftime('%Y-%m-%d')}")
-    print(f"Frequency: {params.frequency}")
-    print(f"Resolution: {params.resolution}°")
+        logger.info(f"Pressure Levels: {params.pressure_levels}")
+    logger.info(f"Date Range: {params.start_date.strftime('%Y-%m-%d')} to {params.end_date.strftime('%Y-%m-%d')}")
+    logger.info(f"Frequency: {params.frequency}")
+    logger.info(f"Resolution: {params.resolution}°")
     if params.geojson_file:
-        print(f"GeoJSON File: {params.geojson_file}")
+        logger.info(f"GeoJSON File: {params.geojson_file}")
 
 def validate_inputs(params: ProcessingParams):
     """Validate all input parameters"""
@@ -420,33 +424,33 @@ def validate_inputs(params: ProcessingParams):
         raise ValueError("pressure_levels must be provided for pressure level data")
     if params.geojson_file and not os.path.exists(params.geojson_file):
         raise FileNotFoundError(f"GeoJSON file not found: {params.geojson_file}")
-    print(f"{Colors.GREEN}✓ All inputs validated successfully{Colors.RESET}")
+    logger.info(f"{Colors.GREEN}✓ All inputs validated successfully{Colors.RESET}")
 
 def load_and_validate_geojson(geojson_file: str) -> Dict:
     """Load and validate GeoJSON file"""
-    print("\n--- Loading GeoJSON File ---")
+    logger.info("\n--- Loading GeoJSON File ---")
     geojson_data = load_json_with_encoding(geojson_file)
     if not is_valid_geojson(geojson_data):
         geojson_data = convert_to_geojson(geojson_data)
-    print(f"{Colors.GREEN}✓ GeoJSON loaded successfully{Colors.RESET}")
+    logger.info(f"{Colors.GREEN}✓ GeoJSON loaded successfully{Colors.RESET}")
     
     return geojson_data
 
 def print_bounding_box(params: ProcessingParams):
     """Print bounding box information"""
-    print("\n--- Bounding Box ---")
-    print(f"{Colors.GREEN}✓ Bounding Box calculated:{Colors.RESET}")
-    print(f"  North: {params.north:.4f}°")
-    print(f"  South: {params.south:.4f}°")
-    print(f"  East:  {params.east:.4f}°")
-    print(f"  West:  {params.west:.4f}°")
-    print(f"  Area:  {abs(params.east-params.west):.4f}° × {abs(params.north-params.south):.4f}°")
+    logger.info("\n--- Bounding Box ---")
+    logger.info(f"{Colors.GREEN}✓ Bounding Box calculated:{Colors.RESET}")
+    logger.info(f"  North: {params.north:.4f}°")
+    logger.info(f"  South: {params.south:.4f}°")
+    logger.info(f"  East:  {params.east:.4f}°")
+    logger.info(f"  West:  {params.west:.4f}°")
+    logger.info(f"  Area:  {abs(params.east-params.west):.4f}° × {abs(params.north-params.south):.4f}°")
 
 def print_processing_strategy(params: ProcessingParams):
     """Print processing strategy information"""
-    print("\n--- Processing Strategy ---")
+    logger.info("\n--- Processing Strategy ---")
     use_monthly = params.frequency in ["monthly", "yearly"]
-    print(f"Using monthly dataset: {use_monthly}")
+    logger.info(f"Using monthly dataset: {use_monthly}")
     
     if use_monthly:
         total_units = (params.end_date.year - params.start_date.year) * 12 + (params.end_date.month - params.start_date.month) + 1
@@ -456,9 +460,9 @@ def print_processing_strategy(params: ProcessingParams):
         max_per_chunk = 14
     
     needs_chunking = total_units > max_per_chunk
-    print(f"Total {'months' if use_monthly else 'days'} to process: {total_units}")
-    print(f"Max {'months' if use_monthly else 'days'} per chunk: {max_per_chunk}")
-    print(f"Needs chunking: {needs_chunking}")
+    logger.info(f"Total {'months' if use_monthly else 'days'} to process: {total_units}")
+    logger.info(f"Max {'months' if use_monthly else 'days'} per chunk: {max_per_chunk}")
+    logger.info(f"Needs chunking: {needs_chunking}")
 
 def calculate_map_dimensions(west, east, south, north):
     """Calculate proportional width/height for ASCII map"""
@@ -522,26 +526,26 @@ def draw_geojson_ascii(geojson_data):
 
 def print_processing_footer(params: ProcessingParams, result_df: pd.DataFrame, total_start_time: float):
     """Print processing footer information"""
-    print(f"\n{'='*60}")
-    print(f"{Colors.GREEN}PROCESSING COMPLETE{Colors.RESET}")
-    print(f"{'='*60}")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"{Colors.GREEN}PROCESSING COMPLETE{Colors.RESET}")
+    logger.info(f"{'='*60}")
 
-    print(f"\n{Colors.CYAN}RESULTS SUMMARY:{Colors.RESET}")
-    print(f"{'-'*40}")
-    print(f"Variables processed: {len(params.variables)}")
-    print(f"Time period:         {params.start_date} to {params.end_date}")
-    print(f"Final output shape:  {result_df.shape}")
+    logger.info(f"\n{Colors.CYAN}RESULTS SUMMARY:{Colors.RESET}")
+    logger.info(f"{'-'*40}")
+    logger.info(f"Variables processed: {len(params.variables)}")
+    logger.info(f"Time period:         {params.start_date} to {params.end_date}")
+    logger.info(f"Final output shape:  {result_df.shape}")
 
     elapsed_time = time.time() - total_start_time
-    print(f"Total complete processing time: {elapsed_time:.2f} seconds")
+    logger.info(f"Total complete processing time: {elapsed_time:.2f} seconds")
 
-    print("\nFirst 5 rows of aggregated data:")
-    print(result_df.head())
+    logger.info("\nFirst 5 rows of aggregated data:")
+    logger.info(result_df.head())
     
     dataset_type = "PRESSURE LEVEL" if params.pressure_levels else "SINGLE LEVEL"
-    print(f"\n{'='*60}")
-    print(f"{Colors.BLUE}ERA5 {dataset_type} PROCESSING COMPLETED SUCCESSFULLY{Colors.RESET}")
-    print(f"{'='*60}")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"{Colors.BLUE}ERA5 {dataset_type} PROCESSING COMPLETED SUCCESSFULLY{Colors.RESET}")
+    logger.info(f"{'='*60}")
 
 # Public functions
 def era5ify_geojson(

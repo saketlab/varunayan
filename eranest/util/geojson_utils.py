@@ -2,6 +2,10 @@ import json
 import os
 import tempfile
 from typing import Dict, Any, List, Tuple
+import logging
+from .logging_utils import get_logger
+
+logger = get_logger(level=logging.INFO)
 
 def extract_coords_from_geometry(geometry: Dict) -> List[List[float]]:
     """Extract all coordinates from a GeoJSON geometry object."""
@@ -88,7 +92,7 @@ def load_json_with_encoding(file_path: str) -> Dict[str, Any]:
         try:
             with open(file_path, "r", encoding=encoding) as f:
                 data = json.load(f)
-                print(f"Successfully loaded JSON file with {encoding} encoding")
+                logging.debug(f"Successfully loaded JSON file with {encoding} encoding")
                 return data
         except UnicodeDecodeError:
             continue

@@ -1,6 +1,10 @@
 import os
 import zipfile
 from typing import List
+import logging
+from ..util.logging_utils import get_logger
+
+logger = get_logger(level=logging.INFO)
 
 def extract_download(zip_or_file_path: str, extract_dir: str = None) -> List[str]:
     """
@@ -28,14 +32,14 @@ def extract_download(zip_or_file_path: str, extract_dir: str = None) -> List[str
     # Determine file type
     if zip_or_file_path.lower().endswith(".zip"):
         # Zip file extraction
-        print(f"Extracting zip file: {zip_or_file_path}")
+        logger.info(f"Extracting zip file: {zip_or_file_path}")
         with zipfile.ZipFile(zip_or_file_path, "r") as zip_ref:
             zip_ref.extractall(extract_dir)
             extracted_files = zip_ref.namelist()
             extracted_files = [os.path.join(extract_dir, f) for f in extracted_files]
     elif zip_or_file_path.lower().endswith(".nc"):
         # Single NetCDF file - just copy to extraction directory
-        print(f"Copying NetCDF file: {zip_or_file_path}")
+        logger.info(f"Copying NetCDF file: {zip_or_file_path}")
         import shutil
 
         dest_path = os.path.join(extract_dir, os.path.basename(zip_or_file_path))
@@ -48,13 +52,13 @@ def extract_download(zip_or_file_path: str, extract_dir: str = None) -> List[str
     nc_files = find_netcdf_files(extract_dir)
 
     if not nc_files:
-        print(f"Warning: No NetCDF files found in {zip_or_file_path}")
-        print(f"Found files: {', '.join(extracted_files)}")
+        logger.warning(f"Warning: No NetCDF files found in {zip_or_file_path}")
+        logger.warning(f"Found files: {', '.join(extracted_files)}")
         return extracted_files
 
-    print("Extracted NetCDF files:")
+    logger.info("Extracted NetCDF files:")
     for file in nc_files:
-        print(f"  - {file}")
+        logger.info(f"  - {file}")
 
     return nc_files
 

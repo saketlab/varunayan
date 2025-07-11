@@ -1,3 +1,6 @@
+import logging
+import sys
+
 class Colors:
     """ANSI color codes for terminal output."""
     RESET = "\033[0m"
@@ -13,3 +16,34 @@ class Colors:
     YELLOW_BRIGHT = "\033[0;93m"
     BLUE_BRIGHT = "\033[0;94m"
     CYAN_BRIGHT = "\033[0;96m"
+
+class ColorFormatter(logging.Formatter):
+    """Custom formatter to add colors to log output."""
+    LEVEL_COLORS = {
+        logging.DEBUG: Colors.BLUE,
+        logging.INFO: Colors.WHITE,
+        logging.WARNING: Colors.YELLOW_BRIGHT,
+        logging.ERROR: Colors.RED_BRIGHT,
+        logging.CRITICAL: Colors.RED,
+    }
+
+    def format(self, record):
+        color = self.LEVEL_COLORS.get(record.levelno, Colors.WHITE)
+        message = super().format(record)
+        return f"{color}{message}{Colors.RESET}"
+
+def get_logger(name="era5_logger", level=logging.INFO):
+    """Returns a configured logger with colored output."""
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    # Prevent duplicate handlers if logger is re-imported
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = ColorFormatter('%(message)s')
+        handler.setFormatter(formatter)
+        handler.setLevel(level)
+        logger.addHandler(handler)
+        logger.propagate = False  # Don't bubble logs to root logger
+
+    return logger
