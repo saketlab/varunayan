@@ -24,7 +24,6 @@ from .processing import (
     aggregate_by_frequency,
     aggregate_pressure_levels,
     filter_netcdf_by_shapefile,
-    get_unique_coordinates_in_polygon,
     extract_download,
     find_netcdf_files
 )
