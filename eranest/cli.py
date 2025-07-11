@@ -1,7 +1,6 @@
 import argparse
 import datetime as dt
-from .core import era5ify_geojson
-from .core import era5ify_bbox
+from .core import era5ify_geojson, era5ify_bbox, era5ify_point
 import logging
 from .util.logging_utils import get_logger
 
@@ -65,7 +64,13 @@ def main():
     bbox_parser.add_argument("--south", type=float, required=True, help="Southern latitude boundary")
     bbox_parser.add_argument("--east", type=float, required=True, help="Eastern longitude boundary")
     bbox_parser.add_argument("--west", type=float, required=True, help="Western longitude boundary")
-    
+
+    # Point mode
+    point_parser = subparsers.add_parser('point', help='Process using a single point (lat, lon)')
+    add_common_args(point_parser)
+    point_parser.add_argument("--lat", type=float, required=True, help="Latitude of the point")
+    point_parser.add_argument("--lon", type=float, required=True, help="Longitude of the point")
+
     args = parser.parse_args()
     
     # Parse common arguments
@@ -115,59 +120,17 @@ def main():
             resolution=args.res,
         )
 
-def main_legacy():
-    """
-    Legacy main function for backward compatibility.
-    This maintains the old interface for existing scripts.
-    """
-    parser = argparse.ArgumentParser(description="ERA5ify your climate data.")
+    elif args.mode == 'point':
+        logger.info("Processing for a single point location...")
+        df = era5ify_point(
+            request_id=args.request_id,
+            variables=variables,
+            start_date=args.start,
+            end_date=args.end,
+            latitude=args.lat,
+            longitude=args.lon,
+            dataset_type=args.dataset_type,
+            pressure_levels=pressure_levels,
+            frequency=args.freq,
+        )
 
-    parser.add_argument("--request-id", required=True)
-    parser.add_argument(
-        "--variables", required=True, help="Comma-separated variable names"
-    )
-    parser.add_argument("--start", required=True, help="Start date (YYYY-MM-DD or YYYY-M-D)")
-    parser.add_argument("--end", required=True, help="End date (YYYY-MM-DD or YYYY-M-D)")
-    parser.add_argument("--geojson", required=True, help="Path to GeoJSON or JSON file")
-    parser.add_argument(
-        "--dataset-type", default="single", choices=["single", "pressure"],
-        help="Type of dataset: single (single level) or pressure (pressure level) - default: single"
-    )
-    parser.add_argument(
-        "--pressure-levels", default="", 
-        help="Comma-separated pressure levels (e.g., '1000,925,850') - only used with pressure dataset type"
-    )
-    parser.add_argument(
-        "--freq", default="hourly", help="Frequency (hourly, daily, etc.)"
-    )
-    parser.add_argument(
-        "--res", type=float, default=0.25, help="Grid resolution (default 0.25)"
-    )
-
-    args = parser.parse_args()
-
-    try:
-        start = parse_flexible_date(args.start)
-        end = parse_flexible_date(args.end)
-    except ValueError as e:
-        logger.error(f"Error parsing dates: {e}")
-        return
-    
-    variables = [v.strip() for v in args.variables.split(",")]
-    
-    # Parse pressure levels if provided
-    pressure_levels = []
-    if args.pressure_levels.strip():
-        pressure_levels = [level.strip() for level in args.pressure_levels.split(",")]
-
-    df = era5ify_geojson(
-        request_id=args.request_id,
-        variables=variables,
-        start_date=args.start,  # Pass as string to match function signature
-        end_date=args.end,      # Pass as string to match function signature
-        json_file=args.geojson,
-        dataset_type=args.dataset_type,
-        pressure_levels=pressure_levels,
-        frequency=args.freq,
-        resolution=args.res,
-    )
