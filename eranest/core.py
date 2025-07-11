@@ -533,7 +533,7 @@ def print_processing_footer(params: ProcessingParams, result_df: pd.DataFrame, t
     logger.info(f"\n{Colors.CYAN}RESULTS SUMMARY:{Colors.RESET}")
     logger.info(f"{'-'*40}")
     logger.info(f"Variables processed: {len(params.variables)}")
-    logger.info(f"Time period:         {params.start_date} to {params.end_date}")
+    logger.info(f"Time period:         {params.start_date.date()} to {params.end_date.date()}")
     logger.info(f"Final output shape:  {result_df.shape}")
 
     elapsed_time = time.time() - total_start_time
