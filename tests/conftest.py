@@ -87,6 +87,7 @@ def pressure_params():
         end_date=dt.datetime(2020, 1, 2),
         frequency="hourly",
         resolution=0.25,
+        dataset_type="pressure",
         pressure_levels=["500", "850"],
         north=38.0,
         south=37.5,

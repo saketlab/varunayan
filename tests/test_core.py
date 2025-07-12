@@ -4,6 +4,7 @@ import pandas as pd
 import xarray as xr
 import pandas as pd
 from calendar import monthrange
+import unittest.mock as mock
 import os
 import sys
 from unittest.mock import MagicMock, patch, Mock
@@ -147,20 +148,26 @@ def test_download_with_retry_success_mo(basic_params_mo, tmp_path):
     # Verification
     assert result == str(test_file)
 
-def test_download_with_retry_success_pr(pressure_params, tmp_path):
+def test_download_with_retry_pressure_levels_with_mock(pressure_params, tmp_path):
     # Setup test file
     test_file = tmp_path / "test_request.zip"
     test_file.touch()
 
-    # Create a mock download function that returns the test file path
-    def mock_download_func(**kwargs):
-        return str(test_file)
-
-    # Test the download with retry
-    result = download_with_retry(mock_download_func, pressure_params)
+    # Option 1: If core.py imports like: from eranest.download import download_era5_pressure_lvl
+    # Then patch in core where it's imported:
+    with mock.patch('eranest.core.download_era5_pressure_lvl', return_value=str(test_file)) as mock_download:
+        from eranest.core import download_era5_pressure_lvl
+        result = download_with_retry(download_era5_pressure_lvl, pressure_params)
     
-    # Verification
+    # Verify the mock was called with pressure_levels
+    mock_download.assert_called_once()
+    call_args = mock_download.call_args[1]
+    print("Call args:", call_args)
+    assert 'pressure_levels' in call_args, f"pressure_levels not found in {call_args}"
+    assert call_args['pressure_levels'] == pressure_params.pressure_levels
+    
     assert result == str(test_file)
+
 
 @patch('time.sleep')  # Mock sleep to avoid waiting
 def test_download_with_retry_failure(mock_sleep, basic_params):
@@ -182,6 +189,18 @@ def test_process_time_chunks_no_chunking(mock_process, basic_params):
         return mock_process(params)
     
     result = process_time_chunks(basic_params, None, mock_download_func)
+    assert isinstance(result, pd.DataFrame)
+    assert len(result) == 3
+
+@patch('eranest.core.process_era5_data')
+def test_process_time_chunks_no_chunking_mo(mock_process, basic_params_mo):
+    mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
+    
+    # Create a mock download function
+    def mock_download_func(params):
+        return mock_process(params)
+    
+    result = process_time_chunks(basic_params_mo, None, mock_download_func)
     assert isinstance(result, pd.DataFrame)
     assert len(result) == 3
 
@@ -342,4 +361,3 @@ def test_adjust_sum_variables_no_sum_vars():
     
     # DataFrame should remain unchanged
     pd.testing.assert_frame_equal(test_df, original_df)
-
