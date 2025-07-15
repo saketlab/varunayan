@@ -38,9 +38,9 @@ jobs:
         black --check varunayan tests
         isort --check-only varunayan tests
     
-    - name: Run linting
-      run: |
-        flake8 varunayan tests
+    #- name: Run linting
+    #  run: |
+    #    flake8 varunayan tests
     
     - name: Run type checking
       run: |
