@@ -1,0 +1,380 @@
+/* Custom styles for Varunayan documentation */
+
+/* Root variables for consistent theming */
+:root {
+  --varunayan-primary: #2E86AB;
+  --varunayan-secondary: #A23B72;
+  --varunayan-accent: #F18F01;
+  --varunayan-success: #C73E1D;
+  --varunayan-light: #F5F5F5;
+  --varunayan-dark: #2C3E50;
+}
+
+/* Force light theme for all elements */
+html[data-theme="light"], 
+html[data-theme="auto"], 
+html:not([data-theme]) {
+  color-scheme: light only !important;
+}
+
+/* Sidebar styling - force white background */
+.bd-sidebar-primary,
+.bd-sidebar {
+  background-color: white !important;
+  border-right: 1px solid #dee2e6 !important;
+  color: #212529 !important;
+}
+
+.bd-sidebar .nav-link {
+  color: var(--varunayan-dark) !important;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin: 0.1rem 0;
+  transition: all 0.3s ease;
+}
+
+.bd-sidebar .nav-link:hover {
+  background-color: rgba(46, 134, 171, 0.1) !important;
+  color: var(--varunayan-primary) !important;
+}
+
+.bd-sidebar .nav-link.current,
+.bd-sidebar .nav-link.active {
+  background-color: var(--varunayan-primary) !important;
+  color: white !important;
+}
+
+/* Sidebar text and headings */
+.bd-sidebar .caption,
+.bd-sidebar .caption-text {
+  color: var(--varunayan-dark) !important;
+  font-weight: 600;
+}
+
+/* Sidebar navigation items */
+.bd-sidenav .nav-item .nav-link {
+  color: #495057 !important;
+}
+
+.bd-sidenav .nav-item .nav-link:hover {
+  color: var(--varunayan-primary) !important;
+  background-color: rgba(46, 134, 171, 0.1) !important;
+}
+
+/* Main content area */
+.bd-main {
+  background-color: white !important;
+}
+
+/* Article content styling */
+.bd-article {
+  max-width: none;
+  padding: 0 2rem;
+  background-color: white !important;
+  color: #212529 !important;
+}
+
+/* Header styling */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--varunayan-dark);
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  color: var(--varunayan-primary);
+  border-bottom: 3px solid var(--varunayan-primary);
+  padding-bottom: 0.5rem;
+}
+
+h2 {
+  color: var(--varunayan-secondary);
+  border-bottom: 2px solid var(--varunayan-secondary);
+  padding-bottom: 0.3rem;
+}
+
+/* Enhanced search bar styling */
+.search-bar {
+  border-radius: 25px;
+  border: 2px solid var(--varunayan-primary);
+  transition: all 0.3s ease;
+  background-color: white !important;
+}
+
+.search-bar:focus {
+  box-shadow: 0 0 0 3px rgba(46, 134, 171, 0.2);
+  border-color: var(--varunayan-primary);
+}
+
+/* Code block enhancements */
+.highlight {
+  border-radius: 8px;
+  border-left: 4px solid var(--varunayan-primary);
+  margin: 1rem 0;
+  background-color: #f8f9fa !important;
+}
+
+.highlight pre {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Copy button styling */
+.copybtn {
+  background-color: var(--varunayan-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  transition: background-color 0.3s ease;
+}
+
+.copybtn:hover {
+  background-color: var(--varunayan-secondary);
+}
+
+/* Admonition styling */
+.admonition {
+  border-radius: 8px;
+  border-left: 4px solid var(--varunayan-primary);
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: var(--varunayan-light) !important;
+  color: #212529 !important;
+}
+
+.admonition.note {
+  border-left-color: var(--varunayan-primary);
+}
+
+.admonition.warning {
+  border-left-color: var(--varunayan-accent);
+}
+
+.admonition.tip {
+  border-left-color: var(--varunayan-success);
+}
+
+/* Enhanced table styling */
+.table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background-color: white !important;
+}
+
+.table th {
+  background-color: var(--varunayan-primary);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #dee2e6;
+  color: #212529 !important;
+}
+
+.table tr:hover {
+  background-color: rgba(46, 134, 171, 0.1);
+}
+
+/* Link styling */
+a {
+  color: var(--varunayan-primary);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--varunayan-secondary);
+  text-decoration: underline;
+}
+
+/* Button styling */
+.btn-primary {
+  background-color: var(--varunayan-primary);
+  border-color: var(--varunayan-primary);
+  border-radius: 25px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--varunayan-secondary);
+  border-color: var(--varunayan-secondary);
+  transform: translateY(-1px);
+}
+
+/* Tab styling for sphinx-design */
+.sd-tab-set {
+  margin: 1rem 0;
+}
+
+.sd-tab-label {
+  background-color: var(--varunayan-light) !important;
+  color: #212529 !important;
+  border: 1px solid #dee2e6;
+  border-bottom: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.sd-tab-label:hover {
+  background-color: rgba(46, 134, 171, 0.1) !important;
+}
+
+input[type="radio"]:checked + .sd-tab-label {
+  background-color: var(--varunayan-primary) !important;
+  color: white !important;
+}
+
+.sd-tab-content {
+  background-color: white !important;
+  border: 1px solid #dee2e6;
+  padding: 1rem;
+  border-radius: 0 0 4px 4px;
+}
+
+/* Toggle button styling */
+.toggle-button {
+  background-color: var(--varunayan-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-button:hover {
+  background-color: var(--varunayan-secondary);
+}
+
+/* Hide Sphinx Book Theme theme toggle button if present */
+.theme-switch-button, .toggle-switch, .bd-header .theme-switch-button, .bd-header .toggle-switch {
+  display: none !important;
+}
+
+/* Footer styling */
+.bd-footer {
+  background-color: var(--varunayan-dark);
+  color: white;
+  padding: 2rem 0;
+  margin-top: 3rem;
+}
+
+.bd-footer a {
+  color: var(--varunayan-accent);
+}
+
+.bd-footer a:hover {
+  color: white;
+}
+
+/* Jupyter notebook cell styling */
+.cell {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa !important;
+  border-radius: 8px;
+  border-left: 4px solid var(--varunayan-primary);
+  color: #212529 !important;
+}
+
+.cell-input {
+  background-color: white !important;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: #212529 !important;
+}
+
+.cell-output {
+  background-color: #f1f3f4 !important;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.5rem;
+  color: #212529 !important;
+}
+
+/* API documentation styling */
+.api-section {
+  margin: 2rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa !important;
+  border-radius: 8px;
+  border-left: 4px solid var(--varunayan-primary);
+  color: #212529 !important;
+}
+
+.api-section h3 {
+  color: var(--varunayan-primary);
+  margin-top: 0;
+}
+
+/* Search result highlighting */
+.search-result {
+  background-color: rgba(46, 134, 171, 0.1);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  margin: 0.1rem;
+}
+
+/* Announcement banner */
+.announcement {
+  background: linear-gradient(90deg, var(--varunayan-primary), var(--varunayan-secondary));
+  color: white;
+  text-align: center;
+  padding: 0.5rem;
+  font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .bd-article {
+    padding: 0 1rem;
+  }
+  
+  .bd-sidebar {
+    position: fixed;
+    top: 0;
+    left: -300px;
+    width: 300px;
+    height: 100%;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    background-color: white !important;
+  }
+  
+  .bd-sidebar.show {
+    left: 0;
+  }
+}
+
+/* Force remove any dark theme overrides */
+.bd-container,
+.bd-page-width,
+body {
+  background-color: white !important;
+  color: #212529 !important;
+}
+
+/* Custom logo and branding */
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--varunayan-primary) !important;
+}
