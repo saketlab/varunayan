@@ -130,19 +130,19 @@ docs-clean:
 .PHONY: docs-convert
 docs-convert:
 	@echo "Converting notebooks to markdown..."
-	@if [ -f "$(NOTEBOOKS_DIR)/eranest_demo.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/eranest_demo.ipynb \
+	@if [ -f "$(NOTEBOOKS_DIR)/Demo.ipynb" ]; then \
+		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/Demo.ipynb \
 			--output-dir $(DOCS_DIR)/tutorials/ \
 			--output demo_tutorial_notebook; \
 	else \
-		echo "Warning: $(NOTEBOOKS_DIR)/eranest_demo.ipynb not found"; \
+		echo "Warning: $(NOTEBOOKS_DIR)/demo.ipynb not found"; \
 	fi
-	@if [ -f "$(NOTEBOOKS_DIR)/eranest_India_temp_change.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/eranest_India_temp_change.ipynb \
+	@if [ -f "$(NOTEBOOKS_DIR)/India_temp_change.ipynb" ]; then \
+		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/India_temp_change.ipynb \
 			--output-dir $(DOCS_DIR)/tutorials/ \
 			--output india_temperature_notebook; \
 	else \
-		echo "Warning: $(NOTEBOOKS_DIR)/eranest_India_temp_change.ipynb not found"; \
+		echo "Warning: $(NOTEBOOKS_DIR)/India_temp_change.ipynb not found"; \
 	fi
 
 .PHONY: docs-build

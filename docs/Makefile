@@ -34,21 +34,21 @@ help:
 .PHONY: notebooks
 notebooks:
 	@echo "Converting notebooks to markdown..."
-	@if [ -f "../notebooks/eranest_demo.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown ../notebooks/eranest_demo.ipynb \
+	@if [ -f "../notebooks/Demo.ipynb" ]; then \
+		$(JUPYTER) nbconvert --to markdown ../notebooks/Demo.ipynb \
 			--output-dir tutorials/ \
 			--output demo_tutorial_notebook; \
-		echo "Converted eranest_demo.ipynb"; \
+		echo "Converted Demo.ipynb"; \
 	else \
-		echo "Warning: ../notebooks/eranest_demo.ipynb not found"; \
+		echo "Warning: ../notebooks/Demo.ipynb not found"; \
 	fi
-	@if [ -f "../notebooks/eranest_India_temp_change.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown ../notebooks/eranest_India_temp_change.ipynb \
+	@if [ -f "../notebooks/India_temp_change.ipynb" ]; then \
+		$(JUPYTER) nbconvert --to markdown ../notebooks/India_temp_change.ipynb \
 			--output-dir tutorials/ \
 			--output india_temperature_notebook; \
-		echo "Converted eranest_India_temp_change.ipynb"; \
+		echo "Converted India_temp_change.ipynb"; \
 	else \
-		echo "Warning: ../notebooks/eranest_India_temp_change.ipynb not found"; \
+		echo "Warning: ../notebooks/India_temp_change.ipynb not found"; \
 	fi
 
 # Build HTML documentation

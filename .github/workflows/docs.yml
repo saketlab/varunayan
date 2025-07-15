@@ -41,9 +41,9 @@ jobs:
     - name: Convert notebooks to markdown
       run: |
         # Convert demo notebook to markdown
-        jupyter nbconvert --to markdown notebooks/eranest_demo.ipynb --output-dir docs/notebooks/
+        jupyter nbconvert --to markdown notebooks/Demo.ipynb --output-dir docs/notebooks/
         # Convert India temperature change notebook to markdown  
-        jupyter nbconvert --to markdown notebooks/eranest_India_temp_change.ipynb --output-dir docs/notebooks/
+        jupyter nbconvert --to markdown notebooks/India_temp_change.ipynb --output-dir docs/notebooks/
     
     - name: Generate API documentation
       run: |
