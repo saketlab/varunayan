@@ -6,7 +6,6 @@ import tempfile
 from unittest.mock import MagicMock
 
 import pytest
-from shapely.geometry import Polygon
 
 from varunayan.core import ProcessingParams
 
@@ -112,7 +111,9 @@ def mock_dataframe():
     """Create a mock DataFrame for testing"""
     mock_df = MagicMock()
     mock_df.shape = (100, 5)
-    mock_df.columns = ["time", "latitude", "longitude", "temperature", "humidity"]
+    mock_df.columns = [
+        "time", "latitude", "longitude", "temperature", "humidity"
+    ]
     return mock_df
 
 
@@ -141,7 +142,9 @@ def sample_geojson_file_cli():
         ],
     }
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".geojson", delete=False) as f:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".geojson", delete=False
+    ) as f:
         json.dump(geojson_content, f)
         temp_file = f.name
 
@@ -159,12 +162,19 @@ def sample_json_file():
         "regions": [
             {
                 "name": "Region 1",
-                "bounds": {"north": 40.8, "south": 40.7, "east": -73.9, "west": -74.0},
+                "bounds": {
+                    "north": 40.8,
+                    "south": 40.7,
+                    "east": -73.9,
+                    "west": -74.0,
+                },
             }
         ]
     }
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False
+    ) as f:
         json.dump(json_content, f)
         temp_file = f.name
 
@@ -235,15 +245,19 @@ def variable_combinations():
 def pytest_configure(config):
     """Configure pytest with custom markers"""
     config.addinivalue_line(
-        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+        "markers",
+        "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
-    config.addinivalue_line("markers", "integration: marks tests as integration tests")
+    config.addinivalue_line(
+        "markers", "integration: marks tests as integration tests"
+    )
     config.addinivalue_line("markers", "unit: marks tests as unit tests")
 
 
 # Custom assertions
 def assert_dataframe_called_with_args(mock_func, expected_args):
-    """Helper function to assert that a function was called with expected arguments"""
+    """Helper function to assert that a function was called with expected
+    arguments"""
     mock_func.assert_called_once()
     call_args = mock_func.call_args[1]
 

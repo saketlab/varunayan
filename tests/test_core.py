@@ -1,21 +1,15 @@
 import datetime as dt
-import os
 import sys
 import unittest.mock as mock
 from calendar import monthrange
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
 
-# Block ALL network calls
-sys.modules["cdsapi"] = MagicMock()
-sys.modules["urllib.request"] = MagicMock()
-sys.modules["requests"] = MagicMock()
-
 from varunayan.core import (
-    SUM_VARS,
     ProcessingParams,
     adjust_sum_variables,
     aggregate_and_save,
@@ -35,11 +29,10 @@ from varunayan.core import (
     validate_inputs,
 )
 
-# Import the download functions
-from varunayan.download.era5_downloader import (
-    download_era5_pressure_lvl,
-    download_era5_single_lvl,
-)
+# Block ALL network calls
+sys.modules["cdsapi"] = MagicMock()
+sys.modules["urllib.request"] = MagicMock()
+sys.modules["requests"] = MagicMock()
 
 
 def test_processing_params_initialization(basic_params):
@@ -157,25 +150,31 @@ def test_download_with_retry_success_mo(basic_params_mo, tmp_path):
     assert result == str(test_file)
 
 
-def test_download_with_retry_pressure_levels_with_mock(pressure_params, tmp_path):
+def test_download_with_retry_pressure_levels_with_mock(
+    pressure_params, tmp_path
+):
     # Setup test file
     test_file = tmp_path / "test_request.zip"
     test_file.touch()
 
-    # Option 1: If core.py imports like: from varunayan.download import download_era5_pressure_lvl
+    # Option 1: If core.py imports like: 
+    # from varunayan.download import download_era5_pressure_lvl
     # Then patch in core where it's imported:
     with mock.patch(
-        "varunayan.core.download_era5_pressure_lvl", return_value=str(test_file)
+        "varunayan.core.download_era5_pressure_lvl", 
+        return_value=str(test_file)
     ) as mock_download:
-        from varunayan.core import download_era5_pressure_lvl
+        from varunayan.core import download_era5_pressure_lvl as download_func
 
-        result = download_with_retry(download_era5_pressure_lvl, pressure_params)
+        result = download_with_retry(download_func, pressure_params)
 
     # Verify the mock was called with pressure_levels
     mock_download.assert_called_once()
     call_args = mock_download.call_args[1]
     print("Call args:", call_args)
-    assert "pressure_levels" in call_args, f"pressure_levels not found in {call_args}"
+    assert "pressure_levels" in call_args, (
+        f"pressure_levels not found in {call_args}"
+    )
     assert call_args["pressure_levels"] == pressure_params.pressure_levels
 
     assert result == str(test_file)
@@ -354,7 +353,7 @@ def test_adjust_sum_variables_monthly():
     test_df = pd.DataFrame(
         {
             "year": [2020, 2020, 2021],  # 2020 is a leap year
-            "month": [1, 2, 2],  # January, February (leap), February (non-leap)
+            "month": [1, 2, 2],  # Jan, Feb (leap), Feb (non-leap)
             "tp": [10, 15, 20],  # Sum variable (precipitation)
             "t2m": [280, 281, 282],  # Non-sum variable (temperature)
         }
@@ -372,9 +371,10 @@ def test_adjust_sum_variables_monthly():
     feb_normal_days = monthrange(2021, 2)[1]  # 28 days
     print(test_df)
     assert test_df["tp"][0] == original_df["tp"][0] * jan_days
-    assert test_df["tp"][1] == original_df["tp"][1] * feb_leap_days
+    assert test_df["tp"][1] == (original_df["tp"][1] * feb_leap_days)
     assert test_df["tp"][2] == original_df["tp"][2] * feb_normal_days
-    assert test_df["t2m"][0] == original_df["t2m"][0]  # Should remain unchanged
+    # Should remain unchanged
+    assert test_df["t2m"][0] == original_df["t2m"][0]
     assert "days_in_month" not in test_df.columns  # Column should be removed
 
 
@@ -395,8 +395,9 @@ def test_adjust_sum_variables_yearly():
 
     # Verify yearly adjustment factor (30.4375 days/month average)
     assert test_df["tp"][0] == original_df["tp"][0] * 30.4375
-    assert test_df["ssr"][0] == original_df["ssr"][0] * 30.4375
-    assert test_df["month"][0] == original_df["month"][0]  # Month column unchanged
+    assert test_df["ssr"][0] == (original_df["ssr"][0] * 30.4375)
+    # Month column unchanged
+    assert (test_df["month"][0] == original_df["month"][0])
 
 
 def test_adjust_sum_variables_no_sum_vars():
@@ -432,11 +433,13 @@ def test_load_and_validate_geojson():
 
     with patch(
         "varunayan.core.load_json_with_encoding", return_value=mock_geojson
-    ), patch("varunayan.core.is_valid_geojson", return_value=True), patch(
+    ), patch(
+        "varunayan.core.is_valid_geojson", return_value=True
+    ), patch(
         "varunayan.core.logger"
     ) as mock_logger:
 
-        # We don't actually need a real file path since we're mocking everything
+        # We don't need a real file path since we're mocking everything
         result = load_and_validate_geojson("dummy_path.json")
 
         assert result == mock_geojson
@@ -569,7 +572,12 @@ def test_cleanup_temp_files(mock_glob, mock_rmtree, mock_remove, mock_exists):
 @patch("varunayan.core.validate_inputs")
 @patch("varunayan.core.process_time_chunks")
 def test_process_era5(
-    mock_print_bbox, mock_footer, mock_header, mock_validate, mock_process, mock_agg
+    mock_print_bbox,
+    mock_footer,
+    mock_header,
+    mock_validate,
+    mock_process,
+    mock_agg,
 ):
     """Test main process_era5 function with mocked dependencies"""
     # Setup mock return values
@@ -631,7 +639,9 @@ def test_adjust_sum_variables_edge_cases():
     adjust_sum_variables(empty_df, "monthly")  # Should not raise any errors
 
     # Test with DataFrame containing only sum variables
-    sum_df = pd.DataFrame({"year": [2020], "month": [1], "tp": [10], "ssr": [100]})
+    sum_df = pd.DataFrame(
+        {"year": [2020], "month": [1], "tp": [10], "ssr": [100]}
+    )
     original_sum_df = sum_df.copy()
     adjust_sum_variables(sum_df, "monthly")
     assert not sum_df.equals(original_sum_df)  # Values should have changed
@@ -651,9 +661,6 @@ def test_print_processing_header_pressure():
     with patch("varunayan.core.logger") as mock_logger:
         print_processing_header(params)
         mock_logger.info.assert_any_call("Pressure Levels: ['500', '850']")
-
-
-import numpy as np
 
 
 @patch("varunayan.core.logger")
@@ -689,7 +696,7 @@ def test_process_era5_data_single_level_success(
     )
 
     # Convert to expected DataFrame format
-    expected_df = mock_ds.to_dataframe().reset_index()
+    # expected_df = mock_ds.to_dataframe().reset_index()  # Unused variable
 
     mock_open_dataset.return_value = mock_ds
 

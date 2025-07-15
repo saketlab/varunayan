@@ -79,15 +79,17 @@ nb_render_priority = {
     ]
 }
 
+import shutil
+import os
+
 # Notebook source directory
 nb_source_dir = "../notebooks"
 # Copy notebooks to docs directory for processing
-import shutil
-import os
+
 if os.path.exists("../notebooks"):
     # Copy notebooks to tutorials directory
     notebook_files = [
-            "Demo.ipynb",
+        "Demo.ipynb",
         "India_temp_change.ipynb",
     ]
     for nb in notebook_files:
@@ -127,7 +129,6 @@ html_theme_options = {
     "use_sidenotes": True,
     "show_toc_level": 2,
     "navigation_with_keys": True,
-    "show_navbar_depth": 2,
     "home_page_in_toc": True,
     "extra_footer": "<p>Built by the Varunayan team</p>",
     "analytics": {
@@ -137,12 +138,14 @@ html_theme_options = {
     "logo": {
         "text": "Varunayan",
     },
-    "theme_switcher_button": False,  # Disable theme switcher (light theme only)
+    "theme_switcher_button": False,  # Disable theme switcher
     "show_navbar_depth": 1,
 }
 
 # Copy button configuration
-copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_text = (
+    r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+)
 copybutton_prompt_is_regexp = True
 copybutton_line_continuation_character = "\\"
 

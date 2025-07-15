@@ -53,10 +53,14 @@ def get_bounding_box(geojson_data: Dict) -> Tuple[float, float, float, float]:
     all_coords = []
 
     if geojson_data["type"] == "Feature":
-        all_coords.extend(extract_coords_from_geometry(geojson_data["geometry"]))
+        all_coords.extend(
+            extract_coords_from_geometry(geojson_data["geometry"])
+        )
     elif geojson_data["type"] == "FeatureCollection":
         for feature in geojson_data["features"]:
-            all_coords.extend(extract_coords_from_geometry(feature["geometry"]))
+            all_coords.extend(
+                extract_coords_from_geometry(feature["geometry"])
+            )
     else:
         # Assume it's a geometry object
         all_coords.extend(extract_coords_from_geometry(geojson_data))
@@ -64,7 +68,8 @@ def get_bounding_box(geojson_data: Dict) -> Tuple[float, float, float, float]:
     if not all_coords:
         raise ValueError("No coordinates found in the GeoJSON data")
 
-    # Extract longitudes (x) and latitudes (y) - IMPORTANT: GeoJSON stores [lon, lat]
+    # Extract longitudes (x) and latitudes (y) - IMPORTANT: GeoJSON stores
+    # [lon, lat]
     lons = [coord[0] for coord in all_coords]  # Longitude is first
     lats = [coord[1] for coord in all_coords]  # Latitude is second
 
@@ -96,13 +101,15 @@ def load_json_with_encoding(file_path: str) -> Dict[str, Any]:
         try:
             with open(file_path, "r", encoding=encoding) as f:
                 data = json.load(f)
-                logging.debug(f"Successfully loaded JSON file with {encoding} encoding")
+                logging.debug(
+                    f"Successfully loaded JSON file with {encoding} encoding"
+                )
                 return data
         except UnicodeDecodeError:
             continue
         except json.JSONDecodeError:
             continue
-        except Exception as e:
+        except Exception:
             continue
 
     # If we get here, none of the encodings worked
@@ -147,10 +154,16 @@ def is_valid_geojson(json_data: Dict[str, Any]) -> bool:
 
     # More specific checks based on type
     if json_data["type"] == "FeatureCollection":
-        return "features" in json_data and isinstance(json_data["features"], list)
+        return (
+            "features" in json_data
+            and isinstance(json_data["features"], list)
+        )
 
     elif json_data["type"] == "Feature":
-        return "geometry" in json_data and isinstance(json_data["geometry"], dict)
+        return (
+            "geometry" in json_data
+            and isinstance(json_data["geometry"], dict)
+        )
 
     # For geometry types, check for coordinates
     elif json_data["type"] in [
@@ -165,7 +178,10 @@ def is_valid_geojson(json_data: Dict[str, Any]) -> bool:
 
     # For GeometryCollection
     elif json_data["type"] == "GeometryCollection":
-        return "geometries" in json_data and isinstance(json_data["geometries"], list)
+        return (
+            "geometries" in json_data
+            and isinstance(json_data["geometries"], list)
+        )
 
     return False
 
@@ -190,12 +206,14 @@ def convert_to_geojson(json_data: Dict[str, Any]) -> Dict[str, Any]:
     if "type" in json_data:
         if json_data["type"] in ["Feature", "FeatureCollection"]:
             # Try to fix common issues
-            if json_data["type"] == "FeatureCollection" and "features" not in json_data:
+            if (json_data["type"] == "FeatureCollection" and
+                    "features" not in json_data):
                 json_data["features"] = []
 
             if json_data["type"] == "Feature" and "geometry" not in json_data:
                 raise ValueError(
-                    "Feature missing geometry and cannot be automatically fixed"
+                    "Feature missing geometry and cannot be "
+                    "automatically fixed"
                 )
 
             return json_data
@@ -205,11 +223,15 @@ def convert_to_geojson(json_data: Dict[str, Any]) -> Dict[str, Any]:
         # Assume it's meant to be a Polygon
         return {
             "type": "Feature",
-            "geometry": {"type": "Polygon", "coordinates": json_data["coordinates"]},
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": json_data["coordinates"],
+            },
             "properties": {},
         }
 
-    # Case 3: It contains a bounding box specified as [west, south, east, north]
+    # Case 3: It contains a bounding box specified as
+    # [west, south, east, north]
     if (
         "bbox" in json_data
         and isinstance(json_data["bbox"], list)
@@ -230,7 +252,9 @@ def convert_to_geojson(json_data: Dict[str, Any]) -> Dict[str, Any]:
         return create_geojson_from_bbox(west, south, east, north)
 
     # If we've gotten here, we can't automatically convert it
-    raise ValueError("Cannot automatically convert the provided JSON to GeoJSON format")
+    raise ValueError(
+        "Cannot automatically convert the provided JSON to GeoJSON format"
+    )
 
 
 def create_geojson_from_bbox(
@@ -263,7 +287,9 @@ def create_geojson_from_bbox(
         "type": "Feature",
         "geometry": {"type": "Polygon", "coordinates": coordinates},
         "properties": {
-            "description": f"Bounding box: N:{north}, W:{west}, S:{south}, E:{east}"
+            "description": (
+                f"Bounding box: N:{north}, W:{west}, S:{south}, E:{east}"
+            )
         },
     }
 
