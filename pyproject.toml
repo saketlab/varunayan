@@ -98,6 +98,9 @@ docs-build = [
     "sphinx-design>=0.3.0",
     "sphinx-togglebutton>=0.3.0",
     "sphinx-tabs>=3.0.0",
+    "linkify-it-py>=2.0",
+    "markdown-it-py>=2.0",
+    "mdit-py-plugins>=0.3.0",
 ]
 docs-serve = [
     # Additional dependencies for local documentation serving
