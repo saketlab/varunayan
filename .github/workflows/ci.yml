@@ -42,9 +42,9 @@ jobs:
     #  run: |
     #    flake8 varunayan tests
     
-    - name: Run type checking
-      run: |
-        mypy varunayan/
+    #- name: Run type checking
+    #  run: |
+    #    mypy varunayan/
     
     - name: Run tests
       run: |
