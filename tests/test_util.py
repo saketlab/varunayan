@@ -2,7 +2,7 @@ import pytest
 import json
 import os
 from shapely.geometry import shape, Polygon
-from eranest.util import (
+from varunayan.util import (
     extract_coords_from_geometry,
     get_bounding_box,
     load_json_with_encoding,

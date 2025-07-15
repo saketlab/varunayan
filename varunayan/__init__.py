@@ -6,3 +6,5 @@ __all__ = ["era5ify_geojson",
            "era5ify_point",
            "describe_variables",
            "search_variable"]
+
+__version__ = "0.1.0"

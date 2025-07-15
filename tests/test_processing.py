@@ -7,7 +7,7 @@ import xarray as xr
 from shapely.geometry import Polygon
 
 # Adjust the import path according to your package structure
-from eranest.processing import (
+from varunayan.processing import (
     aggregate_by_frequency,
     aggregate_pressure_levels,
     filter_netcdf_by_shapefile,

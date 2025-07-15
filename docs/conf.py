@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
-project = "Eranest"
+project = "Varunayan"
 copyright = "2025, Atharva Jagtap and Saket Choudhary"
 author = "Atharva Jagtap and Saket Choudhary"
 

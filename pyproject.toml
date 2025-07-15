@@ -3,68 +3,146 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "eranest"
+name = "varunayan"
 version = "0.1.0"
-description = "ERA5 climate data downloader and processor"
+description = "Analysis-ready climate data downloader and processor for custom regions"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = "MIT"
 authors = [
-    { name = "JaggeryArray" }
+    { name = "Atharva Jagtap", email = "atharvajagtap1108@gmail.com" },
+    { name = "Saket Choudhary", email = "saketc@iitb.ac.in" }
 ]
+maintainers = [
+    { name = "Atharva Jagtap", email = "atharvajagtap1108@gmail.com" },
+    { name = "Saket Choudhary", email = "saketc@iitb.ac.in" }
+]
+keywords = ["climate", "era5", "weather", "atmospheric-science", "geospatial", "netcdf"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Operating System :: OS Independent",
 ]
 dependencies = [
-    "cdsapi",
-    "xarray",
-    "netCDF4",
-    "numpy",
-    "pandas",
-    "geopandas",
-    "shapely",
-    "python-dateutil",
-    "matplotlib",
-    "tqdm",
+    "cdsapi>=0.5.1",
+    "xarray>=0.20.0",
+    "netCDF4>=1.5.0",
+    "numpy>=1.20.0",
+    "pandas>=1.3.0",
+    "geopandas>=0.10.0",
+    "shapely>=1.8.0",
+    "python-dateutil>=2.8.0",
+    "matplotlib>=3.3.0",
+    "tqdm>=4.60.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=2.10",
+    "black>=22.0",
+    "isort>=5.10",
+    "mypy>=0.910",
+    "flake8>=4.0",
+    "pre-commit>=2.15",
+]
+docs = [
+    "sphinx>=4.0",
+    "sphinx-rtd-theme>=1.0",
+    "myst-parser>=0.15",
+]
+all = ["varunayan[dev,docs]"]
+
 [project.scripts]
-eranest = "eranest.cli:main"
+varunayan = "varunayan.cli:main"
 
 [project.urls]
-Documentation = "https://github.com/JaggeryArray/eranest#readme"
-Issues = "https://github.com/JaggeryArray/eranest/issues"
-Source = "https://github.com/JaggeryArray/eranest"
+Homepage = "https://github.com/saketlab/varunayan"
+Documentation = "https://github.com/saketlab/varunayan#readme"
+Repository = "https://github.com/saketlab/varunayan"
+Issues = "https://github.com/saketlab/varunayan/issues"
+
+[tool.hatch.version]
+path = "varunayan/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["eranest"]
+packages = ["varunayan"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.github",
+    "/docs",
+    "/tests",
+    "/.gitignore",
+    "/.pre-commit-config.yaml",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "-ra -q"
+addopts = "-ra -q --cov=varunayan --cov-report=term-missing"
+minversion = "6.0"
+
+[tool.coverage.run]
+source = ["varunayan"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
 
 [tool.black]
 line-length = 88
-target-version = ["py37"]
+target-version = ["py38"]
 include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
+line_length = 88
+known_first_party = ["varunayan"]
 
 [tool.mypy]
-python_version = "3.7"
+python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-disallow_incomplete_defs = true 
+disallow_incomplete_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "cdsapi.*",
+    "geopandas.*",
+    "shapely.*",
+]
+ignore_missing_imports = true

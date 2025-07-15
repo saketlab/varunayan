@@ -1,7 +1,7 @@
-Welcome to Eranest's documentation!
+Welcome to Varunayan's documentation!
 ================================
 
-Eranest is a Python package for downloading and processing ERA5 climate data.
+Varunayan is a Python package for downloading and processing ERA5 climate data.
 
 .. toctree::
    :maxdepth: 2

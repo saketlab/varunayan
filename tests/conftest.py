@@ -5,7 +5,7 @@ import shutil
 import json
 import datetime as dt
 from shapely.geometry import Polygon
-from eranest.core import ProcessingParams
+from varunayan.core import ProcessingParams
 from unittest.mock import MagicMock
 
 @pytest.fixture

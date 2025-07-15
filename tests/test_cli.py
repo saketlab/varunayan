@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 import sys
 import os
 
-from eranest.cli import main, parse_flexible_date
+from varunayan.cli import main, parse_flexible_date
 
 class TestParseFlexibleDate:
     """Test the parse_flexible_date function"""
@@ -46,8 +46,8 @@ class TestCLIMain:
         """Set up test fixtures"""
         self.mock_df = MagicMock()
         
-    @patch('eranest.cli.era5ify_geojson')
-    @patch('eranest.cli.get_logger')
+    @patch('varunayan.cli.era5ify_geojson')
+    @patch('varunayan.cli.get_logger')
     def test_geojson_mode_success(self, mock_logger, mock_era5ify_geojson):
         """Test successful execution in geojson mode"""
         mock_era5ify_geojson.return_value = self.mock_df
@@ -79,8 +79,8 @@ class TestCLIMain:
             resolution=0.1
         )
     
-    @patch('eranest.cli.era5ify_bbox')
-    @patch('eranest.cli.get_logger')
+    @patch('varunayan.cli.era5ify_bbox')
+    @patch('varunayan.cli.get_logger')
     def test_bbox_mode_success(self, mock_logger, mock_era5ify_bbox):
         """Test successful execution in bbox mode"""
         mock_era5ify_bbox.return_value = self.mock_df
@@ -118,8 +118,8 @@ class TestCLIMain:
             resolution=0.25
         )
     
-    @patch('eranest.cli.era5ify_point')
-    @patch('eranest.cli.get_logger')
+    @patch('varunayan.cli.era5ify_point')
+    @patch('varunayan.cli.get_logger')
     def test_point_mode_success(self, mock_logger, mock_era5ify_point):
         """Test successful execution in point mode"""
         mock_era5ify_point.return_value = self.mock_df
@@ -151,7 +151,7 @@ class TestCLIMain:
             frequency='monthly'
         )
     
-    @patch('eranest.cli.logger')  # Patch the actual logger instance
+    @patch('varunayan.cli.logger')  # Patch the actual logger instance
     def test_invalid_date_format_error(self, mock_logger):
         test_args = [
             'geojson',
@@ -169,8 +169,8 @@ class TestCLIMain:
             "Error parsing dates: Date '2023/01/01' must be in YYYY-MM-DD or YYYY-M-D format"
         )
     
-    @patch('eranest.cli.era5ify_geojson')
-    @patch('eranest.cli.get_logger')
+    @patch('varunayan.cli.era5ify_geojson')
+    @patch('varunayan.cli.get_logger')
     def test_pressure_levels_parsing(self, mock_logger, mock_era5ify_geojson):
         """Test parsing of pressure levels"""
         mock_era5ify_geojson.return_value = self.mock_df
@@ -193,8 +193,8 @@ class TestCLIMain:
         call_args = mock_era5ify_geojson.call_args[1]
         assert call_args['pressure_levels'] == ['1000', '925', '850', '500']
     
-    @patch('eranest.cli.era5ify_geojson')
-    @patch('eranest.cli.get_logger')
+    @patch('varunayan.cli.era5ify_geojson')
+    @patch('varunayan.cli.get_logger')
     def test_empty_pressure_levels(self, mock_logger, mock_era5ify_geojson):
         """Test handling of empty pressure levels"""
         mock_era5ify_geojson.return_value = self.mock_df
@@ -216,8 +216,8 @@ class TestCLIMain:
         call_args = mock_era5ify_geojson.call_args[1]
         assert call_args['pressure_levels'] == []
     
-    @patch('eranest.cli.era5ify_geojson')
-    @patch('eranest.cli.get_logger')
+    @patch('varunayan.cli.era5ify_geojson')
+    @patch('varunayan.cli.get_logger')
     def test_variable_parsing_with_spaces(self, mock_logger, mock_era5ify_geojson):
         """Test parsing of variables with spaces"""
         mock_era5ify_geojson.return_value = self.mock_df
@@ -238,8 +238,8 @@ class TestCLIMain:
         call_args = mock_era5ify_geojson.call_args[1]
         assert call_args['variables'] == ['temperature', 'humidity', 'wind_speed']
     
-    @patch('eranest.cli.era5ify_geojson')
-    @patch('eranest.cli.get_logger')
+    @patch('varunayan.cli.era5ify_geojson')
+    @patch('varunayan.cli.get_logger')
     def test_default_values(self, mock_logger, mock_era5ify_geojson):
         """Test that default values are used correctly"""
         mock_era5ify_geojson.return_value = self.mock_df
@@ -324,8 +324,8 @@ import pandas as pd
 class TestCLIIntegration:
     """Integration tests for the CLI"""
     
-    @patch('eranest.cli.era5ify_geojson')
-    @patch('eranest.cli.get_logger')
+    @patch('varunayan.cli.era5ify_geojson')
+    @patch('varunayan.cli.get_logger')
     def test_full_workflow_geojson(self, mock_logger, mock_era5ify_geojson):
         """Test a complete workflow with geojson mode"""
         # Create a simple mock DataFrame
@@ -405,10 +405,10 @@ def sample_geojson_file_cli(tmp_path):
     ("bbox", ["--north", "40", "--south", "30", "--east", "-70", "--west", "-80"]),
     ("point", ["--lat", "35.5", "--lon", "-78.5"])
 ])
-@patch('eranest.cli.era5ify_geojson')
-@patch('eranest.cli.era5ify_bbox')
-@patch('eranest.cli.era5ify_point')
-@patch('eranest.cli.get_logger')
+@patch('varunayan.cli.era5ify_geojson')
+@patch('varunayan.cli.era5ify_bbox')
+@patch('varunayan.cli.era5ify_point')
+@patch('varunayan.cli.get_logger')
 def test_all_modes(mock_logger, mock_era5ify_point, mock_era5ify_bbox, 
                    mock_era5ify_geojson, mode, extra_args):
     """Parametrized test for all modes"""

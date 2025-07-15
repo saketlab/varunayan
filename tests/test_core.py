@@ -14,7 +14,7 @@ sys.modules['cdsapi'] = MagicMock()
 sys.modules['urllib.request'] = MagicMock()
 sys.modules['requests'] = MagicMock()
 
-from eranest.core import (
+from varunayan.core import (
     ProcessingParams,
     download_with_retry,
     process_time_chunks,
@@ -36,7 +36,7 @@ from eranest.core import (
 )
 
 # Import the download functions
-from eranest.download.era5_downloader import (
+from varunayan.download.era5_downloader import (
     download_era5_single_lvl,
     download_era5_pressure_lvl
 )
@@ -159,10 +159,10 @@ def test_download_with_retry_pressure_levels_with_mock(pressure_params, tmp_path
     test_file = tmp_path / "test_request.zip"
     test_file.touch()
 
-    # Option 1: If core.py imports like: from eranest.download import download_era5_pressure_lvl
+    # Option 1: If core.py imports like: from varunayan.download import download_era5_pressure_lvl
     # Then patch in core where it's imported:
-    with mock.patch('eranest.core.download_era5_pressure_lvl', return_value=str(test_file)) as mock_download:
-        from eranest.core import download_era5_pressure_lvl
+    with mock.patch('varunayan.core.download_era5_pressure_lvl', return_value=str(test_file)) as mock_download:
+        from varunayan.core import download_era5_pressure_lvl
         result = download_with_retry(download_era5_pressure_lvl, pressure_params)
     
     # Verify the mock was called with pressure_levels
@@ -186,7 +186,7 @@ def test_download_with_retry_failure(mock_sleep, basic_params):
     assert mock_sleep.call_count > 0
 
 
-@patch('eranest.core.process_era5_data')
+@patch('varunayan.core.process_era5_data')
 def test_process_time_chunks_no_chunking(mock_process, basic_params):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
     
@@ -198,7 +198,7 @@ def test_process_time_chunks_no_chunking(mock_process, basic_params):
     assert isinstance(result, pd.DataFrame)
     assert len(result) == 3
 
-@patch('eranest.core.process_era5_data')
+@patch('varunayan.core.process_era5_data')
 def test_process_time_chunks_no_chunking_mo(mock_process, basic_params_mo):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
     
@@ -211,7 +211,7 @@ def test_process_time_chunks_no_chunking_mo(mock_process, basic_params_mo):
     assert len(result) == 3
 
 @patch('time.sleep')
-@patch('eranest.core.process_era5_data')
+@patch('varunayan.core.process_era5_data')
 def test_process_time_chunks_with_chunking(mock_process, basic_params):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
     
@@ -237,7 +237,7 @@ def test_process_time_chunks_with_chunking(mock_process, basic_params):
     assert isinstance(result, pd.DataFrame)
 
 @patch('time.sleep')
-@patch('eranest.core.process_era5_data')
+@patch('varunayan.core.process_era5_data')
 def test_process_time_chunks_with_chunking_mo_pr(mock_process, basic_params):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
     
@@ -263,8 +263,8 @@ def test_process_time_chunks_with_chunking_mo_pr(mock_process, basic_params):
     result = process_time_chunks(chunk_params, None, mock_download_func)
     assert isinstance(result, pd.DataFrame)
 
-@patch('eranest.core.save_results')
-@patch('eranest.core.aggregate_by_frequency')
+@patch('varunayan.core.save_results')
+@patch('varunayan.core.aggregate_by_frequency')
 def test_aggregate_and_save(mock_agg, mock_save, basic_params, temp_dir):
     test_df = pd.DataFrame({
         "valid_time": pd.to_datetime(["2020-01-01", "2020-01-02"]),
@@ -284,7 +284,7 @@ def test_aggregate_and_save(mock_agg, mock_save, basic_params, temp_dir):
     mock_save.assert_called_once()
 
 
-@patch('eranest.core.process_era5')
+@patch('varunayan.core.process_era5')
 def test_era5ify_geojson(mock_process, sample_geojson_file):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
     
@@ -300,7 +300,7 @@ def test_era5ify_geojson(mock_process, sample_geojson_file):
     mock_process.assert_called_once()
 
 
-@patch('eranest.core.process_era5')
+@patch('varunayan.core.process_era5')
 def test_era5ify_bbox(mock_process):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
     
@@ -319,7 +319,7 @@ def test_era5ify_bbox(mock_process):
     mock_process.assert_called_once()
 
 
-@patch('eranest.core.process_era5')
+@patch('varunayan.core.process_era5')
 def test_era5ify_point(mock_process):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
     
@@ -410,9 +410,9 @@ def test_load_and_validate_geojson():
         }]
     }
     
-    with patch('eranest.core.load_json_with_encoding', return_value=mock_geojson), \
-         patch('eranest.core.is_valid_geojson', return_value=True), \
-         patch('eranest.core.logger') as mock_logger:
+    with patch('varunayan.core.load_json_with_encoding', return_value=mock_geojson), \
+         patch('varunayan.core.is_valid_geojson', return_value=True), \
+         patch('varunayan.core.logger') as mock_logger:
         
         # We don't actually need a real file path since we're mocking everything
         result = load_and_validate_geojson("dummy_path.json")
@@ -433,7 +433,7 @@ def test_print_bounding_box():
         west=-122.5
     )
     
-    with patch('eranest.core.logger') as mock_logger:
+    with patch('varunayan.core.logger') as mock_logger:
         print_bounding_box(params)
         
         mock_logger.info.assert_any_call("  North: 38.0000°")
@@ -451,7 +451,7 @@ def test_print_processing_strategy_monthly():
         frequency="monthly"
     )
     
-    with patch('eranest.core.logger') as mock_logger:
+    with patch('varunayan.core.logger') as mock_logger:
         print_processing_strategy(params)
         
         mock_logger.info.assert_any_call("Using monthly dataset: True")
@@ -467,7 +467,7 @@ def test_print_processing_strategy_daily():
         frequency="daily"
     )
     
-    with patch('eranest.core.logger') as mock_logger:
+    with patch('varunayan.core.logger') as mock_logger:
         print_processing_strategy(params)
         
         mock_logger.info.assert_any_call("Using monthly dataset: False")
@@ -530,12 +530,12 @@ def test_cleanup_temp_files(mock_glob, mock_rmtree, mock_remove, mock_exists):
     # So we expect 3 remove calls: temp_geojson_file + zip file + nc file
     assert mock_remove.call_count == 3
 
-@patch('eranest.core.aggregate_and_save')
-@patch('eranest.core.print_bounding_box')
-@patch('eranest.core.print_processing_footer')
-@patch('eranest.core.print_processing_header')
-@patch('eranest.core.validate_inputs')
-@patch('eranest.core.process_time_chunks')
+@patch('varunayan.core.aggregate_and_save')
+@patch('varunayan.core.print_bounding_box')
+@patch('varunayan.core.print_processing_footer')
+@patch('varunayan.core.print_processing_header')
+@patch('varunayan.core.validate_inputs')
+@patch('varunayan.core.process_time_chunks')
 def test_process_era5(mock_print_bbox, mock_footer, mock_header, mock_validate, mock_process, mock_agg):
     """Test main process_era5 function with mocked dependencies"""
     # Setup mock return values
@@ -561,7 +561,7 @@ def test_process_era5(mock_print_bbox, mock_footer, mock_header, mock_validate, 
     mock_process.assert_called_once()
     mock_footer.assert_called_once()
 
-@patch('eranest.core.process_era5')
+@patch('varunayan.core.process_era5')
 def test_era5ify_point_edge_cases(mock_process):
     """Test era5ify_point with edge case coordinates"""
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
@@ -616,16 +616,16 @@ def test_print_processing_header_pressure():
         geojson_file="jfile.json"
     )
     
-    with patch('eranest.core.logger') as mock_logger:
+    with patch('varunayan.core.logger') as mock_logger:
         print_processing_header(params)
         mock_logger.info.assert_any_call("Pressure Levels: ['500', '850']")
 
 import numpy as np
 
-@patch('eranest.core.logger')
-@patch('eranest.core.filter_netcdf_by_shapefile')
-@patch('eranest.core.extract_download')
-@patch('eranest.core.download_with_retry')
+@patch('varunayan.core.logger')
+@patch('varunayan.core.filter_netcdf_by_shapefile')
+@patch('varunayan.core.extract_download')
+@patch('varunayan.core.download_with_retry')
 @patch('xarray.open_dataset')
 def test_process_era5_data_single_level_success(mock_open_dataset, mock_download, mock_extract, mock_filter, mock_logger, basic_params):
     """Test successful processing of single level data"""
@@ -665,10 +665,10 @@ def test_process_era5_data_single_level_success(mock_open_dataset, mock_download
     mock_open_dataset.assert_called_once_with(mock_nc_file)
     mock_logger.info.assert_called()
 
-@patch('eranest.core.logger')
-@patch('eranest.core.filter_netcdf_by_shapefile')
-@patch('eranest.core.extract_download')
-@patch('eranest.core.download_with_retry')
+@patch('varunayan.core.logger')
+@patch('varunayan.core.filter_netcdf_by_shapefile')
+@patch('varunayan.core.extract_download')
+@patch('varunayan.core.download_with_retry')
 @patch('xarray.open_dataset')
 def test_process_era5_data_pressure_level_success(mock_open_dataset, mock_download, mock_extract, mock_filter, mock_logger, pressure_params):
     """Test successful processing of pressure level data"""
@@ -704,10 +704,10 @@ def test_process_era5_data_pressure_level_success(mock_open_dataset, mock_downlo
     # The first argument should be the pressure level download function
     assert 'pressure_lvl' in str(call_args[0][0])
 
-@patch('eranest.core.logger')
-@patch('eranest.core.filter_netcdf_by_shapefile')
-@patch('eranest.core.extract_download')
-@patch('eranest.core.download_with_retry')
+@patch('varunayan.core.logger')
+@patch('varunayan.core.filter_netcdf_by_shapefile')
+@patch('varunayan.core.extract_download')
+@patch('varunayan.core.download_with_retry')
 @patch('xarray.open_dataset')
 def test_process_era5_data_with_geojson_filtering(mock_open_dataset, mock_download, mock_extract, mock_filter, mock_logger, basic_params):
     """Test processing with GeoJSON filtering"""
@@ -747,9 +747,9 @@ def test_process_era5_data_with_geojson_filtering(mock_open_dataset, mock_downlo
     assert len(result) == 10  # Should match filtered data
     mock_filter.assert_called_once_with(mock_ds, basic_params.geojson_data)
 
-@patch('eranest.core.logger')
-@patch('eranest.core.extract_download')
-@patch('eranest.core.download_with_retry')
+@patch('varunayan.core.logger')
+@patch('varunayan.core.extract_download')
+@patch('varunayan.core.download_with_retry')
 @patch('xarray.open_dataset')
 def test_process_era5_data_multiple_files(mock_open_dataset, mock_download, mock_extract, mock_logger, basic_params):
     """Test processing multiple NetCDF files"""
@@ -788,9 +788,9 @@ def test_process_era5_data_multiple_files(mock_open_dataset, mock_download, mock
     # Verify both files were processed
     assert mock_open_dataset.call_count == 2
 
-@patch('eranest.core.logger')
-@patch('eranest.core.extract_download')
-@patch('eranest.core.download_with_retry')
+@patch('varunayan.core.logger')
+@patch('varunayan.core.extract_download')
+@patch('varunayan.core.download_with_retry')
 @patch('xarray.open_dataset')
 def test_process_era5_data_with_duplicates(mock_open_dataset, mock_download, mock_extract, mock_logger, basic_params):
     """Test duplicate removal functionality"""
@@ -820,9 +820,9 @@ def test_process_era5_data_with_duplicates(mock_open_dataset, mock_download, moc
     # Should still return DataFrame even with duplicates
     assert isinstance(result, pd.DataFrame)
 
-@patch('eranest.core.logger')
-@patch('eranest.core.extract_download')
-@patch('eranest.core.download_with_retry')
+@patch('varunayan.core.logger')
+@patch('varunayan.core.extract_download')
+@patch('varunayan.core.download_with_retry')
 def test_process_era5_data_no_valid_files(mock_download, mock_extract, mock_logger, basic_params):
     """Test handling of no valid NetCDF files"""
     # Setup mock data with no .nc files
@@ -833,9 +833,9 @@ def test_process_era5_data_no_valid_files(mock_download, mock_extract, mock_logg
     with pytest.raises(ValueError, match="No valid datasets were processed"):
         process_era5_data(basic_params)
 
-@patch('eranest.core.logger')
-@patch('eranest.core.extract_download')
-@patch('eranest.core.download_with_retry')
+@patch('varunayan.core.logger')
+@patch('varunayan.core.extract_download')
+@patch('varunayan.core.download_with_retry')
 @patch('xarray.open_dataset')
 def test_process_era5_data_file_processing_error(mock_open_dataset, mock_download, mock_extract, mock_logger, basic_params):
     """Test handling of file processing errors"""
@@ -865,9 +865,9 @@ def test_process_era5_data_file_processing_error(mock_open_dataset, mock_downloa
     # Should log error for the bad file
     mock_logger.error.assert_called()
 
-@patch('eranest.core.logger')
-@patch('eranest.core.extract_download')
-@patch('eranest.core.download_with_retry')
+@patch('varunayan.core.logger')
+@patch('varunayan.core.extract_download')
+@patch('varunayan.core.download_with_retry')
 @patch('xarray.open_dataset')
 def test_process_era5_data_with_chunk_info(mock_open_dataset, mock_download, mock_extract, mock_logger, basic_params):
     """Test processing with chunk information"""
@@ -901,9 +901,9 @@ def test_process_era5_data_with_chunk_info(mock_open_dataset, mock_download, moc
     # The chunk_id should be passed as the third argument
     assert "chunk1" in str(call_args)
 
-@patch('eranest.core.logger')
-@patch('eranest.core.extract_download')
-@patch('eranest.core.download_with_retry')
+@patch('varunayan.core.logger')
+@patch('varunayan.core.extract_download')
+@patch('varunayan.core.download_with_retry')
 @patch('xarray.open_dataset')
 def test_process_era5_data_all_files_fail(mock_open_dataset, mock_download, mock_extract, mock_logger, basic_params):
     """Test when all files fail to process"""
