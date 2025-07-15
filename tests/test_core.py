@@ -150,19 +150,16 @@ def test_download_with_retry_success_mo(basic_params_mo, tmp_path):
     assert result == str(test_file)
 
 
-def test_download_with_retry_pressure_levels_with_mock(
-    pressure_params, tmp_path
-):
+def test_download_with_retry_pressure_levels_with_mock(pressure_params, tmp_path):
     # Setup test file
     test_file = tmp_path / "test_request.zip"
     test_file.touch()
 
-    # Option 1: If core.py imports like: 
+    # Option 1: If core.py imports like:
     # from varunayan.download import download_era5_pressure_lvl
     # Then patch in core where it's imported:
     with mock.patch(
-        "varunayan.core.download_era5_pressure_lvl", 
-        return_value=str(test_file)
+        "varunayan.core.download_era5_pressure_lvl", return_value=str(test_file)
     ) as mock_download:
         from varunayan.core import download_era5_pressure_lvl as download_func
 
@@ -172,9 +169,7 @@ def test_download_with_retry_pressure_levels_with_mock(
     mock_download.assert_called_once()
     call_args = mock_download.call_args[1]
     print("Call args:", call_args)
-    assert "pressure_levels" in call_args, (
-        f"pressure_levels not found in {call_args}"
-    )
+    assert "pressure_levels" in call_args, f"pressure_levels not found in {call_args}"
     assert call_args["pressure_levels"] == pressure_params.pressure_levels
 
     assert result == str(test_file)
@@ -397,7 +392,7 @@ def test_adjust_sum_variables_yearly():
     assert test_df["tp"][0] == original_df["tp"][0] * 30.4375
     assert test_df["ssr"][0] == (original_df["ssr"][0] * 30.4375)
     # Month column unchanged
-    assert (test_df["month"][0] == original_df["month"][0])
+    assert test_df["month"][0] == original_df["month"][0]
 
 
 def test_adjust_sum_variables_no_sum_vars():
@@ -433,9 +428,7 @@ def test_load_and_validate_geojson():
 
     with patch(
         "varunayan.core.load_json_with_encoding", return_value=mock_geojson
-    ), patch(
-        "varunayan.core.is_valid_geojson", return_value=True
-    ), patch(
+    ), patch("varunayan.core.is_valid_geojson", return_value=True), patch(
         "varunayan.core.logger"
     ) as mock_logger:
 
@@ -639,9 +632,7 @@ def test_adjust_sum_variables_edge_cases():
     adjust_sum_variables(empty_df, "monthly")  # Should not raise any errors
 
     # Test with DataFrame containing only sum variables
-    sum_df = pd.DataFrame(
-        {"year": [2020], "month": [1], "tp": [10], "ssr": [100]}
-    )
+    sum_df = pd.DataFrame({"year": [2020], "month": [1], "tp": [10], "ssr": [100]})
     original_sum_df = sum_df.copy()
     adjust_sum_variables(sum_df, "monthly")
     assert not sum_df.equals(original_sum_df)  # Values should have changed

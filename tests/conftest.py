@@ -111,9 +111,7 @@ def mock_dataframe():
     """Create a mock DataFrame for testing"""
     mock_df = MagicMock()
     mock_df.shape = (100, 5)
-    mock_df.columns = [
-        "time", "latitude", "longitude", "temperature", "humidity"
-    ]
+    mock_df.columns = ["time", "latitude", "longitude", "temperature", "humidity"]
     return mock_df
 
 
@@ -142,9 +140,7 @@ def sample_geojson_file_cli():
         ],
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".geojson", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".geojson", delete=False) as f:
         json.dump(geojson_content, f)
         temp_file = f.name
 
@@ -172,9 +168,7 @@ def sample_json_file():
         ]
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(json_content, f)
         temp_file = f.name
 
@@ -248,9 +242,7 @@ def pytest_configure(config):
         "markers",
         "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
-    config.addinivalue_line(
-        "markers", "integration: marks tests as integration tests"
-    )
+    config.addinivalue_line("markers", "integration: marks tests as integration tests")
     config.addinivalue_line("markers", "unit: marks tests as unit tests")
 
 

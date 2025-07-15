@@ -268,9 +268,7 @@ class TestCLIMain:
 
     @patch("varunayan.cli.era5ify_geojson")
     @patch("varunayan.cli.get_logger")
-    def test_variable_parsing_with_spaces(
-        self, mock_logger, mock_era5ify_geojson
-    ):
+    def test_variable_parsing_with_spaces(self, mock_logger, mock_era5ify_geojson):
         """Test parsing of variables with spaces"""
         mock_era5ify_geojson.return_value = self.mock_df
 
@@ -293,9 +291,7 @@ class TestCLIMain:
 
         # Check that variables were parsed correctly
         call_args = mock_era5ify_geojson.call_args[1]
-        assert call_args["variables"] == [
-            "temperature", "humidity", "wind_speed"
-        ]
+        assert call_args["variables"] == ["temperature", "humidity", "wind_speed"]
 
     @patch("varunayan.cli.era5ify_geojson")
     @patch("varunayan.cli.get_logger")
@@ -447,16 +443,12 @@ class TestCLIIntegration:
         call_args = mock_era5ify_geojson.call_args[1]
 
         assert call_args["request_id"] == "full-test-123"
-        assert call_args["variables"] == [
-            "temperature", "humidity", "wind_speed"
-        ]
+        assert call_args["variables"] == ["temperature", "humidity", "wind_speed"]
         assert call_args["start_date"] == "2023-01-01"
         assert call_args["end_date"] == "2023-12-31"
         assert call_args["json_file"] == "/path/to/regions.geojson"
         assert call_args["dataset_type"] == "pressure"
-        assert call_args["pressure_levels"] == [
-            "1000", "925", "850", "700", "500"
-        ]
+        assert call_args["pressure_levels"] == ["1000", "925", "850", "700", "500"]
         assert call_args["frequency"] == "daily"
         assert call_args["resolution"] == 0.1
 
@@ -476,10 +468,7 @@ def sample_geojson_file_cli(tmp_path):
         "features": [
             {
                 "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [-74.0059, 40.7128]
-                },
+                "geometry": {"type": "Point", "coordinates": [-74.0059, 40.7128]},
                 "properties": {"name": "New York City"},
             }
         ],
@@ -497,13 +486,7 @@ def sample_geojson_file_cli(tmp_path):
     "mode,extra_args",
     [
         ("geojson", ["--geojson", "test.geojson"]),
-        (
-            "bbox",
-            [
-                "--north", "40", "--south", "30",
-                "--east", "-70", "--west", "-80"
-            ]
-        ),
+        ("bbox", ["--north", "40", "--south", "30", "--east", "-70", "--west", "-80"]),
         ("point", ["--lat", "35.5", "--lon", "-78.5"]),
     ],
 )

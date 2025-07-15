@@ -283,15 +283,13 @@ mean_rates_variables = [
     {
         "name": "mean_sub_surface_runoff_rate",
         "description": (
-            "Mean rate of subsurface (percolation) runoff. "
-            "Unit: kg·m⁻²·s⁻¹ (mm/s)."
+            "Mean rate of subsurface (percolation) runoff. " "Unit: kg·m⁻²·s⁻¹ (mm/s)."
         ),
     },
     {
         "name": "mean_surface_direct_short_wave_radiation_flux",
         "description": (
-            "Mean downwelling direct solar radiation at the surface. "
-            "Unit: W/m²."
+            "Mean downwelling direct solar radiation at the surface. " "Unit: W/m²."
         ),
     },
     {
@@ -311,8 +309,7 @@ mean_rates_variables = [
     {
         "name": "mean_surface_downward_long_wave_radiation_flux_clear_sky",
         "description": (
-            "Clear-sky estimate of downward long-wave radiation. "
-            "Unit: W/m²."
+            "Clear-sky estimate of downward long-wave radiation. " "Unit: W/m²."
         ),
     },
     {
@@ -324,15 +321,12 @@ mean_rates_variables = [
     },
     {
         "name": "mean_surface_downward_short_wave_radiation_flux_clear_sky",
-        "description": (
-            "Clear-sky downwelling solar radiation. Unit: W/m²."
-        ),
+        "description": ("Clear-sky downwelling solar radiation. Unit: W/m²."),
     },
     {
         "name": "mean_surface_downward_uv_radiation_flux",
         "description": (
-            "Mean downwelling ultraviolet radiation flux at the surface. "
-            "Unit: W/m²."
+            "Mean downwelling ultraviolet radiation flux at the surface. " "Unit: W/m²."
         ),
     },
     {
@@ -352,8 +346,7 @@ mean_rates_variables = [
     {
         "name": "mean_surface_net_long_wave_radiation_flux_clear_sky",
         "description": (
-            "Clear-sky net long-wave radiation at the surface. "
-            "Unit: W/m²."
+            "Clear-sky net long-wave radiation at the surface. " "Unit: W/m²."
         ),
     },
     {
@@ -370,8 +363,7 @@ mean_rates_variables = [
     {
         "name": "mean_surface_runoff_rate",
         "description": (
-            "Mean total surface runoff (overland flow) rate. "
-            "Unit: kg·m⁻²·s⁻¹."
+            "Mean total surface runoff (overland flow) rate. " "Unit: kg·m⁻²·s⁻¹."
         ),
     },
     {
@@ -384,35 +376,29 @@ mean_rates_variables = [
     {
         "name": "mean_top_downward_short_wave_radiation_flux",
         "description": (
-            "Mean downwelling solar radiation at top of atmosphere. "
-            "Unit: W/m²."
+            "Mean downwelling solar radiation at top of atmosphere. " "Unit: W/m²."
         ),
     },
     {
         "name": "mean_top_net_long_wave_radiation_flux",
         "description": (
-            "Mean net long-wave radiation at top of atmosphere. "
-            "Unit: W/m²."
+            "Mean net long-wave radiation at top of atmosphere. " "Unit: W/m²."
         ),
     },
     {
         "name": "mean_top_net_long_wave_radiation_flux_clear_sky",
         "description": (
-            "Clear-sky net long-wave radiation at the top of atmosphere. "
-            "Unit: W/m²."
+            "Clear-sky net long-wave radiation at the top of atmosphere. " "Unit: W/m²."
         ),
     },
     {
         "name": "mean_top_net_short_wave_radiation_flux",
-        "description": (
-            "Mean net solar radiation at top of atmosphere. Unit: W/m²."
-        ),
+        "description": ("Mean net solar radiation at top of atmosphere. Unit: W/m²."),
     },
     {
         "name": "mean_top_net_short_wave_radiation_flux_clear_sky",
         "description": (
-            "Clear-sky net short-wave radiation at top of atmosphere. "
-            "Unit: W/m²."
+            "Clear-sky net short-wave radiation at top of atmosphere. " "Unit: W/m²."
         ),
     },
     {
@@ -498,8 +484,7 @@ heat_and_radiation_variables = [
     {
         "name": "surface_net_solar_radiation_clear_sky",
         "description": (
-            "Net surface solar radiation "
-            "under clear-sky conditions. Unit: W/m²."
+            "Net surface solar radiation " "under clear-sky conditions. Unit: W/m²."
         ),
     },
     {
@@ -512,8 +497,7 @@ heat_and_radiation_variables = [
     {
         "name": "surface_net_thermal_radiation_clear_sky",
         "description": (
-            "Net surface thermal radiation "
-            "under clear-sky conditions. Unit: W/m²."
+            "Net surface thermal radiation " "under clear-sky conditions. Unit: W/m²."
         ),
     },
     {
@@ -533,8 +517,7 @@ heat_and_radiation_variables = [
     {
         "name": "surface_solar_radiation_downwards",
         "description": (
-            "Total downward solar (short-wave) radiation "
-            "at the surface. Unit: W/m²."
+            "Total downward solar (short-wave) radiation " "at the surface. Unit: W/m²."
         ),
     },
     {
@@ -727,8 +710,7 @@ lake_variables = [
     {
         "name": "lake_depth",
         "description": (
-            "Total depth of the lake at "
-            "a given location. Unit: meters (m)."
+            "Total depth of the lake at " "a given location. Unit: meters (m)."
         ),
     },
     {
@@ -740,10 +722,7 @@ lake_variables = [
     },
     {
         "name": "lake_ice_temperature",
-        "description": (
-            "Temperature of the lake's "
-            "ice layer. Unit: Kelvin (K)."
-        ),
+        "description": ("Temperature of the lake's " "ice layer. Unit: Kelvin (K)."),
     },
     {
         "name": "lake_mix_layer_depth",
@@ -756,8 +735,7 @@ lake_variables = [
     {
         "name": "lake_mix_layer_temperature",
         "description": (
-            "Temperature of the mixed layer "
-            "in the lake. Unit: Kelvin (K)."
+            "Temperature of the mixed layer " "in the lake. Unit: Kelvin (K)."
         ),
     },
     {
@@ -771,8 +749,7 @@ lake_variables = [
     {
         "name": "lake_total_layer_temperature",
         "description": (
-            "Average temperature of the entire "
-            "lake water column. Unit: Kelvin (K)."
+            "Average temperature of the entire " "lake water column. Unit: Kelvin (K)."
         ),
     },
 ]
@@ -865,18 +842,14 @@ precipitation_variables = [
         ),
     },
     {
-        "name": (
-            "maximum_total_precipitation_rate_since_previous_post_processing"
-        ),
+        "name": ("maximum_total_precipitation_rate_since_previous_post_processing"),
         "description": (
             "Maximum observed total precipitation rate since last "
             "processing step. Unit: meters per second (m/s)."
         ),
     },
     {
-        "name": (
-            "minimum_total_precipitation_rate_since_previous_post_processing"
-        ),
+        "name": ("minimum_total_precipitation_rate_since_previous_post_processing"),
         "description": (
             "Minimum observed total precipitation rate since last "
             "processing step. Unit: meters per second (m/s)."
@@ -944,10 +917,7 @@ snow_variables = [
     },
     {
         "name": "snow_density",
-        "description": (
-            "Density of snow. Unit: "
-            "kilograms per cubic meter (kg/m³)."
-        ),
+        "description": ("Density of snow. Unit: " "kilograms per cubic meter (kg/m³)."),
     },
     {
         "name": "snow_depth",
@@ -970,15 +940,13 @@ snow_variables = [
     {
         "name": "snowmelt",
         "description": (
-            "Snow that has melted. Unit: "
-            "meters (m) of water equivalent."
+            "Snow that has melted. Unit: " "meters (m) of water equivalent."
         ),
     },
     {
         "name": "temperature_of_snow_layer",
         "description": (
-            "Temperature of the snow layer "
-            "at the surface. Unit: Kelvin (K)."
+            "Temperature of the snow layer " "at the surface. Unit: Kelvin (K)."
         ),
     },
     {
@@ -994,36 +962,31 @@ soil_variables = [
     {
         "name": "soil_temperature_level_1",
         "description": (
-            "Soil temperature in the topmost "
-            "layer (0–7 cm). Unit: Kelvin (K)."
+            "Soil temperature in the topmost " "layer (0–7 cm). Unit: Kelvin (K)."
         ),
     },
     {
         "name": "soil_temperature_level_2",
         "description": (
-            "Soil temperature in the second "
-            "layer (7–28 cm). Unit: Kelvin (K)."
+            "Soil temperature in the second " "layer (7–28 cm). Unit: Kelvin (K)."
         ),
     },
     {
         "name": "soil_temperature_level_3",
         "description": (
-            "Soil temperature in the third "
-            "layer (28–100 cm). Unit: Kelvin (K)."
+            "Soil temperature in the third " "layer (28–100 cm). Unit: Kelvin (K)."
         ),
     },
     {
         "name": "soil_temperature_level_4",
         "description": (
-            "Soil temperature in the deepest "
-            "layer (100–289 cm). Unit: Kelvin (K)."
+            "Soil temperature in the deepest " "layer (100–289 cm). Unit: Kelvin (K)."
         ),
     },
     {
         "name": "soil_type",
         "description": (
-            "Categorical soil type based on "
-            "FAO classification. Unit: integer code."
+            "Categorical soil type based on " "FAO classification. Unit: integer code."
         ),
     },
     {
@@ -1036,22 +999,19 @@ soil_variables = [
     {
         "name": "volumetric_soil_water_layer_2",
         "description": (
-            "Volumetric soil moisture in second "
-            "layer (7–28 cm). Unit: m³/m³."
+            "Volumetric soil moisture in second " "layer (7–28 cm). Unit: m³/m³."
         ),
     },
     {
         "name": "volumetric_soil_water_layer_3",
         "description": (
-            "Volumetric soil moisture in third "
-            "layer (28–100 cm). Unit: m³/m³."
+            "Volumetric soil moisture in third " "layer (28–100 cm). Unit: m³/m³."
         ),
     },
     {
         "name": "volumetric_soil_water_layer_4",
         "description": (
-            "Volumetric soil moisture in fourth "
-            "layer (100–289 cm). Unit: m³/m³."
+            "Volumetric soil moisture in fourth " "layer (100–289 cm). Unit: m³/m³."
         ),
     },
 ]
@@ -1081,8 +1041,7 @@ vertical_integral_variables = [
     {
         "name": "vertical_integral_of_divergence_of_kinetic_energy_flux",
         "description": (
-            "Divergence of kinetic energy "
-            "flux integrated vertically. Unit: W/m²"
+            "Divergence of kinetic energy " "flux integrated vertically. Unit: W/m²"
         ),
     },
     {
@@ -1102,22 +1061,19 @@ vertical_integral_variables = [
     {
         "name": "vertical_integral_of_divergence_of_ozone_flux",
         "description": (
-            "Divergence of ozone flux "
-            "vertically integrated. Unit: kg·m⁻²·s⁻¹"
+            "Divergence of ozone flux " "vertically integrated. Unit: kg·m⁻²·s⁻¹"
         ),
     },
     {
         "name": "vertical_integral_of_divergence_of_thermal_energy_flux",
         "description": (
-            "Divergence of thermal energy "
-            "flux integrated vertically. Unit: W/m²"
+            "Divergence of thermal energy " "flux integrated vertically. Unit: W/m²"
         ),
     },
     {
         "name": "vertical_integral_of_divergence_of_total_energy_flux",
         "description": (
-            "Divergence of total energy "
-            "flux integrated vertically. Unit: W/m²"
+            "Divergence of total energy " "flux integrated vertically. Unit: W/m²"
         ),
     },
     {
@@ -1145,8 +1101,7 @@ vertical_integral_variables = [
     {
         "name": "vertical_integral_of_eastward_kinetic_energy_flux",
         "description": (
-            "Eastward kinetic energy flux "
-            "vertically integrated. Unit: W/m"
+            "Eastward kinetic energy flux " "vertically integrated. Unit: W/m"
         ),
     },
     {
@@ -1156,29 +1111,25 @@ vertical_integral_variables = [
     {
         "name": "vertical_integral_of_eastward_ozone_flux",
         "description": (
-            "Eastward ozone mass flux "
-            "integrated vertically. Unit: kg·m⁻¹·s⁻¹"
+            "Eastward ozone mass flux " "integrated vertically. Unit: kg·m⁻¹·s⁻¹"
         ),
     },
     {
         "name": "vertical_integral_of_eastward_total_energy_flux",
         "description": (
-            "Eastward flux of total "
-            "energy vertically integrated. Unit: W/m"
+            "Eastward flux of total " "energy vertically integrated. Unit: W/m"
         ),
     },
     {
         "name": "vertical_integral_of_eastward_water_vapour_flux",
         "description": (
-            "Eastward flux of water "
-            "vapour integrated vertically. Unit: kg·m⁻¹·s⁻¹"
+            "Eastward flux of water " "vapour integrated vertically. Unit: kg·m⁻¹·s⁻¹"
         ),
     },
     {
         "name": "vertical_integral_of_energy_conversion",
         "description": (
-            "Energy conversion term integrated "
-            "over atmosphere. Unit: W/m²"
+            "Energy conversion term integrated " "over atmosphere. Unit: W/m²"
         ),
     },
     {
@@ -1198,17 +1149,11 @@ vertical_integral_variables = [
     },
     {
         "name": "vertical_integral_of_northward_cloud_frozen_water_flux",
-        "description": (
-            "Northward flux of frozen "
-            "cloud water. Unit: kg·m⁻¹·s⁻¹"
-        ),
+        "description": ("Northward flux of frozen " "cloud water. Unit: kg·m⁻¹·s⁻¹"),
     },
     {
         "name": "vertical_integral_of_northward_cloud_liquid_water_flux",
-        "description": (
-            "Northward flux of liquid "
-            "cloud water. Unit: kg·m⁻¹·s⁻¹"
-        ),
+        "description": ("Northward flux of liquid " "cloud water. Unit: kg·m⁻¹·s⁻¹"),
     },
     {
         "name": "vertical_integral_of_northward_geopotential_flux",
@@ -1229,8 +1174,7 @@ vertical_integral_variables = [
     {
         "name": "vertical_integral_of_northward_ozone_flux",
         "description": (
-            "Northward ozone flux "
-            "vertically integrated. Unit: kg·m⁻¹·s⁻¹"
+            "Northward ozone flux " "vertically integrated. Unit: kg·m⁻¹·s⁻¹"
         ),
     },
     {
@@ -1244,8 +1188,7 @@ vertical_integral_variables = [
     {
         "name": "vertical_integral_of_potential_and_internal_energy",
         "description": (
-            "Vertically integrated potential and "
-            "internal energy. Unit: J/m²"
+            "Vertically integrated potential and " "internal energy. Unit: J/m²"
         ),
     },
     {
@@ -1258,15 +1201,13 @@ vertical_integral_variables = [
     {
         "name": "vertical_integral_of_temperature",
         "description": (
-            "Vertical integral of temperature "
-            "over atmospheric column. Unit: K·m"
+            "Vertical integral of temperature " "over atmospheric column. Unit: K·m"
         ),
     },
     {
         "name": "vertical_integral_of_thermal_energy",
         "description": (
-            "Thermal energy integrated over "
-            "the full column. Unit: J/m²"
+            "Thermal energy integrated over " "the full column. Unit: J/m²"
         ),
     },
     {
@@ -1304,16 +1245,12 @@ vegetation_variables = [
     {
         "name": "leaf_area_index_low_vegetation",
         "description": (
-            "Leaf area index for low "
-            "vegetation (e.g. grasses, shrubs). Unit: m²/m²"
+            "Leaf area index for low " "vegetation (e.g. grasses, shrubs). Unit: m²/m²"
         ),
     },
     {
         "name": "low_vegetation_cover",
-        "description": (
-            "Fraction of ground covered "
-            "by low vegetation. Unit: (0–1)"
-        ),
+        "description": ("Fraction of ground covered " "by low vegetation. Unit: (0–1)"),
     },
     {
         "name": "type_of_high_vegetation",
@@ -1346,8 +1283,7 @@ ocean_wave_variables = [
     {
         "name": "free_convective_velocity_over_the_oceans",
         "description": (
-            "Characteristic velocity of "
-            "convective turbulence. Unit: m/s"
+            "Characteristic velocity of " "convective turbulence. Unit: m/s"
         ),
     },
     {
@@ -1399,10 +1335,7 @@ ocean_wave_variables = [
     },
     {
         "name": "mean_wave_period_based_on_first_moment",
-        "description": (
-            "Mean wave period based on "
-            "spectral first moment. Unit: s"
-        ),
+        "description": ("Mean wave period based on " "spectral first moment. Unit: s"),
     },
     {
         "name": "mean_wave_period_based_on_first_moment_for_swell",
@@ -1410,10 +1343,7 @@ ocean_wave_variables = [
     },
     {
         "name": "mean_wave_period_based_on_first_moment_for_wind_waves",
-        "description": (
-            "Mean period of wind waves "
-            "based on first moment. Unit: s"
-        ),
+        "description": ("Mean period of wind waves " "based on first moment. Unit: s"),
     },
     {
         "name": "mean_wave_period_based_on_second_moment_for_swell",
@@ -1421,10 +1351,7 @@ ocean_wave_variables = [
     },
     {
         "name": "mean_wave_period_based_on_second_moment_for_wind_waves",
-        "description": (
-            "Mean period of wind waves "
-            "based on second moment. Unit: s"
-        ),
+        "description": ("Mean period of wind waves " "based on second moment. Unit: s"),
     },
     {
         "name": "mean_wave_period_of_first_swell_partition",
@@ -1440,10 +1367,7 @@ ocean_wave_variables = [
     },
     {
         "name": "mean_zero_crossing_wave_period",
-        "description": (
-            "Mean time between successive "
-            "wave zero-crossings. Unit: s"
-        ),
+        "description": ("Mean time between successive " "wave zero-crossings. Unit: s"),
     },
     {
         "name": "model_bathymetry",
@@ -1459,16 +1383,12 @@ ocean_wave_variables = [
     {
         "name": "normalized_energy_flux_into_waves",
         "description": (
-            "Normalized rate of energy input "
-            "into wave field. Unit: dimensionless"
+            "Normalized rate of energy input " "into wave field. Unit: dimensionless"
         ),
     },
     {
         "name": "normalized_stress_into_ocean",
-        "description": (
-            "Normalized surface stress "
-            "into ocean. Unit: dimensionless"
-        ),
+        "description": ("Normalized surface stress " "into ocean. Unit: dimensionless"),
     },
     {
         "name": "ocean_surface_stress_equivalent_10m_neutral_wind_direction",
@@ -1495,8 +1415,7 @@ ocean_wave_variables = [
     {
         "name": "significant_height_of_combined_wind_waves_and_swell",
         "description": (
-            "Significant wave height from combined "
-            "wind waves and swell. Unit: m"
+            "Significant wave height from combined " "wind waves and swell. Unit: m"
         ),
     },
     {
@@ -1521,17 +1440,11 @@ ocean_wave_variables = [
     },
     {
         "name": "wave_spectral_directional_width",
-        "description": (
-            "Spread of wave energy "
-            "across directions. Unit: degrees"
-        ),
+        "description": ("Spread of wave energy " "across directions. Unit: degrees"),
     },
     {
         "name": "wave_spectral_directional_width_for_swell",
-        "description": (
-            "Directional spread of swell "
-            "wave energy. Unit: degrees"
-        ),
+        "description": ("Directional spread of swell " "wave energy. Unit: degrees"),
     },
     {
         "name": "wave_spectral_directional_width_for_wind_waves",
@@ -1547,15 +1460,13 @@ ocean_wave_variables = [
     {
         "name": "wave_spectral_peakedness",
         "description": (
-            "Measure of how peaked the "
-            "wave spectrum is. Unit: dimensionless"
+            "Measure of how peaked the " "wave spectrum is. Unit: dimensionless"
         ),
     },
     {
         "name": "wave_spectral_skewness",
         "description": (
-            "Asymmetry of the wave "
-            "spectral distribution. Unit: dimensionless"
+            "Asymmetry of the wave " "spectral distribution. Unit: dimensionless"
         ),
     },
 ]
@@ -1568,8 +1479,7 @@ other_variables = [
     {
         "name": "anisotropy_of_sub_gridscale_orography",
         "description": (
-            "Degree of anisotropy in "
-            "sub-grid orography. Unit: dimensionless"
+            "Degree of anisotropy in " "sub-grid orography. Unit: dimensionless"
         ),
     },
     {
@@ -1612,8 +1522,7 @@ other_variables = [
     {
         "name": "eastward_gravity_wave_surface_stress",
         "description": (
-            "Zonal stress from gravity waves "
-            "at the surface. Unit: N/m²"
+            "Zonal stress from gravity waves " "at the surface. Unit: N/m²"
         ),
     },
     {
@@ -1623,8 +1532,7 @@ other_variables = [
     {
         "name": "forecast_albedo",
         "description": (
-            "Forecasted surface albedo "
-            "(reflectivity). Unit: 0–1 (dimensionless)"
+            "Forecasted surface albedo " "(reflectivity). Unit: 0–1 (dimensionless)"
         ),
     },
     {
@@ -1637,10 +1545,7 @@ other_variables = [
     },
     {
         "name": "geopotential",
-        "description": (
-            "Gravitational potential energy per "
-            "unit mass. Unit: m²/s²"
-        ),
+        "description": ("Gravitational potential energy per " "unit mass. Unit: m²/s²"),
     },
     {
         "name": "gravity_wave_dissipation",
@@ -1649,8 +1554,7 @@ other_variables = [
     {
         "name": "instantaneous_eastward_turbulent_surface_stress",
         "description": (
-            "Instantaneous zonal turbulent stress "
-            "at surface. Unit: N/m²"
+            "Instantaneous zonal turbulent stress " "at surface. Unit: N/m²"
         ),
     },
     {
@@ -1660,23 +1564,18 @@ other_variables = [
     {
         "name": "instantaneous_northward_turbulent_surface_stress",
         "description": (
-            "Instantaneous meridional turbulent stress "
-            "at surface. Unit: N/m²"
+            "Instantaneous meridional turbulent stress " "at surface. Unit: N/m²"
         ),
     },
     {
         "name": "k_index",
         "description": (
-            "Thunderstorm potential index based on "
-            "temperature and humidity. Unit: K"
+            "Thunderstorm potential index based on " "temperature and humidity. Unit: K"
         ),
     },
     {
         "name": "land_sea_mask",
-        "description": (
-            "Binary mask for land (1) "
-            "or sea (0). Unit: dimensionless"
-        ),
+        "description": ("Binary mask for land (1) " "or sea (0). Unit: dimensionless"),
     },
     {
         "name": "mean_vertical_gradient_of_refractivity_inside_trapping_layer",
@@ -1686,19 +1585,15 @@ other_variables = [
         ),
     },
     {
-        "name": (
-            "minimum_vertical_gradient_of_refractivity_inside_trapping_layer"
-        ),
+        "name": ("minimum_vertical_gradient_of_refractivity_inside_trapping_layer"),
         "description": (
-            "Minimum gradient of refractivity "
-            "in trapping layer. Unit: N-units/km"
+            "Minimum gradient of refractivity " "in trapping layer. Unit: N-units/km"
         ),
     },
     {
         "name": "northward_gravity_wave_surface_stress",
         "description": (
-            "Meridional stress from gravity waves "
-            "at the surface. Unit: N/m²"
+            "Meridional stress from gravity waves " "at the surface. Unit: N/m²"
         ),
     },
     {
@@ -1708,8 +1603,7 @@ other_variables = [
     {
         "name": "sea_ice_cover",
         "description": (
-            "Fraction of area covered by "
-            "sea ice. Unit: 0–1 (dimensionless)"
+            "Fraction of area covered by " "sea ice. Unit: 0–1 (dimensionless)"
         ),
     },
     {
@@ -1719,8 +1613,7 @@ other_variables = [
     {
         "name": "slope_of_sub_gridscale_orography",
         "description": (
-            "Average slope of terrain "
-            "below model resolution. Unit: radians"
+            "Average slope of terrain " "below model resolution. Unit: radians"
         ),
     },
     {
@@ -1729,10 +1622,7 @@ other_variables = [
     },
     {
         "name": "standard_deviation_of_orography",
-        "description": (
-            "Standard deviation of elevation in "
-            "a grid cell. Unit: m"
-        ),
+        "description": ("Standard deviation of elevation in " "a grid cell. Unit: m"),
     },
     {
         "name": "total_column_ozone",
@@ -1740,16 +1630,12 @@ other_variables = [
     },
     {
         "name": "total_column_supercooled_liquid_water",
-        "description": (
-            "Amount of supercooled liquid "
-            "water in column. Unit: kg/m²"
-        ),
+        "description": ("Amount of supercooled liquid " "water in column. Unit: kg/m²"),
     },
     {
         "name": "total_column_water",
         "description": (
-            "Total water content (vapour + liquid "
-            "+ ice) in column. Unit: kg/m²"
+            "Total water content (vapour + liquid " "+ ice) in column. Unit: kg/m²"
         ),
     },
     {
@@ -1758,9 +1644,7 @@ other_variables = [
     },
     {
         "name": "total_totals_index",
-        "description": (
-            "Thunderstorm index using temperature differences. Unit: K"
-        ),
+        "description": ("Thunderstorm index using temperature differences. Unit: K"),
     },
     {
         "name": "trapping_layer_base_height",
@@ -1776,9 +1660,7 @@ other_variables = [
     },
     {
         "name": "v_component_stokes_drift",
-        "description": (
-            "Meridional component of Stokes drift velocity. Unit: m/s"
-        ),
+        "description": ("Meridional component of Stokes drift velocity. Unit: m/s"),
     },
     {
         "name": "zero_degree_level",

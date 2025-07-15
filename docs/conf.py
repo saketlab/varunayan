@@ -143,9 +143,7 @@ html_theme_options = {
 }
 
 # Copy button configuration
-copybutton_prompt_text = (
-    r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
-)
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
 copybutton_prompt_is_regexp = True
 copybutton_line_continuation_character = "\\"
 
