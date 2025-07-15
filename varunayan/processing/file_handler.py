@@ -1,10 +1,12 @@
+import logging
 import os
 import zipfile
 from typing import List
-import logging
+
 from ..util.logging_utils import get_logger
 
 logger = get_logger(level=logging.INFO)
+
 
 def extract_download(zip_or_file_path: str, extract_dir: str = None) -> List[str]:
     """
@@ -61,6 +63,7 @@ def extract_download(zip_or_file_path: str, extract_dir: str = None) -> List[str
         logger.info(f"  - {file}")
 
     return nc_files
+
 
 def find_netcdf_files(extraction_dir: str) -> List[str]:
     """

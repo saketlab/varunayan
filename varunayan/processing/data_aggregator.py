@@ -1,10 +1,13 @@
-import pandas as pd
-import numpy as np
 import logging
-from .variable_lists import sum_vars, max_vars, min_vars, rate_vars, exclude_cols
+
+import numpy as np
+import pandas as pd
+
 from ..util.logging_utils import get_logger
+from .variable_lists import exclude_cols, max_vars, min_vars, rate_vars, sum_vars
 
 logger = get_logger(level=logging.INFO)
+
 
 def aggregate_by_frequency(
     df: pd.DataFrame, frequency: str, keep_original_time: bool = False
@@ -215,16 +218,15 @@ def aggregate_by_frequency(
 
     return result, unique_latlongs
 
+
 def aggregate_pressure_levels(
-    df: pd.DataFrame,
-    frequency: str = "hourly",
-    keep_original_time: bool = False
+    df: pd.DataFrame, frequency: str = "hourly", keep_original_time: bool = False
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Aggregate ERA5 pressure level data by the specified frequency.
-    
+
     All variables are aggregated using mean values (both spatially and temporally).
-    
+
     Parameters:
         df: DataFrame containing ERA5 pressure level data with columns:
             - latitude, longitude: Spatial coordinates
@@ -233,108 +235,113 @@ def aggregate_pressure_levels(
             - Other columns: Meteorological variables
         frequency: One of 'hourly', 'daily', 'weekly', 'monthly', 'yearly'
         keep_original_time: Whether to keep the original time column
-        
+
     Returns:
         Tuple of (aggregated DataFrame, unique lat/lon DataFrame)
     """
     logger.info(f"Aggregating pressure level data to {frequency} frequency...")
-    
+
     # Store unique lat/lon pairs for reference
     unique_latlongs = (
         df[["latitude", "longitude"]].drop_duplicates().reset_index(drop=True)
     )
-    
+
     # Identify time column (handle both valid_time and time)
     time_col = "valid_time" if "valid_time" in df.columns else "time"
-    
+
     # Ensure time column is properly formatted
     if not np.issubdtype(df[time_col].dtype, np.datetime64):
         df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
-    
+
     # Identify pressure level column if exists
     has_pressure_level = "pressure_level" in df.columns
-    
+
     # Grouping columns - always include time, optionally include pressure_level
     group_cols = [time_col]
     if has_pressure_level:
         group_cols.append("pressure_level")
-    
+
     # Columns to exclude from aggregation
     exclude_cols = {
-        "latitude", "longitude", "date", "time", "hour", 
-        "expver", "number", "valid_time"
+        "latitude",
+        "longitude",
+        "date",
+        "time",
+        "hour",
+        "expver",
+        "number",
+        "valid_time",
     }
-    
+
     # All other columns are variables to be averaged
-    var_cols = [col for col in df.columns if col not in exclude_cols and col not in group_cols]
-    
+    var_cols = [
+        col for col in df.columns if col not in exclude_cols and col not in group_cols
+    ]
+
     logger.info(f"Variables to average: {var_cols}")
     if has_pressure_level:
         logger.info(f"Including pressure_level in aggregation groups")
-    
+
     # For hourly data, just do spatial aggregation
     if frequency == "hourly":
         # Group by time (and pressure level if present) and average across space
         agg_df = df.groupby(group_cols, as_index=False)[var_cols].mean()
-        
+
         # Add time components
         agg_df["year"] = agg_df[time_col].dt.year
         agg_df["month"] = agg_df[time_col].dt.month
         agg_df["day"] = agg_df[time_col].dt.day
         agg_df["hour"] = agg_df[time_col].dt.hour
-        
+
         if not keep_original_time:
             agg_df = agg_df.drop(columns=[time_col])
-            
+
         return agg_df, unique_latlongs
-    
+
     # For other frequencies, first spatial then temporal aggregation
-    
+
     # 1. Spatial aggregation - average across lat/lon points
     spatial_agg = df.groupby(group_cols, as_index=False)[var_cols].mean()
-    
+
     # 2. Temporal aggregation
-    freq_map = {
-        "daily": "D",
-        "weekly": "W",
-        "monthly": "MS",
-        "yearly": "AS"
-    }
-    
+    freq_map = {"daily": "D", "weekly": "W", "monthly": "MS", "yearly": "AS"}
+
     if frequency not in freq_map:
         raise ValueError(f"Invalid frequency: {frequency}")
-    
+
     # Set time as index for resampling
     temporal_agg = spatial_agg.set_index(time_col)
-    
+
     # For pressure levels, we need to group by pressure level before resampling
     if has_pressure_level:
         # Get unique pressure levels
         pressure_levels = df["pressure_level"].unique()
-        
+
         # Initialize empty DataFrame for results
         result_df = pd.DataFrame()
-        
+
         # Process each pressure level separately
         for level in pressure_levels:
             # Filter data for this pressure level
             level_data = temporal_agg[temporal_agg["pressure_level"] == level]
-            
+
             # Resample and average variables
             resampled = level_data[var_cols].resample(freq_map[frequency]).mean()
-            
+
             # Add pressure level back
             resampled["pressure_level"] = level
-            
+
             # Combine results
             result_df = pd.concat([result_df, resampled.reset_index()])
     else:
         # No pressure levels - simple resample
-        result_df = temporal_agg[var_cols].resample(freq_map[frequency]).mean().reset_index()
-    
+        result_df = (
+            temporal_agg[var_cols].resample(freq_map[frequency]).mean().reset_index()
+        )
+
     # Add frequency-specific time components
     result_df["year"] = result_df[time_col].dt.year
-    
+
     if frequency == "daily":
         result_df["month"] = result_df[time_col].dt.month
         result_df["day"] = result_df[time_col].dt.day
@@ -342,8 +349,8 @@ def aggregate_pressure_levels(
         result_df["week"] = result_df[time_col].dt.isocalendar().week
     elif frequency == "monthly":
         result_df["month"] = result_df[time_col].dt.month
-    
+
     if not keep_original_time:
         result_df = result_df.drop(columns=[time_col])
-    
+
     return result_df, unique_latlongs

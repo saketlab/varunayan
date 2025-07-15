@@ -1,8 +1,10 @@
 import logging
 import sys
 
+
 class Colors:
     """ANSI color codes for terminal output."""
+
     RESET = "\033[0m"
     RED = "\033[0;31m"
     GREEN = "\033[0;32m"
@@ -17,8 +19,10 @@ class Colors:
     BLUE_BRIGHT = "\033[0;94m"
     CYAN_BRIGHT = "\033[0;96m"
 
+
 class ColorFormatter(logging.Formatter):
     """Custom formatter to add colors to log output."""
+
     LEVEL_COLORS = {
         logging.DEBUG: Colors.BLUE,
         logging.INFO: Colors.RESET,
@@ -32,6 +36,7 @@ class ColorFormatter(logging.Formatter):
         message = super().format(record)
         return f"{color}{message}{Colors.RESET}"
 
+
 def get_logger(name="era5_logger", level=logging.INFO):
     """Returns a configured logger with colored output."""
     logger = logging.getLogger(name)
@@ -40,7 +45,7 @@ def get_logger(name="era5_logger", level=logging.INFO):
     # Prevent duplicate handlers if logger is re-imported
     if not logger.handlers:
         handler = logging.StreamHandler(sys.stdout)
-        formatter = ColorFormatter('%(message)s')
+        formatter = ColorFormatter("%(message)s")
         handler.setFormatter(formatter)
         handler.setLevel(level)
         logger.addHandler(handler)

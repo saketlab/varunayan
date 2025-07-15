@@ -1,8 +1,10 @@
 import datetime as dt
-import cdsapi
-import tempfile
 import os
+import tempfile
 from typing import List
+
+import cdsapi
+
 
 def download_era5_single_lvl(
     request_id: str,
@@ -18,9 +20,12 @@ def download_era5_single_lvl(
 ) -> str:
     """Download ERA5 single levels data."""
     frequency = frequency.lower()
-    
-    dataset = "reanalysis-era5-single-levels-monthly-means" if frequency in ["monthly", "yearly"] \
-              else "reanalysis-era5-single-levels"
+
+    dataset = (
+        "reanalysis-era5-single-levels-monthly-means"
+        if frequency in ["monthly", "yearly"]
+        else "reanalysis-era5-single-levels"
+    )
 
     # Prepare date ranges
     dates = {}
@@ -79,8 +84,9 @@ def download_era5_single_lvl(
 
     client = cdsapi.Client()
     client.retrieve(dataset, request, output_file)
-    
+
     return output_file
+
 
 def download_era5_pressure_lvl(
     request_id: str,
@@ -97,9 +103,12 @@ def download_era5_pressure_lvl(
 ) -> str:
     """Download ERA5 pressure levels data."""
     frequency = frequency.lower()
-    
-    dataset = "reanalysis-era5-pressure-levels-monthly-means" if frequency in ["monthly", "yearly"] \
-              else "reanalysis-era5-pressure-levels"
+
+    dataset = (
+        "reanalysis-era5-pressure-levels-monthly-means"
+        if frequency in ["monthly", "yearly"]
+        else "reanalysis-era5-pressure-levels"
+    )
 
     # Prepare date ranges
     dates = {}
@@ -158,5 +167,5 @@ def download_era5_pressure_lvl(
 
     client = cdsapi.Client()
     client.retrieve(dataset, request, output_file)
-    
+
     return output_file
