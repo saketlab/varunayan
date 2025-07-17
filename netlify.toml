@@ -1,6 +1,6 @@
 [build]
   publish = "docs/_build/html"
-  command = "cd docs && make html"
+  command = "pip install -e .[docs-build] && cd docs && make html"
 
 [build.environment]
   PYTHON_VERSION = "3.9"
