@@ -196,7 +196,7 @@ def convert_to_geojson(json_data: Dict[str, Any]) -> Dict[str, Any]:
 
             if json_data["type"] == "Feature" and "geometry" not in json_data:
                 raise ValueError(
-                    "Feature missing geometry and cannot be " "automatically fixed"
+                    "Feature missing geometry and cannot be automatically fixed"
                 )
 
             return json_data
