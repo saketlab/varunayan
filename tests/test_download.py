@@ -1,8 +1,6 @@
 import datetime as dt
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from varunayan.download import download_era5_pressure_lvl, download_era5_single_lvl
 
 

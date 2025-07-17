@@ -280,7 +280,7 @@ def aggregate_pressure_levels(
 
     logger.info(f"Variables to average: {var_cols}")
     if has_pressure_level:
-        logger.info(f"Including pressure_level in aggregation groups")
+        logger.info("Including pressure_level in aggregation groups")
 
     # For hourly data, just do spatial aggregation
     if frequency == "hourly":

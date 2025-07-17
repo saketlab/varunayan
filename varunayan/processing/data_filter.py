@@ -112,7 +112,7 @@ def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFra
         )
 
         # Additional debugging info
-        logger.info(f"\nDataset coordinate ranges:")
+        logger.info("\nDataset coordinate ranges:")
         logger.info(f"  Latitude: {lats.min():.4f} to {lats.max():.4f}")
         logger.info(f"  Longitude: {lons.min():.4f} to {lons.max():.4f}")
 

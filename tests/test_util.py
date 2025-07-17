@@ -1,9 +1,3 @@
-import json
-import os
-
-import pytest
-from shapely.geometry import Polygon, shape
-
 from varunayan.util import (
     convert_to_geojson,
     create_geojson_from_bbox,

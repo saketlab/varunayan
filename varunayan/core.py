@@ -1,20 +1,18 @@
 import datetime as dt
 import glob
-import json
 import logging
 import math
 import os
 import shutil
-import sys
 import tempfile
 import time
 from calendar import monthrange
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 import xarray as xr
-from shapely.geometry import MultiPolygon, Point, Polygon, shape
+from shapely.geometry import Point
 
 from .config import ensure_cdsapi_config
 from .download import download_era5_pressure_lvl, download_era5_single_lvl
@@ -23,14 +21,13 @@ from .processing import (
     aggregate_pressure_levels,
     extract_download,
     filter_netcdf_by_shapefile,
-    find_netcdf_files,
+    sum_vars
 )
 from .util import (
     Colors,
     convert_to_geojson,
     create_geojson_from_bbox,
     create_temp_geojson,
-    extract_coords_from_geometry,
     get_bounding_box,
     get_logger,
     is_valid_geojson,
@@ -39,87 +36,7 @@ from .util import (
 
 logger = get_logger(level=logging.INFO)
 
-SUM_VARS = [
-    "tp",
-    "total_precipitation",
-    "cp",
-    "convective_precipitation",
-    "lsp",
-    "large_scale_precipitation",
-    "sf",
-    "snowfall",
-    "csf",
-    "convective_snowfall",
-    "lsf",
-    "large_scale_snowfall",
-    "ssr",
-    "surface_net_solar_radiation",
-    "str",
-    "surface_net_thermal_radiation",
-    "tsr",
-    "top_net_solar_radiation",
-    "ttr",
-    "top_net_thermal_radiation",
-    "ssrd",
-    "surface_solar_radiation_downward",
-    "strd",
-    "surface_thermal_radiation_downward",
-    "tisr",
-    "toa_incident_solar_radiation",
-    "slhf",
-    "surface_latent_heat_flux",
-    "sshf",
-    "surface_sensible_heat_flux",
-    "ewss",
-    "eastward_turbulent_surface_stress",
-    "nsss",
-    "northward_turbulent_surface_stress",
-    "ro",
-    "runoff",
-    "sro",
-    "surface_runoff",
-    "ssro",
-    "sub_surface_runoff",
-    "e",
-    "evaporation",
-    "pev",
-    "potential_evaporation",
-    "es",
-    "snow_evaporation",
-    "smlt",
-    "snowmelt",
-    "bld",
-    "boundary_layer_dissipation",
-    "gwd",
-    "gravity_wave_dissipation",
-    "cdir",
-    "clear_sky_direct_solar_radiation",
-    "uvb",
-    "downward_uv_radiation",
-    "lgws",
-    "eastward_gravity_wave_surface_stress",
-    "lspf",
-    "large_scale_precipitation_fraction",
-    "mgws",
-    "meridional_gravity_wave_surface_stress",
-    "ssrc",
-    "surface_net_solar_radiation_clear_sky",
-    "strc",
-    "surface_net_thermal_radiation_clear_sky",
-    "ssrdc",
-    "surface_solar_radiation_downward_clear_sky",
-    "strdc",
-    "surface_thermal_radiation_downward_clear_sky",
-    "tsrc",
-    "top_net_solar_radiation_clear_sky",
-    "ttrc",
-    "top_net_thermal_radiation_clear_sky",
-    "fdir",
-    "total_sky_direct_solar_radiation",
-    "vimd",
-    "vertically_integrated_moisture_divergence",
-]
-
+SUM_VARS = sum_vars
 
 @dataclass
 class ProcessingParams:
@@ -296,7 +213,7 @@ def process_era5_data(
     nc_files = extract_download(download_file)
     datasets = []
 
-    logger.info(f"\nProcessing downloaded data:")
+    logger.info("\nProcessing downloaded data:")
     logger.info(f"- Found {len(nc_files)} file(s)")
 
     for i, nc_file in enumerate(nc_files, 1):
@@ -572,7 +489,7 @@ def draw_geojson_ascii(geojson_data):
     """
     try:
         import numpy as np
-        from shapely.geometry import MultiPolygon, Polygon, shape
+        from shapely.geometry import shape
 
         # Get bounding box
         west, south, east, north = get_bounding_box(geojson_data)

@@ -7,7 +7,6 @@ import pytest
 
 from varunayan.cli import main, parse_flexible_date
 
-
 class TestParseFlexibleDate:
     """Test the parse_flexible_date function"""
 

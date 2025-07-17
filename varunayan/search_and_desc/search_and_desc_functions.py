@@ -113,7 +113,7 @@ def describe_variables(variable_names, dataset_type):
         else:
             descriptions[var_name] = "Variable not found"
             print(f"\n{var_name}:")
-            print(f"  Variable not found")
+            print("  Variable not found")
 
 
 def search_variable(pattern, dataset_type="all"):
