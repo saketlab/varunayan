@@ -47,6 +47,8 @@ jobs:
     #    mypy varunayan/
     
     - name: Run tests
+      env:
+        CDS_API_KEY: ${{ secrets.CDS_API_KEY }}
       run: |
         pytest --cov=varunayan --cov-report=xml --cov-report=term-missing
     

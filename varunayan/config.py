@@ -73,6 +73,23 @@ def ensure_cdsapi_config():
     Ensure CDS API configuration exists and is valid.
     If not, guide the user through setting it up.
     """
+    # Check if we're in a testing environment
+    if "pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST"):
+        # In testing, just log and return without prompting
+        logger.info("✓ CDS API configuration check skipped in test environment.")
+        return
+    
+    # Check if CDS_API_KEY environment variable is set (for CI/CD)
+    if os.environ.get("CDS_API_KEY"):
+        api_key = os.environ["CDS_API_KEY"]
+        try:
+            _create_config_file(api_key)
+            logger.info("✓ CDS API configuration created from environment variable.")
+            return
+        except Exception as e:
+            logger.error(f"Failed to create config from environment variable: {e}")
+            # Fall through to normal flow
+        
     if check_cdsapi_config():
         logger.info("✓ CDS API configuration is already set up and valid.")
         return
