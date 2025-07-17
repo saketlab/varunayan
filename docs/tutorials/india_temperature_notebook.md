@@ -1,6 +1,6 @@
 # Visualising climate change in India
 
-In this vignette, we demonstrate the use of varunayan for visualizing the change in average temperature from 1941 to 2024.
+In this vignette, we demonstrate the use of varunayan for visualizsing the change in average temeperatre from 1941 to 2024.
 
 
 

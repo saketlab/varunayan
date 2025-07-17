@@ -3,56 +3,21 @@
 ```{admonition} What is Varunayan?
 :class: tip
 
-Varunayan is a powerful Python package for downloading and processing **ERA5 climate data**. 
+Varunayan =  Varun + ayan
+
+Varun in the vedic mythology was the god of sky, order, truth, water and magic. 
+
+Varunayan is a Python package for downloading and processing **ERA5 climate data**. 
 It provides both command-line and Python APIs for extracting analysis-ready climate data 
 for custom geographical regions using GeoJSON files, bounding boxes, or point coordinates.
 ```
 
-## Key Features
-
-::::{grid} 1 2 2 3
-:::{grid-item-card} Multiple Input Formats
-:class-card: text-center
-
-Support for GeoJSON files, bounding boxes, and point coordinates
-:::
-
-:::{grid-item-card} Flexible Processing
-:class-card: text-center
-
-Hourly, daily, weekly, monthly, and yearly aggregations
-:::
-
-:::{grid-item-card} Efficient Downloads
-:class-card: text-center
-
-Automatic chunking for large requests with retry logic
-:::
-
-:::{grid-item-card} Comprehensive Output
-:class-card: text-center
-
-CSV files with raw data, aggregated data, and coordinates
-:::
-
-:::{grid-item-card} Dual APIs
-:class-card: text-center
-
-Command-line interface and Python API
-:::
-
-:::{grid-item-card} Variable Discovery
-:class-card: text-center
-
-Search and describe ERA5 variables easily
-:::
-::::
 
 ## Quick Start
 
 ### Installation
 ```bash
-pip install varunayan
+pip install git+https://github.com/saketlab/varunayan
 ```
 
 ### Usage Examples
@@ -129,15 +94,6 @@ autoapi/index
 DEPENDENCIES
 ```
 
-## Search & Navigate
-
-Use the search bar above or press `Ctrl+K` (or `⌘K` on Mac) to quickly find what you're looking for.
-
-**Keyboard shortcuts:**
-- `Ctrl+K` / `⌘K`: Open search
-- `Alt+←/→`: Navigate between pages
-- `s`: Toggle sidebar
-- `t`: Go to top
 
 ## Contributing
 
@@ -154,4 +110,3 @@ This project is licensed under the MIT License. See the [LICENSE](https://github
 
 ---
 
-*Built by the Varunayan team*
