@@ -78,7 +78,7 @@ def ensure_cdsapi_config():
         # In testing, just log and return without prompting
         logger.info("✓ CDS API configuration check skipped in test environment.")
         return
-    
+
     # Check if CDS_API_KEY environment variable is set (for CI/CD)
     if os.environ.get("CDS_API_KEY"):
         api_key = os.environ["CDS_API_KEY"]
@@ -89,7 +89,7 @@ def ensure_cdsapi_config():
         except Exception as e:
             logger.error(f"Failed to create config from environment variable: {e}")
             # Fall through to normal flow
-        
+
     if check_cdsapi_config():
         logger.info("✓ CDS API configuration is already set up and valid.")
         return
