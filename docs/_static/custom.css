@@ -13,8 +13,56 @@
 /* Force light theme for all elements */
 html[data-theme="light"], 
 html[data-theme="auto"], 
-html:not([data-theme]) {
+html:not([data-theme]),
+html[data-theme="dark"] {
   color-scheme: light only !important;
+}
+
+/* Universal text color override - force all text to be dark */
+* {
+  color: #212529 !important;
+}
+
+/* Specific overrides for elements that should have colored text */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--varunayan-dark) !important;
+}
+
+h1 {
+  color: var(--varunayan-primary) !important;
+}
+
+h2 {
+  color: var(--varunayan-secondary) !important;
+}
+
+a {
+  color: var(--varunayan-primary) !important;
+}
+
+a:hover {
+  color: var(--varunayan-secondary) !important;
+}
+
+/* Elements that should have white text on colored backgrounds */
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.bd-sidebar .nav-link.current,
+.bd-sidebar .nav-link.active,
+.copybtn,
+.toggle-button,
+.bd-footer,
+.bd-footer *,
+.announcement,
+.announcement *,
+.bd-header-announcement,
+.bd-header-announcement *,
+.table th,
+input[type="radio"]:checked + .sd-tab-label,
+input[type="radio"]:checked + .sd-tab-label * {
+  color: white !important;
 }
 
 /* Sidebar styling - force white background */
@@ -342,6 +390,25 @@ input[type="radio"]:checked + .sd-tab-label {
   font-weight: 600;
 }
 
+/* Override sphinx-book-theme announcement banner */
+.bd-header-announcement {
+  background-color: var(--varunayan-primary) !important;
+  color: white !important;
+  text-align: center;
+  padding: 0.5rem;
+  font-weight: 600;
+}
+
+/* Fix any remaining white text issues */
+.bd-header-announcement a {
+  color: white !important;
+  text-decoration: underline;
+}
+
+.bd-header-announcement a:hover {
+  color: var(--varunayan-light) !important;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .bd-article {
@@ -370,6 +437,73 @@ input[type="radio"]:checked + .sd-tab-label {
 body {
   background-color: white !important;
   color: #212529 !important;
+}
+
+/* Ensure all text elements have proper contrast */
+.bd-article p,
+.bd-article li,
+.bd-article td,
+.bd-article th,
+.bd-article span,
+.bd-article div,
+.bd-article blockquote {
+  color: #212529 !important;
+}
+
+/* Fix any remaining white text in navigation */
+.bd-toc .nav-link,
+.bd-toc .nav-item,
+.bd-sidebar .nav-link,
+.bd-sidebar .nav-item {
+  color: #212529 !important;
+}
+
+/* Override any theme-specific white text */
+.bd-header,
+.bd-header-article,
+.bd-header-nav,
+.bd-header-secondary {
+  color: #212529 !important;
+}
+
+/* Fix breadcrumb text */
+.bd-breadcrumbs {
+  color: #212529 !important;
+}
+
+.bd-breadcrumbs .breadcrumb-item {
+  color: #212529 !important;
+}
+
+.bd-breadcrumbs .breadcrumb-item a {
+  color: var(--varunayan-primary) !important;
+}
+
+/* Fix any white text in buttons or controls */
+.btn:not(.btn-primary):not(.btn-secondary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-light):not(.btn-dark) {
+  color: #212529 !important;
+}
+
+/* Fix dropdown and menu text */
+.dropdown-menu,
+.dropdown-item {
+  color: #212529 !important;
+  background-color: white !important;
+}
+
+/* Fix table text specifically */
+table,
+table th,
+table td {
+  color: #212529 !important;
+  background-color: white !important;
+}
+
+/* Fix any code or pre elements */
+code:not(.highlight code),
+pre:not(.highlight pre) {
+  color: #212529 !important;
+  background-color: #f8f9fa !important;
 }
 
 /* Custom logo and branding */
