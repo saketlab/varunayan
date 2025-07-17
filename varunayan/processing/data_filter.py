@@ -1,14 +1,17 @@
-import xarray as xr
-import pandas as pd
+import datetime as dt
+import logging
+from typing import Dict
+
 import geopandas as gpd
 import numpy as np
-import datetime as dt
-from typing import Dict
+import pandas as pd
+import xarray as xr
 from shapely.geometry import Point
-import logging
+
 from ..util.logging_utils import get_logger
 
 logger = get_logger(level=logging.INFO)
+
 
 def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFrame:
     """
@@ -90,15 +93,23 @@ def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFra
     )
     logger.info(f"  - Points inside: {points_inside_count}")
     logger.info(f"  - Points outside: {points_outside_count}")
-    logger.info(f"  - Percentage inside: {points_inside_count/total_unique_points*100:.2f}%")
+    logger.info(
+        f"  - Percentage inside: {points_inside_count/total_unique_points*100:.2f}%"
+    )
 
     # Verify we found points inside
     if points_inside_count == 0:
         logger.warning("\n!!! WARNING: No points found inside the shapefile !!!")
         logger.warning("Possible reasons:")
-        logger.warning("1. The selected variable may not have valid values in the specified region.")
-        logger.warning("2. The region is too small or falls outside the spatial coverage of the dataset.")
-        logger.warning("3. All dataset grid points fall outside the shapefile boundaries.")
+        logger.warning(
+            "1. The selected variable may not have valid values in the specified region."
+        )
+        logger.warning(
+            "2. The region is too small or falls outside the spatial coverage of the dataset."
+        )
+        logger.warning(
+            "3. All dataset grid points fall outside the shapefile boundaries."
+        )
 
         # Additional debugging info
         logger.info(f"\nDataset coordinate ranges:")
@@ -131,7 +142,9 @@ def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFra
     inside_coord_tuples = set(
         zip(inside_coords["latitude"], inside_coords["longitude"])
     )
-    logger.info(f"  ✓ Created lookup set with {len(inside_coord_tuples)} coordinate pairs")
+    logger.info(
+        f"  ✓ Created lookup set with {len(inside_coord_tuples)} coordinate pairs"
+    )
 
     # Filter the DataFrame to keep only rows where (lat, lon) pair is in the inside set
     logger.info("  Filtering DataFrame rows...")
@@ -165,6 +178,7 @@ def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFra
     logger.info(f"Rows in final dataset: {len(filtered_df)}")
 
     return filtered_df
+
 
 def get_unique_coordinates_in_polygon(
     ds: xr.Dataset, geojson_data: Dict

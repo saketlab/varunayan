@@ -56,11 +56,88 @@ dev = [
     "pre-commit>=2.15",
 ]
 docs = [
+    # Core Sphinx dependencies
     "sphinx>=4.0",
-    "sphinx-rtd-theme>=1.0",
+    "sphinx-book-theme>=1.0.0",
+    "sphinx-autoapi>=2.0",
+    
+    # Markdown and content processing
     "myst-parser>=0.15",
+    "docutils>=0.17",
+    
+    # Notebook processing
+    "jupyter>=1.0",
+    "nbconvert>=6.0",
+    "ipython>=7.0",
+    "myst-nb>=0.13.0",
+    
+    # Modern Sphinx extensions
+    "sphinx-copybutton>=0.5.0",
+    "sphinx-design>=0.3.0",
+    "sphinx-togglebutton>=0.3.0",
+    
+    # Enhanced search and navigation
+    "sphinx-tabs>=3.0.0",
+    
+    # Documentation testing and validation
+    "linkify-it-py>=2.0",
+    "markdown-it-py>=2.0",
+    "mdit-py-plugins>=0.3.0",
 ]
-all = ["varunayan[dev,docs]"]
+docs-build = [
+    # Minimal dependencies for CI/CD documentation building
+    "sphinx>=4.0",
+    "sphinx-book-theme>=1.0.0",
+    "sphinx-autoapi>=2.0",
+    "myst-parser>=0.15",
+    "myst-nb>=0.13.0",
+    "jupyter>=1.0",
+    "nbconvert>=6.0",
+    "docutils>=0.17",
+    "sphinx-copybutton>=0.5.0",
+    "sphinx-design>=0.3.0",
+    "sphinx-togglebutton>=0.3.0",
+    "sphinx-tabs>=3.0.0",
+    "linkify-it-py>=2.0",
+    "markdown-it-py>=2.0",
+    "mdit-py-plugins>=0.3.0",
+]
+docs-serve = [
+    # Additional dependencies for local documentation serving
+    "sphinx-autobuild>=2021.3.14",
+    "livereload>=2.6.3",
+    "watchdog>=2.1.0",
+]
+build = [
+    # Dependencies for building distribution packages
+    "build>=0.7.0",
+    "twine>=4.0.0",
+    "wheel>=0.37.0",
+    "setuptools>=60.0.0",
+    "check-manifest>=0.48",
+]
+test = [
+    # Extended testing dependencies
+    "pytest>=6.0",
+    "pytest-cov>=2.10",
+    "pytest-xdist>=2.5.0",
+    "pytest-mock>=3.6.1",
+    "pytest-timeout>=2.1.0",
+    "coverage[toml]>=6.0",
+    "tox>=3.24.0",
+]
+quality = [
+    # Code quality and formatting
+    "black>=22.0",
+    "isort>=5.10",
+    "flake8>=4.0",
+    "mypy>=0.910",
+    "pre-commit>=2.15",
+    "bandit>=1.7.0",
+    "safety>=2.0.0",
+    "pylint>=2.12.0",
+]
+all = ["varunayan[dev,docs,docs-serve,build,test,quality]"]
 
 [project.scripts]
 varunayan = "varunayan.cli:main"
@@ -146,3 +223,7 @@ module = [
     "shapely.*",
 ]
 ignore_missing_imports = true
+
+[tool.flake8]
+max-line-length = 120
+extend-ignore = ["E203", "W503", "E501"]

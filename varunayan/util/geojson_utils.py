@@ -1,11 +1,13 @@
 import json
+import logging
 import os
 import tempfile
-from typing import Dict, Any, List, Tuple
-import logging
+from typing import Any, Dict, List, Tuple
+
 from .logging_utils import get_logger
 
 logger = get_logger(level=logging.INFO)
+
 
 def extract_coords_from_geometry(geometry: Dict) -> List[List[float]]:
     """Extract all coordinates from a GeoJSON geometry object."""
@@ -29,6 +31,7 @@ def extract_coords_from_geometry(geometry: Dict) -> List[List[float]]:
             coords.extend(extract_coords_from_geometry(geom))
 
     return coords
+
 
 def get_bounding_box(geojson_data: Dict) -> Tuple[float, float, float, float]:
     """
@@ -61,7 +64,8 @@ def get_bounding_box(geojson_data: Dict) -> Tuple[float, float, float, float]:
     if not all_coords:
         raise ValueError("No coordinates found in the GeoJSON data")
 
-    # Extract longitudes (x) and latitudes (y) - IMPORTANT: GeoJSON stores [lon, lat]
+    # Extract longitudes (x) and latitudes (y) - IMPORTANT: GeoJSON stores
+    # [lon, lat]
     lons = [coord[0] for coord in all_coords]  # Longitude is first
     lats = [coord[1] for coord in all_coords]  # Latitude is second
 
@@ -72,6 +76,7 @@ def get_bounding_box(geojson_data: Dict) -> Tuple[float, float, float, float]:
     north = max(lats)
 
     return (west, south, east, north)
+
 
 def load_json_with_encoding(file_path: str) -> Dict[str, Any]:
     """
@@ -98,13 +103,14 @@ def load_json_with_encoding(file_path: str) -> Dict[str, Any]:
             continue
         except json.JSONDecodeError:
             continue
-        except Exception as e:
+        except Exception:
             continue
 
     # If we get here, none of the encodings worked
     raise ValueError(
         f"Could not load {file_path} as valid JSON with any common encoding"
     )
+
 
 def is_valid_geojson(json_data: Dict[str, Any]) -> bool:
     """
@@ -164,6 +170,7 @@ def is_valid_geojson(json_data: Dict[str, Any]) -> bool:
 
     return False
 
+
 def convert_to_geojson(json_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Convert various JSON formats to valid GeoJSON.
@@ -199,11 +206,15 @@ def convert_to_geojson(json_data: Dict[str, Any]) -> Dict[str, Any]:
         # Assume it's meant to be a Polygon
         return {
             "type": "Feature",
-            "geometry": {"type": "Polygon", "coordinates": json_data["coordinates"]},
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": json_data["coordinates"],
+            },
             "properties": {},
         }
 
-    # Case 3: It contains a bounding box specified as [west, south, east, north]
+    # Case 3: It contains a bounding box specified as
+    # [west, south, east, north]
     if (
         "bbox" in json_data
         and isinstance(json_data["bbox"], list)
@@ -225,6 +236,7 @@ def convert_to_geojson(json_data: Dict[str, Any]) -> Dict[str, Any]:
 
     # If we've gotten here, we can't automatically convert it
     raise ValueError("Cannot automatically convert the provided JSON to GeoJSON format")
+
 
 def create_geojson_from_bbox(
     west: float, south: float, east: float, north: float
@@ -256,9 +268,10 @@ def create_geojson_from_bbox(
         "type": "Feature",
         "geometry": {"type": "Polygon", "coordinates": coordinates},
         "properties": {
-            "description": f"Bounding box: N:{north}, W:{west}, S:{south}, E:{east}"
+            "description": (f"Bounding box: N:{north}, W:{west}, S:{south}, E:{east}")
         },
     }
+
 
 def create_temp_geojson(geojson_data: Dict[str, Any], request_id: str) -> str:
     """
