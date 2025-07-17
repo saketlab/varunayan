@@ -142,16 +142,34 @@ h2 {
 }
 
 /* Enhanced search bar styling */
-.search-bar {
-  border-radius: 25px;
-  border: 2px solid var(--varunayan-primary);
-  transition: all 0.3s ease;
+.search-bar,
+.search-button,
+.search-input,
+input[type="search"],
+input[type="text"],
+.bd-search,
+.bd-search input,
+.bd-search input:focus,
+.bd-search-docs,
+.bd-search-docs input,
+.bd-search-docs input:focus {
+  border-radius: 25px !important;
+  border: 2px solid var(--varunayan-primary) !important;
+  transition: all 0.3s ease !important;
   background-color: white !important;
+  color: #212529 !important;
 }
 
-.search-bar:focus {
-  box-shadow: 0 0 0 3px rgba(46, 134, 171, 0.2);
-  border-color: var(--varunayan-primary);
+.search-bar:focus,
+.search-input:focus,
+input[type="search"]:focus,
+input[type="text"]:focus,
+.bd-search input:focus,
+.bd-search-docs input:focus {
+  box-shadow: 0 0 0 3px rgba(46, 134, 171, 0.2) !important;
+  border-color: var(--varunayan-primary) !important;
+  background-color: white !important;
+  color: #212529 !important;
 }
 
 /* Code block enhancements */
@@ -462,8 +480,12 @@ body {
 .bd-header,
 .bd-header-article,
 .bd-header-nav,
-.bd-header-secondary {
+.bd-header-secondary,
+.bd-header-start,
+.bd-header-end,
+.bd-header-middle {
   color: #212529 !important;
+  background-color: white !important;
 }
 
 /* Fix breadcrumb text */
@@ -511,4 +533,112 @@ pre:not(.highlight pre) {
   font-weight: 700;
   font-size: 1.5rem;
   color: var(--varunayan-primary) !important;
+}
+
+/* Additional header fixes */
+.bd-header-logo,
+.bd-header-logo img,
+.bd-header-logo svg,
+.bd-header-logo a {
+  background-color: white !important;
+}
+
+/* Fix any dark navbar elements */
+.navbar,
+.navbar-nav,
+.navbar-toggler,
+.navbar-collapse {
+  background-color: white !important;
+  border-color: #dee2e6 !important;
+}
+
+/* Fix header search components */
+.bd-search-container,
+.bd-search-docs,
+.bd-search-docs-button,
+.bd-search-docs-input,
+.bd-header .bd-search,
+.bd-header .bd-search-docs {
+  background-color: white !important;
+  color: #212529 !important;
+}
+
+/* Fix header buttons and controls */
+.bd-header button,
+.bd-header .btn,
+.bd-header .form-control,
+.bd-header input {
+  background-color: white !important;
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+/* Fix any remaining dark elements in header */
+.bd-header *:not(.btn-primary):not(.btn-secondary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-light):not(.btn-dark) {
+  background-color: white !important;
+  color: #212529 !important;
+}
+
+/* Comprehensive white background enforcement */
+html,
+body,
+.bd-page-width,
+.bd-container,
+.bd-content,
+.bd-main,
+.bd-article-container,
+.bd-sidebar-primary,
+.bd-sidebar-secondary,
+.bd-toc,
+.bd-header,
+main,
+article,
+section,
+div:not(.highlight):not(.admonition):not(.btn):not(.badge):not(.alert):not(.card):not(.table):not(.dropdown-menu) {
+  background-color: white !important;
+}
+
+/* Force white background for all Sphinx Book Theme elements */
+.theme-switch-button,
+.pst-color-primary,
+.pst-color-secondary,
+.pst-color-success,
+.pst-color-info,
+.pst-color-warning,
+.pst-color-danger,
+.pst-color-light,
+.pst-color-dark,
+.pst-color-muted {
+  background-color: white !important;
+  color: #212529 !important;
+}
+
+/* Override any CSS variables that might be causing dark theme */
+:root {
+  --pst-color-primary: #2E86AB !important;
+  --pst-color-secondary: #A23B72 !important;
+  --pst-color-success: #C73E1D !important;
+  --pst-color-info: #2E86AB !important;
+  --pst-color-warning: #F18F01 !important;
+  --pst-color-danger: #C73E1D !important;
+  --pst-color-light: #F5F5F5 !important;
+  --pst-color-dark: #2C3E50 !important;
+  --pst-color-muted: #6C757D !important;
+  --pst-color-white: #FFFFFF !important;
+  --pst-color-border: #DEE2E6 !important;
+  --pst-color-shadow: rgba(0, 0, 0, 0.1) !important;
+  --pst-color-text-base: #212529 !important;
+  --pst-color-text-muted: #6C757D !important;
+  --pst-color-link: #2E86AB !important;
+  --pst-color-link-hover: #A23B72 !important;
+  --pst-color-background: #FFFFFF !important;
+  --pst-color-on-background: #212529 !important;
+  --pst-color-surface: #FFFFFF !important;
+  --pst-color-on-surface: #212529 !important;
+}
+
+/* Final catchall for any remaining dark elements */
+*:not(.btn-primary):not(.btn-secondary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-light):not(.btn-dark):not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-light):not(.bg-dark):not(.table-dark):not(.navbar-dark):not(.card-dark):not(.alert-dark) {
+  background-color: white !important;
+  color: #212529 !important;
 }
