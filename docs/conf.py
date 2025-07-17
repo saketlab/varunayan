@@ -136,7 +136,8 @@ html_theme_options = {
     },
     "search_bar_text": "Search the documentation...",
     "logo": {
-        "text": "Varunayan",
+        "image_light": "_static/varunayan_logo.png",
+        "image_dark": "_static/varunayan_logo.png",
     },
     "theme_switcher_button": False,  # Disable theme switcher
     "show_navbar_depth": 1,
@@ -156,8 +157,8 @@ html_search_options = {
 }
 
 # Additional HTML options
-# html_favicon = "_static/favicon.ico"  # Comment out until we have the file
-# html_logo = "_static/logo.png"        # Comment out until we have the file
+html_favicon = "_static/favicon.ico"
+html_logo = "_static/varunayan_logo.png"
 html_css_files = [
     "custom.css",
 ]

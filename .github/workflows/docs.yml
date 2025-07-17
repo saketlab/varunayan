@@ -53,7 +53,6 @@ jobs:
       run: |
         cd docs
         sphinx-build -b html . _build/html
-    
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
