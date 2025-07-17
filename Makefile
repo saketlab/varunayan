@@ -1,7 +1,5 @@
 # Varunayan Project Makefile
 # 
-# This Makefile provides comprehensive build, test, and documentation targets
-# for the Varunayan ERA5 climate data processing package.
 
 # Variables
 PYTHON := python
