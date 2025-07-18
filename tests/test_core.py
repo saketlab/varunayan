@@ -2,13 +2,15 @@ import datetime as dt
 import sys
 import unittest.mock as mock
 from calendar import monthrange
-from unittest.mock import MagicMock, patch
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from typing import Dict, Any, Optional, List
+
 from varunayan.core import (
     ProcessingParams,
     adjust_sum_variables,
@@ -35,7 +37,7 @@ sys.modules["urllib.request"] = MagicMock()
 sys.modules["requests"] = MagicMock()
 
 
-def test_processing_params_initialization(basic_params : ProcessingParams):
+def test_processing_params_initialization(basic_params: ProcessingParams):
     assert basic_params.request_id == "test_request"
     assert basic_params.variables == ["2m_temperature", "total_precipitation"]
     assert basic_params.start_date == dt.datetime(2020, 1, 1)
@@ -51,7 +53,7 @@ def test_parse_date():
         parse_date("invalid-date")
 
 
-def test_validate_inputs(basic_params : ProcessingParams):
+def test_validate_inputs(basic_params: ProcessingParams):
     # Should not raise exceptions for valid inputs
     validate_inputs(basic_params)
 
@@ -118,13 +120,13 @@ def test_validate_inputs(basic_params : ProcessingParams):
         validate_inputs(invalid_params)
 
 
-def test_download_with_retry_success(basic_params : ProcessingParams, tmp_path : Path):
+def test_download_with_retry_success(basic_params: ProcessingParams, tmp_path: Path):
     # Setup test file
     test_file = tmp_path / "test_request.zip"
     test_file.touch()
 
     # Create a mock download function that returns the test file path
-    def mock_download_func(**kwargs : Dict[str, Any]):
+    def mock_download_func(**kwargs: Dict[str, Any]):
         return str(test_file)
 
     # Test the download with retry
@@ -134,13 +136,15 @@ def test_download_with_retry_success(basic_params : ProcessingParams, tmp_path :
     assert result == str(test_file)
 
 
-def test_download_with_retry_success_mo(basic_params_mo : ProcessingParams, tmp_path : Path):
+def test_download_with_retry_success_mo(
+    basic_params_mo: ProcessingParams, tmp_path: Path
+):
     # Setup test file
     test_file = tmp_path / "test_request.zip"
     test_file.touch()
 
     # Create a mock download function that returns the test file path
-    def mock_download_func(**kwargs : Dict[str, Any]):
+    def mock_download_func(**kwargs: Dict[str, Any]):
         return str(test_file)
 
     # Test the download with retry
@@ -150,7 +154,9 @@ def test_download_with_retry_success_mo(basic_params_mo : ProcessingParams, tmp_
     assert result == str(test_file)
 
 
-def test_download_with_retry_pressure_levels_with_mock(pressure_params : ProcessingParams, tmp_path : Path):
+def test_download_with_retry_pressure_levels_with_mock(
+    pressure_params: ProcessingParams, tmp_path: Path
+):
     # Setup test file
     test_file = tmp_path / "test_request.zip"
     test_file.touch()
@@ -176,8 +182,10 @@ def test_download_with_retry_pressure_levels_with_mock(pressure_params : Process
 
 
 @patch("time.sleep")  # Mock sleep to avoid waiting
-def test_download_with_retry_failure(mock_sleep : MagicMock, basic_params : ProcessingParams):
-    def failing_download(**kwargs : Dict[str, Any]):
+def test_download_with_retry_failure(
+    mock_sleep: MagicMock, basic_params: ProcessingParams
+):
+    def failing_download(**kwargs: Dict[str, Any]):
         raise Exception("Download failed")
 
     with pytest.raises(Exception):
@@ -187,13 +195,19 @@ def test_download_with_retry_failure(mock_sleep : MagicMock, basic_params : Proc
 
 
 @patch("varunayan.core.process_era5_data")
-def test_process_time_chunks_no_chunking(mock_process : MagicMock, basic_params : ProcessingParams):
+def test_process_time_chunks_no_chunking(
+    mock_process: MagicMock, basic_params: ProcessingParams
+):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
 
     # Create a mock download function
-    def mock_proc_func(params : ProcessingParams, chunk_num : Optional[int] = None, total_chunks : Optional[int] = None):
+    def mock_proc_func(
+        params: ProcessingParams,
+        chunk_num: Optional[int] = None,
+        total_chunks: Optional[int] = None,
+    ):
         return mock_process(params)
-    
+
     def mock_down_func():
         return None
 
@@ -203,13 +217,19 @@ def test_process_time_chunks_no_chunking(mock_process : MagicMock, basic_params 
 
 
 @patch("varunayan.core.process_era5_data")
-def test_process_time_chunks_no_chunking_mo(mock_process : MagicMock, basic_params_mo: ProcessingParams):
+def test_process_time_chunks_no_chunking_mo(
+    mock_process: MagicMock, basic_params_mo: ProcessingParams
+):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
 
     # Create a mock download function
-    def mock_proc_func(params : ProcessingParams, chunk_num : Optional[int] = None, total_chunks : Optional[int] = None):
+    def mock_proc_func(
+        params: ProcessingParams,
+        chunk_num: Optional[int] = None,
+        total_chunks: Optional[int] = None,
+    ):
         return mock_process(params)
-    
+
     def mock_down_func():
         return None
 
@@ -220,7 +240,9 @@ def test_process_time_chunks_no_chunking_mo(mock_process : MagicMock, basic_para
 
 @patch("time.sleep")
 @patch("varunayan.core.process_era5_data")
-def test_process_time_chunks_with_chunking(mock_process : MagicMock, basic_params: ProcessingParams):
+def test_process_time_chunks_with_chunking(
+    mock_process: MagicMock, basic_params: ProcessingParams
+):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
 
     # Create params that would require chunking (>14 days)
@@ -238,9 +260,13 @@ def test_process_time_chunks_with_chunking(mock_process : MagicMock, basic_param
     )
 
     # Create a mock download function
-    def mock_proc_func(params : ProcessingParams, chunk_num : Optional[int] = None, total_chunks : Optional[int] = None):
+    def mock_proc_func(
+        params: ProcessingParams,
+        chunk_num: Optional[int] = None,
+        total_chunks: Optional[int] = None,
+    ):
         return mock_process(params)
-    
+
     def mock_down_func():
         return None
 
@@ -250,7 +276,9 @@ def test_process_time_chunks_with_chunking(mock_process : MagicMock, basic_param
 
 @patch("time.sleep")
 @patch("varunayan.core.process_era5_data")
-def test_process_time_chunks_with_chunking_mo_pr(mock_process : MagicMock, basic_params: ProcessingParams):
+def test_process_time_chunks_with_chunking_mo_pr(
+    mock_process: MagicMock, basic_params: ProcessingParams
+):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
 
     # Create params that would require chunking (>14 days)
@@ -269,9 +297,13 @@ def test_process_time_chunks_with_chunking_mo_pr(mock_process : MagicMock, basic
     )
 
     # Create a mock download function
-    def mock_proc_func(params : ProcessingParams, chunk_num : Optional[int] = None, total_chunks : Optional[int] = None):
+    def mock_proc_func(
+        params: ProcessingParams,
+        chunk_num: Optional[int] = None,
+        total_chunks: Optional[int] = None,
+    ):
         return mock_process(params)
-    
+
     def mock_down_func():
         return None
 
@@ -281,10 +313,15 @@ def test_process_time_chunks_with_chunking_mo_pr(mock_process : MagicMock, basic
 
 @patch("varunayan.core.save_results")
 @patch("varunayan.core.aggregate_by_frequency")
-def test_aggregate_and_save(mock_agg : MagicMock, mock_save : MagicMock, basic_params: ProcessingParams, temp_dir: Path):
+def test_aggregate_and_save(
+    mock_agg: MagicMock,
+    mock_save: MagicMock,
+    basic_params: ProcessingParams,
+    temp_dir: Path,
+):
     test_df = pd.DataFrame(
         {
-            "valid_time": pd.to_datetime(["2020-01-01", "2020-01-02"]), #type: ignore
+            "valid_time": pd.to_datetime(["2020-01-01", "2020-01-02"]),  # type: ignore
             "latitude": [37.75, 37.75],
             "longitude": [-122.25, -122.25],
             "t2m": [280, 281],
@@ -303,7 +340,7 @@ def test_aggregate_and_save(mock_agg : MagicMock, mock_save : MagicMock, basic_p
 
 
 @patch("varunayan.core.process_era5")
-def test_era5ify_geojson(mock_process: MagicMock, sample_geojson_file : str):
+def test_era5ify_geojson(mock_process: MagicMock, sample_geojson_file: str):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
 
     result = era5ify_geojson(
@@ -319,7 +356,7 @@ def test_era5ify_geojson(mock_process: MagicMock, sample_geojson_file : str):
 
 
 @patch("varunayan.core.process_era5")
-def test_era5ify_bbox(mock_process : MagicMock):
+def test_era5ify_bbox(mock_process: MagicMock):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
 
     result = era5ify_bbox(
@@ -338,7 +375,7 @@ def test_era5ify_bbox(mock_process : MagicMock):
 
 
 @patch("varunayan.core.process_era5")
-def test_era5ify_point(mock_process : MagicMock):
+def test_era5ify_point(mock_process: MagicMock):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
 
     result = era5ify_point(
@@ -510,7 +547,7 @@ def test_print_processing_strategy_daily():
 
 
 @patch("os.path.exists", return_value=True)
-def test_validate_inputs_with_geojson(mock_exists : MagicMock):
+def test_validate_inputs_with_geojson(mock_exists: MagicMock):
     """Test input validation with GeoJSON file"""
     params = ProcessingParams(
         request_id="test",
@@ -543,11 +580,16 @@ def test_validate_inputs_pressure_levels():
 @patch("os.remove")
 @patch("shutil.rmtree")
 @patch("glob.glob")
-def test_cleanup_temp_files(mock_glob : MagicMock, mock_rmtree : MagicMock, mock_remove : MagicMock, mock_exists : MagicMock):
+def test_cleanup_temp_files(
+    mock_glob: MagicMock,
+    mock_rmtree: MagicMock,
+    mock_remove: MagicMock,
+    mock_exists: MagicMock,
+):
     """Test cleanup of temporary files"""
 
     # Mock glob to return files for both patterns
-    def mock_glob_side_effect(pattern : str) -> Optional[List[str]]:
+    def mock_glob_side_effect(pattern: str) -> Optional[List[str]]:
         if "*test123*.zip" in pattern:
             return ["/tmp/test123.zip"]
         elif "*test123*.nc" in pattern:
@@ -577,12 +619,12 @@ def test_cleanup_temp_files(mock_glob : MagicMock, mock_rmtree : MagicMock, mock
 @patch("varunayan.core.validate_inputs")
 @patch("varunayan.core.process_time_chunks")
 def test_process_era5(
-    mock_print_bbox : MagicMock,
-    mock_footer : MagicMock,
-    mock_header : MagicMock,
+    mock_print_bbox: MagicMock,
+    mock_footer: MagicMock,
+    mock_header: MagicMock,
     mock_validate: MagicMock,
-    mock_process : MagicMock,
-    mock_agg : MagicMock,
+    mock_process: MagicMock,
+    mock_agg: MagicMock,
 ):
     """Test main process_era5 function with mocked dependencies"""
     # Setup mock return values
@@ -610,7 +652,7 @@ def test_process_era5(
 
 
 @patch("varunayan.core.process_era5")
-def test_era5ify_point_edge_cases(mock_process : MagicMock):
+def test_era5ify_point_edge_cases(mock_process: MagicMock):
     """Test era5ify_point with edge case coordinates"""
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
 
@@ -672,12 +714,12 @@ def test_print_processing_header_pressure():
 @patch("varunayan.core.download_with_retry")
 @patch("xarray.open_dataset")
 def test_process_era5_data_single_level_success(
-    mock_open_dataset : MagicMock,
-    mock_download : MagicMock,
-    mock_extract : MagicMock,
-    mock_filter : MagicMock,
-    mock_logger : MagicMock,
-    basic_params : ProcessingParams,
+    mock_open_dataset: MagicMock,
+    mock_download: MagicMock,
+    mock_extract: MagicMock,
+    mock_filter: MagicMock,
+    mock_logger: MagicMock,
+    basic_params: ProcessingParams,
 ):
     """Test successful processing of single level data"""
     # Setup mock data
@@ -726,12 +768,12 @@ def test_process_era5_data_single_level_success(
 @patch("varunayan.core.download_with_retry")
 @patch("xarray.open_dataset")
 def test_process_era5_data_pressure_level_success(
-    mock_open_dataset : MagicMock,
-    mock_download : MagicMock,
-    mock_extract : MagicMock,
-    mock_filter : MagicMock,
-    mock_logger : MagicMock,
-    pressure_params : ProcessingParams,
+    mock_open_dataset: MagicMock,
+    mock_download: MagicMock,
+    mock_extract: MagicMock,
+    mock_filter: MagicMock,
+    mock_logger: MagicMock,
+    pressure_params: ProcessingParams,
 ):
     """Test successful processing of pressure level data"""
     # Setup mock data
@@ -782,12 +824,12 @@ def test_process_era5_data_pressure_level_success(
 @patch("varunayan.core.download_with_retry")
 @patch("xarray.open_dataset")
 def test_process_era5_data_with_geojson_filtering(
-    mock_open_dataset : MagicMock,
-    mock_download : MagicMock,
-    mock_extract : MagicMock,
-    mock_filter : MagicMock,
-    mock_logger : MagicMock,
-    basic_params : ProcessingParams,
+    mock_open_dataset: MagicMock,
+    mock_download: MagicMock,
+    mock_extract: MagicMock,
+    mock_filter: MagicMock,
+    mock_logger: MagicMock,
+    basic_params: ProcessingParams,
 ):
     """Test processing with GeoJSON filtering"""
     # Setup params with geojson_data
@@ -835,7 +877,11 @@ def test_process_era5_data_with_geojson_filtering(
 @patch("varunayan.core.download_with_retry")
 @patch("xarray.open_dataset")
 def test_process_era5_data_multiple_files(
-    mock_open_dataset : MagicMock, mock_download : MagicMock, mock_extract : MagicMock, mock_logger : MagicMock, basic_params : ProcessingParams
+    mock_open_dataset: MagicMock,
+    mock_download: MagicMock,
+    mock_extract: MagicMock,
+    mock_logger: MagicMock,
+    basic_params: ProcessingParams,
 ):
     """Test processing multiple NetCDF files"""
     # Setup mock data
@@ -881,7 +927,11 @@ def test_process_era5_data_multiple_files(
 @patch("varunayan.core.download_with_retry")
 @patch("xarray.open_dataset")
 def test_process_era5_data_with_duplicates(
-    mock_open_dataset : MagicMock, mock_download : MagicMock, mock_extract : MagicMock, mock_logger : MagicMock, basic_params : ProcessingParams
+    mock_open_dataset: MagicMock,
+    mock_download: MagicMock,
+    mock_extract: MagicMock,
+    mock_logger: MagicMock,
+    basic_params: ProcessingParams,
 ):
     """Test duplicate removal functionality"""
     # Setup mock data
@@ -916,7 +966,10 @@ def test_process_era5_data_with_duplicates(
 @patch("varunayan.core.extract_download")
 @patch("varunayan.core.download_with_retry")
 def test_process_era5_data_no_valid_files(
-    mock_download : MagicMock, mock_extract : MagicMock, mock_logger : MagicMock, basic_params : ProcessingParams
+    mock_download: MagicMock,
+    mock_extract: MagicMock,
+    mock_logger: MagicMock,
+    basic_params: ProcessingParams,
 ):
     """Test handling of no valid NetCDF files"""
     # Setup mock data with no .nc files
@@ -933,7 +986,11 @@ def test_process_era5_data_no_valid_files(
 @patch("varunayan.core.download_with_retry")
 @patch("xarray.open_dataset")
 def test_process_era5_data_file_processing_error(
-    mock_open_dataset : MagicMock, mock_download : MagicMock, mock_extract : MagicMock, mock_logger : MagicMock, basic_params : ProcessingParams
+    mock_open_dataset: MagicMock,
+    mock_download: MagicMock,
+    mock_extract: MagicMock,
+    mock_logger: MagicMock,
+    basic_params: ProcessingParams,
 ):
     """Test handling of file processing errors"""
     # Setup mock data
@@ -969,7 +1026,11 @@ def test_process_era5_data_file_processing_error(
 @patch("varunayan.core.download_with_retry")
 @patch("xarray.open_dataset")
 def test_process_era5_data_with_chunk_info(
-    mock_open_dataset : MagicMock, mock_download : MagicMock, mock_extract : MagicMock, mock_logger : MagicMock, basic_params : ProcessingParams
+    mock_open_dataset: MagicMock,
+    mock_download: MagicMock,
+    mock_extract: MagicMock,
+    mock_logger: MagicMock,
+    basic_params: ProcessingParams,
 ):
     """Test processing with chunk information"""
     # Setup mock data
@@ -1009,7 +1070,11 @@ def test_process_era5_data_with_chunk_info(
 @patch("varunayan.core.download_with_retry")
 @patch("xarray.open_dataset")
 def test_process_era5_data_all_files_fail(
-    mock_open_dataset : MagicMock, mock_download : MagicMock, mock_extract : MagicMock, mock_logger : MagicMock, basic_params : ProcessingParams
+    mock_open_dataset: MagicMock,
+    mock_download: MagicMock,
+    mock_extract: MagicMock,
+    mock_logger: MagicMock,
+    basic_params: ProcessingParams,
 ):
     """Test when all files fail to process"""
     # Setup mock data

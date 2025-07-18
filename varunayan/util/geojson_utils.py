@@ -11,7 +11,7 @@ logger = get_logger(level=logging.INFO)
 
 def extract_coords_from_geometry(geometry: Dict[str, Any]) -> List[List[float]]:
     """Extract all coordinates from a GeoJSON geometry object."""
-    coords : List[List[float]] = []
+    coords: List[List[float]] = []
     geom_type = geometry["type"]
 
     if geom_type == "Point":
@@ -50,7 +50,7 @@ def get_bounding_box(geojson_data: Dict[str, Any]) -> Tuple[float, float, float,
         return (bbox[0], bbox[1], bbox[2], bbox[3])
 
     # If no bbox, calculate it ourselves
-    all_coords : List[List[float]] = []
+    all_coords: List[List[float]] = []
 
     if geojson_data["type"] == "Feature":
         all_coords.extend(extract_coords_from_geometry(geojson_data["geometry"]))
@@ -66,14 +66,14 @@ def get_bounding_box(geojson_data: Dict[str, Any]) -> Tuple[float, float, float,
 
     # Extract longitudes (x) and latitudes (y) - IMPORTANT: GeoJSON stores
     # [lon, lat]
-    lons : List[float] = [coord[0] for coord in all_coords]  # Longitude is first
-    lats : List[float] = [coord[1] for coord in all_coords]  # Latitude is second
+    lons: List[float] = [coord[0] for coord in all_coords]  # Longitude is first
+    lats: List[float] = [coord[1] for coord in all_coords]  # Latitude is second
 
     # Calculate bounds
-    west : float = min(lons)
-    east : float = max(lons)
-    south : float = min(lats)
-    north : float = max(lats)
+    west: float = min(lons)
+    east: float = max(lons)
+    south: float = min(lats)
+    north: float = max(lats)
 
     return (west, south, east, north)
 
@@ -96,7 +96,7 @@ def load_json_with_encoding(file_path: str) -> Dict[str, Any]:
     for encoding in encodings:
         try:
             with open(file_path, "r", encoding=encoding) as f:
-                data : Dict[str, Any] = json.load(f)
+                data: Dict[str, Any] = json.load(f)
                 logging.debug(f"Successfully loaded JSON file with {encoding} encoding")
                 return data
         except UnicodeDecodeError:
@@ -123,7 +123,7 @@ def is_valid_geojson(json_data: Dict[str, Any]) -> bool:
         True if it's valid GeoJSON, False otherwise
     """
     # Check if it's a dictionary
-    if not isinstance(json_data, dict): #type: ignore
+    if not isinstance(json_data, dict):  # type: ignore
         return False
 
     # Basic GeoJSON structure check
@@ -218,9 +218,9 @@ def convert_to_geojson(json_data: Dict[str, Any]) -> Dict[str, Any]:
     if (
         "bbox" in json_data
         and isinstance(json_data["bbox"], list)
-        and len(json_data["bbox"]) >= 4 #type: ignore
+        and len(json_data["bbox"]) >= 4  # type: ignore
     ):
-        bbox_list: List[Any] = json_data["bbox"]    #type: ignore
+        bbox_list: List[Any] = json_data["bbox"]  # type: ignore
         west: float = float(bbox_list[0])
         south: float = float(bbox_list[1])
         east: float = float(bbox_list[2])

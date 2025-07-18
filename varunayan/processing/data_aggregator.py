@@ -1,14 +1,16 @@
 import logging
+from typing import List
 
 import numpy as np
 import pandas as pd
-from typing import List
+
 from ..util.logging_utils import get_logger
 from .variable_lists import exclude_cols, max_vars, min_vars, rate_vars, sum_vars
 
 logger = get_logger(level=logging.INFO)
 
-#pyright: reportUnknownMemberType=false
+
+# pyright: reportUnknownMemberType=false
 def aggregate_by_frequency(
     df: pd.DataFrame, frequency: str, keep_original_time: bool = False
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -37,7 +39,7 @@ def aggregate_by_frequency(
 
     # Ensure time column is properly formatted
     if "valid_time" in df.columns:
-        if not np.issubdtype(df["valid_time"].dtype, np.datetime64):    #type: ignore
+        if not np.issubdtype(df["valid_time"].dtype, np.datetime64):  # type: ignore
             df["valid_time"] = pd.to_datetime(df["valid_time"], errors="coerce")
         df["date"] = df["valid_time"].dt.date
         df["hour"] = df["valid_time"].dt.hour
@@ -57,7 +59,7 @@ def aggregate_by_frequency(
         if isinstance(df["time"].iloc[0], str):
             df["hour"] = pd.to_datetime(df["time"]).dt.hour
         else:
-            df["hour"] = df["time"].apply(lambda t: t.hour) #type: ignore
+            df["hour"] = df["time"].apply(lambda t: t.hour)  # type: ignore
 
         # Create valid_time column for resampling
         df["valid_time"] = pd.to_datetime(df["date"]) + pd.to_timedelta(
@@ -69,28 +71,28 @@ def aggregate_by_frequency(
     var_cols = [col for col in df.columns if col not in exclude_cols]
 
     # Match columns that should be summed (more flexible matching)
-    sum_cols : List[str] = []
+    sum_cols: List[str] = []
     for col in var_cols:
         col_lower = col.lower()
         if any(sv == col_lower or sv in col_lower.split("_") for sv in sum_vars):
             sum_cols.append(col)
 
     # Match columns that should use max
-    max_cols : List[str] = []
+    max_cols: List[str] = []
     for col in var_cols:
         col_lower = col.lower()
         if any(mv == col_lower or mv in col_lower.split("_") for mv in max_vars):
             max_cols.append(col)
 
     # Match columns that should use min
-    min_cols : List[str] = []
+    min_cols: List[str] = []
     for col in var_cols:
         col_lower = col.lower()
         if any(mv == col_lower or mv in col_lower.split("_") for mv in min_vars):
             min_cols.append(col)
 
     # Match rate columns
-    rate_cols : List[str] = []
+    rate_cols: List[str] = []
     for col in var_cols:
         col_lower = col.lower()
         if any(rv == col_lower or rv in col_lower.split("_") for rv in rate_vars):
@@ -217,7 +219,8 @@ def aggregate_by_frequency(
 
     return result, unique_latlongs
 
-#pyright: reportUnknownMemberType=false
+
+# pyright: reportUnknownMemberType=false
 def aggregate_pressure_levels(
     df: pd.DataFrame, frequency: str = "hourly", keep_original_time: bool = False
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -249,7 +252,7 @@ def aggregate_pressure_levels(
     time_col = "valid_time" if "valid_time" in df.columns else "time"
 
     # Ensure time column is properly formatted
-    if not np.issubdtype(df[time_col].dtype, np.datetime64):    #type: ignore
+    if not np.issubdtype(df[time_col].dtype, np.datetime64):  # type: ignore
         df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
 
     # Identify pressure level column if exists
@@ -314,7 +317,7 @@ def aggregate_pressure_levels(
     # For pressure levels, we need to group by pressure level before resampling
     if has_pressure_level:
         # Get unique pressure levels
-        pressure_levels = df["pressure_level"].unique() #type: ignore
+        pressure_levels = df["pressure_level"].unique()  # type: ignore
 
         # Initialize empty DataFrame for results
         result_df = pd.DataFrame()
@@ -322,16 +325,16 @@ def aggregate_pressure_levels(
         # Process each pressure level separately
         for level in pressure_levels:
             # Filter data for this pressure level
-            level_data = temporal_agg[temporal_agg["pressure_level"] == level]  #type: ignore
+            level_data = temporal_agg[temporal_agg["pressure_level"] == level]  # type: ignore
 
             # Resample and average variables
-            resampled = level_data[var_cols].resample(freq_map[frequency]).mean()   #type: ignore
+            resampled = level_data[var_cols].resample(freq_map[frequency]).mean()  # type: ignore
 
             # Add pressure level back
             resampled["pressure_level"] = level
 
             # Combine results
-            result_df = pd.concat([result_df, resampled.reset_index()]) #type: ignore
+            result_df = pd.concat([result_df, resampled.reset_index()])  # type: ignore
     else:
         # No pressure levels - simple resample
         result_df = (

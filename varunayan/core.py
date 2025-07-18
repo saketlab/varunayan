@@ -8,7 +8,7 @@ import tempfile
 import time
 from calendar import monthrange
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Any, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
 import xarray as xr
@@ -21,7 +21,7 @@ from .processing import (
     aggregate_pressure_levels,
     extract_download,
     filter_netcdf_by_shapefile,
-    sum_vars
+    sum_vars,
 )
 from .util import (
     Colors,
@@ -37,6 +37,7 @@ from .util import (
 logger = get_logger(level=logging.INFO)
 
 SUM_VARS = sum_vars
+
 
 @dataclass
 class ProcessingParams:
@@ -57,7 +58,9 @@ class ProcessingParams:
 
 
 def download_with_retry(
-    download_func: Callable[..., Optional[str]], params: ProcessingParams, chunk_id: Optional[str] = None
+    download_func: Callable[..., Optional[str]],
+    params: ProcessingParams,
+    chunk_id: Optional[str] = None,
 ) -> Optional[str]:
     """Generic download function with retry logic"""
     max_retries = 5
@@ -104,7 +107,13 @@ def download_with_retry(
                 raise e
 
 
-def process_time_chunks(params: ProcessingParams, download_func: Callable[..., Optional[str]], process_func: Callable[[ProcessingParams, Optional[int], Optional[int]], Optional[pd.DataFrame]])-> Optional[pd.DataFrame]:
+def process_time_chunks(
+    params: ProcessingParams,
+    download_func: Callable[..., Optional[str]],
+    process_func: Callable[
+        [ProcessingParams, Optional[int], Optional[int]], Optional[pd.DataFrame]
+    ],
+) -> Optional[pd.DataFrame]:
     """Handle time-based chunking of downloads and processing"""
     use_monthly = params.frequency in ["monthly", "yearly"]
 
@@ -120,7 +129,7 @@ def process_time_chunks(params: ProcessingParams, download_func: Callable[..., O
         total_units = (params.end_date - params.start_date).days + 1
 
     needs_chunking = total_units > max_per_chunk
-    all_data : List[pd.DataFrame] = []
+    all_data: List[pd.DataFrame] = []
 
     if not needs_chunking:
         return process_func(params, 1, 1)
@@ -188,10 +197,11 @@ def process_time_chunks(params: ProcessingParams, download_func: Callable[..., O
 
     return pd.concat(all_data, ignore_index=True)
 
+
 # pyright: reportUnknownMemberType=false
 def process_era5_data(
     params: ProcessingParams, chunk_info: Optional[Tuple[int, int]] = None
-)-> Optional[pd.DataFrame]:
+) -> Optional[pd.DataFrame]:
     """Core processing function for both single and pressure level data"""
     chunk_number, total_chunks = chunk_info or (1, 1)
 
@@ -211,7 +221,7 @@ def process_era5_data(
     download_file = download_with_retry(download_func, params, chunk_id)
 
     # Process downloaded files
-    nc_files : List[str] = []
+    nc_files: List[str] = []
     if download_file is not None:
         nc_files = extract_download(download_file)
     datasets: List[xr.Dataset] = []
@@ -286,7 +296,7 @@ def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame):
     return aggregated_df
 
 
-def adjust_sum_variables(df: pd.DataFrame, frequency: str)-> None:
+def adjust_sum_variables(df: pd.DataFrame, frequency: str) -> None:
     """Adjust sum variables based on temporal frequency"""
     sum_vars_present = [col for col in df.columns if col in SUM_VARS]
 
@@ -296,7 +306,7 @@ def adjust_sum_variables(df: pd.DataFrame, frequency: str)-> None:
     try:
         if frequency == "monthly":
             df["days_in_month"] = df.apply(
-                lambda row: monthrange(int(row["year"]), int(row["month"]))[1], axis=1 #type: ignore
+                lambda row: monthrange(int(row["year"]), int(row["month"]))[1], axis=1  # type: ignore
             )
             for var in sum_vars_present:
                 if var in df.columns:
@@ -378,12 +388,14 @@ def process_era5(params: ProcessingParams):
             if params.pressure_levels
             else download_era5_single_lvl
         ),
-        lambda p, cn, tc: process_era5_data(p, (cn, tc) if cn is not None and tc is not None else None),
+        lambda p, cn, tc: process_era5_data(
+            p, (cn, tc) if cn is not None and tc is not None else None
+        ),
     )
 
     if processed_df is None:
         raise ValueError("No valid data processed during chunking.")
-    
+
     final_result = aggregate_and_save(params, processed_df)
     print_processing_footer(params, final_result, total_start_time)
     return final_result
@@ -472,7 +484,9 @@ def print_processing_strategy(params: ProcessingParams):
     logger.info(f"Needs chunking: {needs_chunking}")
 
 
-def calculate_map_dimensions(west: float, east: float, south: float, north: float) -> Tuple[int, int]:
+def calculate_map_dimensions(
+    west: float, east: float, south: float, north: float
+) -> Tuple[int, int]:
     """Calculate proportional width/height for ASCII map"""
     geo_width = abs(east - west)
     geo_height = abs(north - south)

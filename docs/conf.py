@@ -1,7 +1,7 @@
 import os
 import shutil
 import sys
-from typing import List, Dict
+from typing import Dict, List
 
 sys.path.insert(0, os.path.abspath(".."))
 

@@ -8,7 +8,9 @@ from ..util.logging_utils import get_logger
 logger = get_logger(level=logging.INFO)
 
 
-def extract_download(zip_or_file_path: str, extract_dir: Optional[str] = None) -> List[str]:
+def extract_download(
+    zip_or_file_path: str, extract_dir: Optional[str] = None
+) -> List[str]:
     """
     Extract downloaded file. Handles both single NC file and zip files.
 
@@ -76,9 +78,9 @@ def find_netcdf_files(extraction_dir: str) -> List[str]:
     Returns:
         List of full paths to NetCDF files
     """
-    nc_files : List[str] = []
+    nc_files: List[str] = []
     for root, _, files in os.walk(extraction_dir):
-        nc_files.extend( #type: ignore
+        nc_files.extend(  # type: ignore
             [os.path.join(root, file) for file in files if file.endswith(".nc")]
         )
     return nc_files

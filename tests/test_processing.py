@@ -1,7 +1,8 @@
+from typing import Any, Dict
+
 import numpy as np
 import pandas as pd
 import xarray as xr
-from typing import Dict, Any
 
 # Adjust the import path according to your package structure
 from varunayan.processing import (
@@ -15,7 +16,7 @@ def test_aggregate_by_frequency_hourly():
     """Test hourly aggregation (should return original data)"""
     df = pd.DataFrame(
         {
-            "valid_time": pd.to_datetime(["2020-01-01 00:00", "2020-01-01 01:00"]), #type: ignore
+            "valid_time": pd.to_datetime(["2020-01-01 00:00", "2020-01-01 01:00"]),  # type: ignore
             "latitude": [37.5, 37.5],
             "longitude": [-122.5, -122.5],
             "t2m": [280, 281],
@@ -43,7 +44,7 @@ def test_aggregate_by_frequency_daily():
         }
     )
 
-    result, unique_coords = aggregate_by_frequency(df, "daily") #type: ignore
+    result, unique_coords = aggregate_by_frequency(df, "daily")  # type: ignore
     assert len(result) == 1  # Aggregated to 1 day
     assert "t2m" in result.columns
     assert "tp" in result.columns
@@ -64,7 +65,7 @@ def test_aggregate_by_frequency_monthly():
         }
     )
 
-    result, unique_coords = aggregate_by_frequency(df, "monthly")   #type: ignore
+    result, unique_coords = aggregate_by_frequency(df, "monthly")  # type: ignore
     assert len(result) == 1  # Aggregated to 1 month
     assert "t2m" in result.columns
     assert "tp" in result.columns
@@ -76,7 +77,7 @@ def test_aggregate_pressure_levels():
     """Test aggregation of pressure level data"""
     df = pd.DataFrame(
         {
-            "valid_time": pd.to_datetime(["2020-01-01 00:00"] * 3), #type: ignore
+            "valid_time": pd.to_datetime(["2020-01-01 00:00"] * 3),  # type: ignore
             "latitude": [37.5] * 3,
             "longitude": [-122.5] * 3,
             "pressure_level": [500, 850, 1000],
@@ -87,7 +88,7 @@ def test_aggregate_pressure_levels():
 
     result, _ = aggregate_pressure_levels(df, "hourly")
     assert len(result) == 3  # returns 3 time points, one for each pressure level
-    assert result[result["pressure_level"] == 500]["z"].eq(5000).all()  #type: ignore
+    assert result[result["pressure_level"] == 500]["z"].eq(5000).all()  # type: ignore
 
 
 def test_filter_netcdf_by_shapefile(sample_geojson: Dict[str, Any]):
