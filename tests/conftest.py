@@ -4,7 +4,7 @@ import os
 import shutil
 import tempfile
 from unittest.mock import MagicMock
-
+from typing import Dict, Any
 import pytest
 
 from varunayan.core import ProcessingParams
@@ -45,7 +45,7 @@ def sample_geojson():
 
 
 @pytest.fixture
-def sample_geojson_file(sample_geojson, temp_dir):
+def sample_geojson_file(sample_geojson : Dict[str, Any], temp_dir : str) -> str:
     """Save sample GeoJSON to a temporary file"""
     file_path = os.path.join(temp_dir, "test.geojson")
     with open(file_path, "w") as f:
@@ -206,13 +206,13 @@ def point_coords():
 
 
 @pytest.fixture(params=["hourly", "daily", "weekly", "monthly", "yearly"])
-def frequency_options(request):
+def frequency_options(request : pytest.FixtureRequest):
     """Parametrized fixture for frequency options"""
     return request.param
 
 
 @pytest.fixture(params=["single", "pressure"])
-def dataset_type_options(request):
+def dataset_type_options(request : pytest.FixtureRequest):
     """Parametrized fixture for dataset type options"""
     return request.param
 
@@ -236,7 +236,7 @@ def variable_combinations():
 
 
 # Configure pytest
-def pytest_configure(config):
+def pytest_configure(config : pytest.Config):
     """Configure pytest with custom markers"""
     config.addinivalue_line(
         "markers",
@@ -247,7 +247,7 @@ def pytest_configure(config):
 
 
 # Custom assertions
-def assert_dataframe_called_with_args(mock_func, expected_args):
+def assert_dataframe_called_with_args(mock_func : MagicMock, expected_args : Dict[str, Any]):
     """Helper function to assert that a function was called with expected
     arguments"""
     mock_func.assert_called_once()

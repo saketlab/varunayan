@@ -8,7 +8,7 @@ import tempfile
 import time
 from calendar import monthrange
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any, Callable
 
 import pandas as pd
 import xarray as xr
@@ -53,12 +53,12 @@ class ProcessingParams:
     east: Optional[float] = None
     west: Optional[float] = None
     geojson_file: Optional[str] = None
-    geojson_data: Optional[Dict] = None
+    geojson_data: Optional[Dict[str, Any]] = None
 
 
 def download_with_retry(
-    download_func, params: ProcessingParams, chunk_id: Optional[str] = None
-):
+    download_func: Callable[..., Optional[str]], params: ProcessingParams, chunk_id: Optional[str] = None
+) -> Optional[str]:
     """Generic download function with retry logic"""
     max_retries = 5
     retry_delay = 30
@@ -104,7 +104,7 @@ def download_with_retry(
                 raise e
 
 
-def process_time_chunks(params: ProcessingParams, download_func, process_func):
+def process_time_chunks(params: ProcessingParams, download_func: Callable[..., Optional[str]], process_func: Callable[[ProcessingParams, Optional[int], Optional[int]], Optional[pd.DataFrame]])-> Optional[pd.DataFrame]:
     """Handle time-based chunking of downloads and processing"""
     use_monthly = params.frequency in ["monthly", "yearly"]
 
@@ -120,10 +120,10 @@ def process_time_chunks(params: ProcessingParams, download_func, process_func):
         total_units = (params.end_date - params.start_date).days + 1
 
     needs_chunking = total_units > max_per_chunk
-    all_data = []
+    all_data : List[pd.DataFrame] = []
 
     if not needs_chunking:
-        return process_func(params)
+        return process_func(params, 1, 1)
 
     # Chunked processing
     current_date = params.start_date
@@ -169,7 +169,8 @@ def process_time_chunks(params: ProcessingParams, download_func, process_func):
             logger.info(
                 f"{Colors.GREEN}✓ Chunk completed in {elapsed:.1f} seconds{Colors.RESET}"
             )
-            all_data.append(chunk_data)
+            if chunk_data is not None:
+                all_data.append(chunk_data)
         except Exception as e:
             logger.error(
                 f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}"
@@ -187,10 +188,10 @@ def process_time_chunks(params: ProcessingParams, download_func, process_func):
 
     return pd.concat(all_data, ignore_index=True)
 
-
+# pyright: reportUnknownMemberType=false
 def process_era5_data(
     params: ProcessingParams, chunk_info: Optional[Tuple[int, int]] = None
-):
+)-> Optional[pd.DataFrame]:
     """Core processing function for both single and pressure level data"""
     chunk_number, total_chunks = chunk_info or (1, 1)
 
@@ -210,8 +211,10 @@ def process_era5_data(
     download_file = download_with_retry(download_func, params, chunk_id)
 
     # Process downloaded files
-    nc_files = extract_download(download_file)
-    datasets = []
+    nc_files : List[str] = []
+    if download_file is not None:
+        nc_files = extract_download(download_file)
+    datasets: List[xr.Dataset] = []
 
     logger.info("\nProcessing downloaded data:")
     logger.info(f"- Found {len(nc_files)} file(s)")
@@ -223,7 +226,7 @@ def process_era5_data(
             f"  Processing file {i}/{len(nc_files)}: {os.path.basename(nc_file)}"
         )
         try:
-            ds = xr.open_dataset(nc_file)
+            ds: xr.Dataset = xr.open_dataset(nc_file)
             logger.info(f"  ✓ Loaded: Dimensions: {ds.sizes}")
             datasets.append(ds)
         except Exception as e:
@@ -235,7 +238,7 @@ def process_era5_data(
         raise ValueError("No valid datasets were processed")
 
     # Merge and convert to DataFrame
-    merged_ds = xr.merge(datasets) if len(datasets) > 1 else datasets[0]
+    merged_ds: xr.Dataset = xr.merge(datasets) if len(datasets) > 1 else datasets[0]
 
     # Apply filtering if GeoJSON provided
     if params.geojson_data:
@@ -283,7 +286,7 @@ def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame):
     return aggregated_df
 
 
-def adjust_sum_variables(df: pd.DataFrame, frequency: str):
+def adjust_sum_variables(df: pd.DataFrame, frequency: str)-> None:
     """Adjust sum variables based on temporal frequency"""
     sum_vars_present = [col for col in df.columns if col in SUM_VARS]
 
@@ -293,7 +296,7 @@ def adjust_sum_variables(df: pd.DataFrame, frequency: str):
     try:
         if frequency == "monthly":
             df["days_in_month"] = df.apply(
-                lambda row: monthrange(int(row["year"]), int(row["month"]))[1], axis=1
+                lambda row: monthrange(int(row["year"]), int(row["month"]))[1], axis=1 #type: ignore
             )
             for var in sum_vars_present:
                 if var in df.columns:
@@ -375,8 +378,12 @@ def process_era5(params: ProcessingParams):
             if params.pressure_levels
             else download_era5_single_lvl
         ),
-        lambda p, cn=1, tc=1: process_era5_data(p, (cn, tc)),
+        lambda p, cn, tc: process_era5_data(p, (cn, tc) if cn is not None and tc is not None else None),
     )
+
+    if processed_df is None:
+        raise ValueError("No valid data processed during chunking.")
+    
     final_result = aggregate_and_save(params, processed_df)
     print_processing_footer(params, final_result, total_start_time)
     return final_result
@@ -415,7 +422,7 @@ def validate_inputs(params: ProcessingParams):
     logger.info(f"{Colors.GREEN}✓ All inputs validated successfully{Colors.RESET}")
 
 
-def load_and_validate_geojson(geojson_file: str) -> Dict:
+def load_and_validate_geojson(geojson_file: str) -> Dict[str, Any]:
     """Load and validate GeoJSON file"""
     logger.info("\n--- Loading GeoJSON File ---")
     geojson_data = load_json_with_encoding(geojson_file)
@@ -434,9 +441,10 @@ def print_bounding_box(params: ProcessingParams):
     logger.info(f"  South: {params.south:.4f}°")
     logger.info(f"  East:  {params.east:.4f}°")
     logger.info(f"  West:  {params.west:.4f}°")
-    logger.info(
-        f"  Area:  {abs(params.east-params.west):.4f}° × {abs(params.north-params.south):.4f}°"
-    )
+    if params.north and params.south and params.east and params.west:
+        logger.info(
+            f"  Area:  {abs(params.east-params.west):.4f}° × {abs(params.north-params.south):.4f}°"
+        )
 
 
 def print_processing_strategy(params: ProcessingParams):
@@ -464,7 +472,7 @@ def print_processing_strategy(params: ProcessingParams):
     logger.info(f"Needs chunking: {needs_chunking}")
 
 
-def calculate_map_dimensions(west, east, south, north):
+def calculate_map_dimensions(west: float, east: float, south: float, north: float) -> Tuple[int, int]:
     """Calculate proportional width/height for ASCII map"""
     geo_width = abs(east - west)
     geo_height = abs(north - south)
@@ -480,7 +488,7 @@ def calculate_map_dimensions(west, east, south, north):
     return max(width, MIN_DIMENSION), max(height, MIN_DIMENSION)
 
 
-def draw_geojson_ascii(geojson_data):
+def draw_geojson_ascii(geojson_data: Dict[str, Any]):
     """
     Draws a mini ASCII map showing the GeoJSON polygon
     :param geojson_data: Loaded GeoJSON data
@@ -748,7 +756,7 @@ def era5ify_point(
             circle_coords.append([circle_lon, circle_lat])
 
     # Create GeoJSON structure
-    geojson_data = {
+    geojson_data: Dict[str, Any] = {
         "type": "FeatureCollection",
         "features": [
             {

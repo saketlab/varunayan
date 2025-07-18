@@ -1,3 +1,5 @@
+from typing import Optional, Dict, Any, List, Callable
+
 def get_available_datasets():
     """
     Get list of available dataset types
@@ -61,8 +63,8 @@ def get_pressure_levels_dataset():
 
     return pressure_level_variables
 
-
-def describe_variables(variable_names, dataset_type):
+#pyright: reportUnknownMemberType=false
+def describe_variables(variable_names: List[str], dataset_type: str):
     """
     Get descriptions for specific variables
 
@@ -71,7 +73,7 @@ def describe_variables(variable_names, dataset_type):
         dataset_type (str): Dataset type to search ("single", "pressure", "all", or any other registered dataset)
     """
     # Define available datasets and their processors
-    dataset_processors = {
+    dataset_processors : Dict[str, Callable[..., Any]] = {
         "single": _process_single_dataset,
         "pressure": _process_pressure_dataset,
         # Easy to add more datasets here:
@@ -84,7 +86,7 @@ def describe_variables(variable_names, dataset_type):
     # Get the appropriate dataset(s)
     if dataset_type == "all":
         # Process all available datasets
-        dataset = []
+        dataset : List[Dict[str, Any]] = []
         for ds_type, processor in dataset_processors.items():
             dataset.extend(processor(ds_type))
     elif dataset_type in dataset_processors:
@@ -116,7 +118,7 @@ def describe_variables(variable_names, dataset_type):
             print("  Variable not found")
 
 
-def search_variable(pattern, dataset_type="all"):
+def search_variable(pattern: Optional[str], dataset_type: str = "all"):
     """
     Search for variables in the dataset by pattern
 
@@ -130,7 +132,7 @@ def search_variable(pattern, dataset_type="all"):
     dataset_type = dataset_type.strip().lower()
 
     # Define available datasets and their processors
-    dataset_processors = {
+    dataset_processors : Dict[str, Callable[..., Any]] = {
         "single": _process_single_dataset,
         "pressure": _process_pressure_dataset,
         # Easy to add more datasets here:
@@ -141,7 +143,7 @@ def search_variable(pattern, dataset_type="all"):
     # Get the appropriate dataset(s)
     if dataset_type == "all":
         # Process all available datasets
-        dataset = []
+        dataset : List[Dict[str, Any]] = []
         for ds_type, processor in dataset_processors.items():
             dataset.extend(processor(ds_type))
     elif dataset_type in dataset_processors:
@@ -158,7 +160,7 @@ def search_variable(pattern, dataset_type="all"):
         print(f"Total variables found: {len(matches)}")
     else:
         pattern = pattern.lower()
-        matches = []
+        matches : List[Dict[str, Any]] = []
 
         for var in dataset:
             if pattern in var["name"].lower():
@@ -171,9 +173,9 @@ def search_variable(pattern, dataset_type="all"):
     # Print results grouped by category
     if len(matches) > 0:
         # Group matches by category
-        category_groups = {}
+        category_groups : Dict[str, List[Dict[str, Any]]] = {}
         for var in matches:
-            category = var.get("category", "Unknown")
+            category : str = var.get("category", "Unknown")
             if category not in category_groups:
                 category_groups[category] = []
             category_groups[category].append(var)
@@ -192,10 +194,10 @@ def search_variable(pattern, dataset_type="all"):
         print("No variables found matching the pattern.")
 
 
-def _process_single_dataset(dataset_type):
+def _process_single_dataset(dataset_type : str) -> List[Dict[str, Any]]:
     """Process single levels dataset"""
     dataset = get_single_levels_dataset()
-    all_vars = []
+    all_vars : List[Dict[str, Any]] = []
     for category_name, category_vars in dataset.items():
         for var in category_vars:
             var_with_category = var.copy()
@@ -205,10 +207,10 @@ def _process_single_dataset(dataset_type):
     return all_vars
 
 
-def _process_pressure_dataset(dataset_type):
+def _process_pressure_dataset(dataset_type : str) -> List[Dict[str, Any]]:
     """Process pressure levels dataset"""
     dataset = get_pressure_levels_dataset()
-    processed_vars = []
+    processed_vars : List[Dict[str, Any]] = []
     for var in dataset:
         var_with_info = var.copy()
         var_with_info["category"] = "pressure_levels"

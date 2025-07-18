@@ -1,9 +1,10 @@
 import datetime as dt
 import os
 import tempfile
-from typing import List
+from typing import List, Dict
 
-import cdsapi
+import cdsapi   # pyright: ignore
+
 
 
 def download_era5_single_lvl(
@@ -28,7 +29,7 @@ def download_era5_single_lvl(
     )
 
     # Prepare date ranges
-    dates = {}
+    dates : Dict[str, Dict[str, List[str]]] = {}
     current_date = start_date
     while current_date <= end_date:
         year = str(current_date.year)
@@ -40,9 +41,9 @@ def download_era5_single_lvl(
         dates[year][month].append(str(current_date.day).zfill(2))
         current_date += dt.timedelta(days=1)
 
-    years = list(dates.keys())
-    months = []
-    days = []
+    years : List[str] = list(dates.keys())
+    months : List[str] = []
+    days : List[str] = []
     for year in dates:
         for month in dates[year]:
             if month not in months:
@@ -83,7 +84,7 @@ def download_era5_single_lvl(
         }
 
     client = cdsapi.Client()
-    client.retrieve(dataset, request, output_file)
+    client.retrieve(dataset, request, output_file) # type: ignore
 
     return output_file
 
@@ -111,7 +112,7 @@ def download_era5_pressure_lvl(
     )
 
     # Prepare date ranges
-    dates = {}
+    dates : Dict[str, Dict[str, List[str]]] = {}
     current_date = start_date
     while current_date <= end_date:
         year = str(current_date.year)
@@ -123,9 +124,9 @@ def download_era5_pressure_lvl(
         dates[year][month].append(str(current_date.day).zfill(2))
         current_date += dt.timedelta(days=1)
 
-    years = list(dates.keys())
-    months = []
-    days = []
+    years : List[str] = list(dates.keys())
+    months : List[str] = []
+    days : List[str] = []
     for year in dates:
         for month in dates[year]:
             if month not in months:
@@ -166,6 +167,6 @@ def download_era5_pressure_lvl(
         }
 
     client = cdsapi.Client()
-    client.retrieve(dataset, request, output_file)
+    client.retrieve(dataset, request, output_file) # type: ignore
 
     return output_file

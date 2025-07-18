@@ -1,10 +1,10 @@
 import datetime as dt
 import json
 from unittest.mock import MagicMock, patch
-
+from pathlib import Path
 import pandas as pd
 import pytest
-
+from typing import List, Literal
 from varunayan.cli import main, parse_flexible_date
 
 class TestParseFlexibleDate:
@@ -51,7 +51,7 @@ class TestCLIMain:
 
     @patch("varunayan.cli.era5ify_geojson")
     @patch("varunayan.cli.get_logger")
-    def test_geojson_mode_success(self, mock_logger, mock_era5ify_geojson):
+    def test_geojson_mode_success(self, mock_logger : MagicMock, mock_era5ify_geojson : MagicMock):
         """Test successful execution in geojson mode"""
         mock_era5ify_geojson.return_value = self.mock_df
 
@@ -92,7 +92,7 @@ class TestCLIMain:
 
     @patch("varunayan.cli.era5ify_bbox")
     @patch("varunayan.cli.get_logger")
-    def test_bbox_mode_success(self, mock_logger, mock_era5ify_bbox):
+    def test_bbox_mode_success(self, mock_logger : MagicMock, mock_era5ify_bbox : MagicMock):
         """Test successful execution in bbox mode"""
         mock_era5ify_bbox.return_value = self.mock_df
 
@@ -142,7 +142,7 @@ class TestCLIMain:
 
     @patch("varunayan.cli.era5ify_point")
     @patch("varunayan.cli.get_logger")
-    def test_point_mode_success(self, mock_logger, mock_era5ify_point):
+    def test_point_mode_success(self, mock_logger : MagicMock, mock_era5ify_point : MagicMock):
         """Test successful execution in point mode"""
         mock_era5ify_point.return_value = self.mock_df
 
@@ -182,7 +182,7 @@ class TestCLIMain:
         )
 
     @patch("varunayan.cli.logger")  # Patch the actual logger instance
-    def test_invalid_date_format_error(self, mock_logger):
+    def test_invalid_date_format_error(self, mock_logger : MagicMock):
         test_args = [
             "geojson",
             "--request-id",
@@ -207,7 +207,7 @@ class TestCLIMain:
 
     @patch("varunayan.cli.era5ify_geojson")
     @patch("varunayan.cli.get_logger")
-    def test_pressure_levels_parsing(self, mock_logger, mock_era5ify_geojson):
+    def test_pressure_levels_parsing(self, mock_logger : MagicMock, mock_era5ify_geojson : MagicMock):
         """Test parsing of pressure levels"""
         mock_era5ify_geojson.return_value = self.mock_df
 
@@ -238,7 +238,7 @@ class TestCLIMain:
 
     @patch("varunayan.cli.era5ify_geojson")
     @patch("varunayan.cli.get_logger")
-    def test_empty_pressure_levels(self, mock_logger, mock_era5ify_geojson):
+    def test_empty_pressure_levels(self, mock_logger : MagicMock, mock_era5ify_geojson : MagicMock):
         """Test handling of empty pressure levels"""
         mock_era5ify_geojson.return_value = self.mock_df
 
@@ -267,7 +267,7 @@ class TestCLIMain:
 
     @patch("varunayan.cli.era5ify_geojson")
     @patch("varunayan.cli.get_logger")
-    def test_variable_parsing_with_spaces(self, mock_logger, mock_era5ify_geojson):
+    def test_variable_parsing_with_spaces(self, mock_logger : MagicMock, mock_era5ify_geojson : MagicMock):
         """Test parsing of variables with spaces"""
         mock_era5ify_geojson.return_value = self.mock_df
 
@@ -294,7 +294,7 @@ class TestCLIMain:
 
     @patch("varunayan.cli.era5ify_geojson")
     @patch("varunayan.cli.get_logger")
-    def test_default_values(self, mock_logger, mock_era5ify_geojson):
+    def test_default_values(self, mock_logger : MagicMock, mock_era5ify_geojson : MagicMock):
         """Test that default values are used correctly"""
         mock_era5ify_geojson.return_value = self.mock_df
 
@@ -401,7 +401,7 @@ class TestCLIIntegration:
 
     @patch("varunayan.cli.era5ify_geojson")
     @patch("varunayan.cli.get_logger")
-    def test_full_workflow_geojson(self, mock_logger, mock_era5ify_geojson):
+    def test_full_workflow_geojson(self, mock_logger : MagicMock, mock_era5ify_geojson : MagicMock):
         """Test a complete workflow with geojson mode"""
         # Create a simple mock DataFrame
         mock_df = pd.DataFrame(
@@ -460,7 +460,7 @@ def mock_df():
 
 
 @pytest.fixture
-def sample_geojson_file_cli(tmp_path):
+def sample_geojson_file_cli(tmp_path : Path):
     """Create a sample GeoJSON file for testing"""
     geojson_content = {
         "type": "FeatureCollection",
@@ -494,12 +494,12 @@ def sample_geojson_file_cli(tmp_path):
 @patch("varunayan.cli.era5ify_point")
 @patch("varunayan.cli.get_logger")
 def test_all_modes(
-    mock_logger,
-    mock_era5ify_point,
-    mock_era5ify_bbox,
-    mock_era5ify_geojson,
-    mode,
-    extra_args,
+    mock_logger : MagicMock,
+    mock_era5ify_point : MagicMock,
+    mock_era5ify_bbox : MagicMock,
+    mock_era5ify_geojson : MagicMock,
+    mode : Literal['geojson', 'bbox', 'point'],
+    extra_args : List[str],
 ):
     """Parametrized test for all modes"""
     # Mock all functions to return a mock dataframe
@@ -508,7 +508,7 @@ def test_all_modes(
     mock_era5ify_bbox.return_value = mock_df
     mock_era5ify_point.return_value = mock_df
 
-    base_args = [
+    base_args : List[str] = [
         mode,
         "--request-id",
         "test-123",
@@ -520,7 +520,7 @@ def test_all_modes(
         "2023-01-31",
     ]
 
-    test_args = base_args + extra_args
+    test_args : List[str] = base_args + extra_args
 
     with patch("sys.argv", ["cli.py"] + test_args):
         main()
