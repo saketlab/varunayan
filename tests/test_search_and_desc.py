@@ -1,10 +1,16 @@
-from unittest.mock import MagicMock, patch
+from typing import Dict, List
+from unittest.mock import patch
 
 import pytest
+from pytest import CaptureFixture
 
 from varunayan.search_and_desc.search_and_desc_functions import (
-    _process_pressure_dataset,
-    _process_single_dataset,
+    _process_pressure_dataset,  # type: ignore
+)
+from varunayan.search_and_desc.search_and_desc_functions import (
+    _process_single_dataset,  # type: ignore
+)
+from varunayan.search_and_desc.search_and_desc_functions import (
     describe_variables,
     get_available_datasets,
     get_pressure_levels_dataset,
@@ -106,7 +112,7 @@ def test_get_pressure_levels_dataset():
 
 
 # Tests for _process_single_dataset
-def test_process_single_dataset(single_level_processed):
+def test_process_single_dataset(single_level_processed: List[Dict[str, str]]):
     with patch(
         "varunayan.search_and_desc.search_and_desc_functions.get_single_levels_dataset",
         return_value=MOCK_SINGLE_DATASET,
@@ -119,7 +125,7 @@ def test_process_single_dataset(single_level_processed):
 
 
 # Tests for _process_pressure_dataset
-def test_process_pressure_dataset(pressure_level_processed):
+def test_process_pressure_dataset(pressure_level_processed: List[Dict[str, str]]):
     with patch(
         "varunayan.search_and_desc.search_and_desc_functions.get_pressure_levels_dataset",
         return_value=MOCK_PRESSURE_DATASET,
@@ -131,7 +137,9 @@ def test_process_pressure_dataset(pressure_level_processed):
 
 
 # Tests for describe_variables
-def test_describe_variables_single(capsys, single_level_processed):
+def test_describe_variables_single(
+    capsys: CaptureFixture[str], single_level_processed: List[Dict[str, str]]
+):
     with patch(
         "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
         return_value=single_level_processed,
@@ -144,7 +152,9 @@ def test_describe_variables_single(capsys, single_level_processed):
         assert "Variable not found" not in captured.out
 
 
-def test_describe_variables_not_found(capsys, single_level_processed):
+def test_describe_variables_not_found(
+    capsys: CaptureFixture[str], single_level_processed: List[Dict[str, str]]
+):
     with patch(
         "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
         return_value=single_level_processed,
@@ -156,7 +166,9 @@ def test_describe_variables_not_found(capsys, single_level_processed):
 
 
 def test_describe_variables_all(
-    capsys, single_level_processed, pressure_level_processed
+    capsys: CaptureFixture[str],
+    single_level_processed: List[Dict[str, str]],
+    pressure_level_processed: List[Dict[str, str]],
 ):
     with patch(
         "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
@@ -181,7 +193,9 @@ def test_describe_variables_invalid_type():
 
 
 # Tests for search_variable
-def test_search_variable_single(capsys, single_level_processed):
+def test_search_variable_single(
+    capsys: CaptureFixture[str], single_level_processed: List[Dict[str, str]]
+):
     with patch(
         "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
         return_value=single_level_processed,
@@ -194,7 +208,11 @@ def test_search_variable_single(capsys, single_level_processed):
         assert "Temperature variable" in captured.out
 
 
-def test_search_variable_all(capsys, single_level_processed, pressure_level_processed):
+def test_search_variable_all(
+    capsys: CaptureFixture[str],
+    single_level_processed: List[Dict[str, str]],
+    pressure_level_processed: List[Dict[str, str]],
+):
     with patch(
         "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
         return_value=single_level_processed,
@@ -210,7 +228,9 @@ def test_search_variable_all(capsys, single_level_processed, pressure_level_proc
         assert "pressure_lev1 (from pressure levels)" in captured.out
 
 
-def test_search_variable_no_pattern(capsys, single_level_processed):
+def test_search_variable_no_pattern(
+    capsys: CaptureFixture[str], single_level_processed: List[Dict[str, str]]
+):
     with patch(
         "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
         return_value=single_level_processed,
@@ -221,7 +241,9 @@ def test_search_variable_no_pattern(capsys, single_level_processed):
         assert "Total variables found: 3" in captured.out
 
 
-def test_search_variable_no_matches(capsys, single_level_processed):
+def test_search_variable_no_matches(
+    capsys: CaptureFixture[str], single_level_processed: List[Dict[str, str]]
+):
     with patch(
         "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
         return_value=single_level_processed,

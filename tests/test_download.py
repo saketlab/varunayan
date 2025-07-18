@@ -1,13 +1,11 @@
 import datetime as dt
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from varunayan.download import download_era5_pressure_lvl, download_era5_single_lvl
 
 
 @patch("varunayan.download.era5_downloader.cdsapi.Client")
-def test_download_era5_single_lvl(mock_client):
+def test_download_era5_single_lvl(mock_client: MagicMock):
     mock_client.return_value.retrieve.return_value = MagicMock()
     mock_client.return_value.retrieve.return_value.download.return_value = None
 
@@ -30,7 +28,7 @@ def test_download_era5_single_lvl(mock_client):
 
 
 @patch("varunayan.download.era5_downloader.cdsapi.Client")
-def test_download_era5_single_lvl_mo(mock_client):
+def test_download_era5_single_lvl_mo(mock_client: MagicMock):
     mock_client.return_value.retrieve.return_value = MagicMock()
     mock_client.return_value.retrieve.return_value.download.return_value = None
 
@@ -53,7 +51,7 @@ def test_download_era5_single_lvl_mo(mock_client):
 
 
 @patch("varunayan.download.era5_downloader.cdsapi.Client")
-def test_download_era5_pressure_lvl(mock_client):
+def test_download_era5_pressure_lvl(mock_client: MagicMock):
     mock_client.return_value.retrieve.return_value = MagicMock()
     mock_client.return_value.retrieve.return_value.download.return_value = None
 
@@ -76,7 +74,7 @@ def test_download_era5_pressure_lvl(mock_client):
 
 
 @patch("varunayan.download.era5_downloader.cdsapi.Client")
-def test_download_era5_pressure_lvl_mo(mock_client):
+def test_download_era5_pressure_lvl_mo(mock_client: MagicMock):
     mock_client.return_value.retrieve.return_value = MagicMock()
     mock_client.return_value.retrieve.return_value.download.return_value = None
 

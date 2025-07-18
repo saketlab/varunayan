@@ -1,6 +1,6 @@
 import datetime as dt
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 import geopandas as gpd
 import numpy as np
@@ -13,7 +13,10 @@ from ..util.logging_utils import get_logger
 logger = get_logger(level=logging.INFO)
 
 
-def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFrame:
+# pyright: reportUnknownMemberType=false
+def filter_netcdf_by_shapefile(
+    ds: xr.Dataset, geojson_data: Dict[str, Any]
+) -> pd.DataFrame:
     """
     Filter a NetCDF dataset to only include grid points that fall within the GeoJSON polygon
     by first identifying unique lat/lon pairs that are inside the polygon, then filtering the dataset.
@@ -23,8 +26,8 @@ def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFra
     start_time = dt.datetime.now()
 
     # Convert GeoJSON to GeoDataFrame for efficient spatial operations
-    if isinstance(geojson_data, dict):
-        gdf = gpd.GeoDataFrame.from_features(
+    if isinstance(geojson_data, dict):  # type: ignore
+        gdf = gpd.GeoDataFrame.from_features(  # type: ignore
             geojson_data["features"] if "features" in geojson_data else [geojson_data]
         )
     else:
@@ -41,19 +44,19 @@ def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFra
     logger.info("→ Extracting unique lat/lon coordinates from dataset...")
 
     # Get the coordinate arrays
-    lats = (
+    lats: np.ndarray = (  # type: ignore
         ds.coords["latitude"].values
         if "latitude" in ds.coords
         else ds.coords["lat"].values
     )
-    lons = (
+    lons: np.ndarray = (  # type: ignore
         ds.coords["longitude"].values
         if "longitude" in ds.coords
         else ds.coords["lon"].values
     )
 
     # Create all possible lat/lon combinations (grid points)
-    lon_grid, lat_grid = np.meshgrid(lons, lats)
+    lon_grid, lat_grid = np.meshgrid(lons, lats)  # type: ignore
     unique_coords = pd.DataFrame(
         {"latitude": lat_grid.flatten(), "longitude": lon_grid.flatten()}
     ).drop_duplicates()
@@ -112,14 +115,14 @@ def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFra
         )
 
         # Additional debugging info
-        logger.info(f"\nDataset coordinate ranges:")
+        logger.info("\nDataset coordinate ranges:")
         logger.info(f"  Latitude: {lats.min():.4f} to {lats.max():.4f}")
         logger.info(f"  Longitude: {lons.min():.4f} to {lons.max():.4f}")
 
         # Print shapefile bounds
         logger.info("\nShapefile bounds (west, south, east, north):")
         bounds = unified_polygon.bounds
-        if isinstance(bounds, tuple):
+        if isinstance(bounds, tuple):  # type: ignore
             logger.info(
                 f"  {bounds[0]:.4f}, {bounds[1]:.4f}, {bounds[2]:.4f}, {bounds[3]:.4f}"
             )
@@ -181,7 +184,7 @@ def filter_netcdf_by_shapefile(ds: xr.Dataset, geojson_data: Dict) -> pd.DataFra
 
 
 def get_unique_coordinates_in_polygon(
-    ds: xr.Dataset, geojson_data: Dict
+    ds: xr.Dataset, geojson_data: Dict[str, Any]
 ) -> pd.DataFrame:
     """
     Alternative helper function that returns just the unique lat/lon pairs inside the polygon.
@@ -190,7 +193,7 @@ def get_unique_coordinates_in_polygon(
     logger.info("Extracting unique coordinates inside polygon...")
 
     # Convert GeoJSON to GeoDataFrame
-    if isinstance(geojson_data, dict):
+    if isinstance(geojson_data, dict):  # type: ignore
         gdf = gpd.GeoDataFrame.from_features(
             geojson_data["features"] if "features" in geojson_data else [geojson_data]
         )
@@ -203,19 +206,19 @@ def get_unique_coordinates_in_polygon(
     unified_polygon = gdf.geometry.union_all()
 
     # Get coordinate arrays
-    lats = (
+    lats: np.ndarray = (  # type: ignore
         ds.coords["latitude"].values
         if "latitude" in ds.coords
         else ds.coords["lat"].values
     )
-    lons = (
+    lons: np.ndarray = (  # type: ignore
         ds.coords["longitude"].values
         if "longitude" in ds.coords
         else ds.coords["lon"].values
     )
 
     # Create grid and unique combinations
-    lon_grid, lat_grid = np.meshgrid(lons, lats)
+    lon_grid, lat_grid = np.meshgrid(lons, lats)  # type: ignore
     unique_coords = pd.DataFrame(
         {"latitude": lat_grid.flatten(), "longitude": lon_grid.flatten()}
     ).drop_duplicates()

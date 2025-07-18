@@ -31,13 +31,13 @@ class ColorFormatter(logging.Formatter):
         logging.CRITICAL: Colors.RED,
     }
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         color = self.LEVEL_COLORS.get(record.levelno, Colors.WHITE)
         message = super().format(record)
         return f"{color}{message}{Colors.RESET}"
 
 
-def get_logger(name="era5_logger", level=logging.INFO):
+def get_logger(name: str = "era5_logger", level: int = logging.INFO) -> logging.Logger:
     """Returns a configured logger with colored output."""
     logger = logging.getLogger(name)
     logger.setLevel(level)

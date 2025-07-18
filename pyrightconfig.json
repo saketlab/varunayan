@@ -1,0 +1,17 @@
+{
+  "typeCheckingMode": "strict",
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.venv",
+    "build",
+    "dist"
+  ],
+  "reportMissingTypeStubs": true,
+  "reportUnusedImport": true,
+  "reportUnusedVariable": true,
+  "reportOptionalSubscript": true,
+  "reportOptionalMemberAccess": true,
+  "reportOptionalCall": true,
+  "reportGeneralTypeIssues": true
+}

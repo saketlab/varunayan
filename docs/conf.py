@@ -1,6 +1,7 @@
 import os
+import shutil
 import sys
-from typing import List, Dict
+from typing import Dict, List
 
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -78,9 +79,6 @@ nb_render_priority = {
         "text/plain",
     ]
 }
-
-import shutil
-import os
 
 # Notebook source directory
 nb_source_dir = "../notebooks"

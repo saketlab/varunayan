@@ -8,7 +8,7 @@ from .util.logging_utils import get_logger
 logger = get_logger(level=logging.INFO)
 
 
-def parse_flexible_date(date_string):
+def parse_flexible_date(date_string: str):
     """Parse date string in either YYYY-M-D or YYYY-MM-DD format"""
     try:
         # Try YYYY-MM-DD format first
@@ -32,7 +32,7 @@ def main():
     subparsers.required = True
 
     # Common arguments function
-    def add_common_args(subparser):
+    def add_common_args(subparser: argparse.ArgumentParser):
         subparser.add_argument(
             "--request-id", required=True, help="Unique request identifier"
         )
@@ -114,6 +114,7 @@ def main():
     try:
         start = parse_flexible_date(args.start)
         end = parse_flexible_date(args.end)
+        logger.debug(f"Parsed start date: {start}, end date: {end}")
     except ValueError as e:
         logger.error(f"Error parsing dates: {e}")
         return
@@ -128,7 +129,7 @@ def main():
     # Process based on mode
     if args.mode == "geojson":
         logger.info("Processing with GeoJSON/JSON file...")
-        df = era5ify_geojson(
+        era5ify_geojson(
             request_id=args.request_id,
             variables=variables,
             start_date=args.start,  # Pass as string to match function signature
@@ -142,7 +143,7 @@ def main():
 
     elif args.mode == "bbox":
         logger.info("Processing with bounding box coordinates...")
-        df = era5ify_bbox(
+        era5ify_bbox(
             request_id=args.request_id,
             variables=variables,
             start_date=args.start,  # Pass as string to match function signature
@@ -159,7 +160,7 @@ def main():
 
     elif args.mode == "point":
         logger.info("Processing for a single point location...")
-        df = era5ify_point(
+        era5ify_point(
             request_id=args.request_id,
             variables=variables,
             start_date=args.start,
