@@ -10,7 +10,7 @@ from shapely.geometry import Point
 
 from ..util.logging_utils import get_logger
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
 
 
 def set_v_data_fil(verbosity: int):

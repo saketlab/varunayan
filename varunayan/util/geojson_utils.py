@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Tuple
 
 from .logging_utils import get_logger
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
 
 
 def set_v_geoj_utl(verbosity: int):

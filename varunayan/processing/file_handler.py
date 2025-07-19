@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from ..util.logging_utils import get_logger
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
 
 
 def set_v_file_han(verbosity: int):

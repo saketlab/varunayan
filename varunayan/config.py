@@ -4,7 +4,7 @@ import sys
 
 from .util import get_logger
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
 
 
 def set_v_config(verbosity: int):

@@ -5,7 +5,7 @@ import logging
 from .core import era5ify_bbox, era5ify_geojson, era5ify_point
 from .util.logging_utils import get_logger
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
 
 
 def parse_flexible_date(date_string: str):
