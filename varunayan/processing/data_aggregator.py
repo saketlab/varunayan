@@ -162,7 +162,7 @@ def aggregate_by_frequency(
         "daily": "D",  # Calendar day
         "weekly": "W",  # Weekly
         "monthly": "MS",  # Month start
-        "yearly": "AS",  # Year start
+        "yearly": "YS",  # Year start
     }
 
     if frequency not in freq_map and frequency != "hourly":
