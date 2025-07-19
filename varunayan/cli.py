@@ -68,6 +68,13 @@ def main():
             default=0.25,
             help="Grid resolution in degrees (e.g., 0.1, 0.25) - default: 0.25",
         )
+        subparser.add_argument(
+            "--verbosity",
+            type=int,
+            choices=[0, 1, 2],
+            default=0,
+            help="Verbosity level: 0 (quiet), 1 (normal), 2 (verbose)",
+        )
 
     # GeoJSON/JSON file mode
     geojson_parser = subparsers.add_parser(
@@ -139,6 +146,7 @@ def main():
             pressure_levels=pressure_levels,
             frequency=args.freq,
             resolution=args.res,
+            verbosity=args.verbosity,
         )
 
     elif args.mode == "bbox":
@@ -156,6 +164,7 @@ def main():
             pressure_levels=pressure_levels,
             frequency=args.freq,
             resolution=args.res,
+            verbosity=args.verbosity,
         )
 
     elif args.mode == "point":
@@ -170,4 +179,5 @@ def main():
             dataset_type=args.dataset_type,
             pressure_levels=pressure_levels,
             frequency=args.freq,
+            verbosity=args.verbosity,
         )

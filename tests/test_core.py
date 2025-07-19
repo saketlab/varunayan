@@ -485,7 +485,7 @@ def test_load_and_validate_geojson():
         result = load_and_validate_geojson("dummy_path.json")
 
         assert result == mock_geojson
-        mock_logger.info.assert_called_with(
+        mock_logger.debug.assert_called_with(
             "\x1b[0;32m✓ GeoJSON loaded successfully\x1b[0m"
         )
 
@@ -525,8 +525,8 @@ def test_print_processing_strategy_monthly():
     with patch("varunayan.core.logger") as mock_logger:
         print_processing_strategy(params)
 
-        mock_logger.info.assert_any_call("Using monthly dataset: True")
-        mock_logger.info.assert_any_call("Total months to process: 12")
+        mock_logger.debug.assert_any_call("Using monthly dataset: True")
+        mock_logger.debug.assert_any_call("Total months to process: 12")
 
 
 def test_print_processing_strategy_daily():
@@ -542,8 +542,8 @@ def test_print_processing_strategy_daily():
     with patch("varunayan.core.logger") as mock_logger:
         print_processing_strategy(params)
 
-        mock_logger.info.assert_any_call("Using monthly dataset: False")
-        mock_logger.info.assert_any_call("Total days to process: 14")
+        mock_logger.debug.assert_any_call("Using monthly dataset: False")
+        mock_logger.debug.assert_any_call("Total days to process: 14")
 
 
 @patch("os.path.exists", return_value=True)
@@ -703,7 +703,7 @@ def test_print_processing_header_pressure():
         geojson_file="jfile.json",
     )
 
-    with patch("varunayan.core.logger") as mock_logger:
+    with patch("varunayan.core.always_logger") as mock_logger:
         print_processing_header(params)
         mock_logger.info.assert_any_call("Pressure Levels: ['500', '850']")
 

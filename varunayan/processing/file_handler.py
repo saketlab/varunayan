@@ -8,6 +8,21 @@ from ..util.logging_utils import get_logger
 logger = get_logger(level=logging.INFO)
 
 
+def set_v_file_han(verbosity: int):
+
+    if verbosity == 0:
+        logger.setLevel(logging.WARNING)
+
+    elif verbosity == 1:
+        logger.setLevel(logging.INFO)
+
+    elif verbosity == 2:
+        logger.setLevel(logging.DEBUG)
+
+    else:
+        logger.setLevel(logging.WARNING)
+
+
 def extract_download(
     zip_or_file_path: str, extract_dir: Optional[str] = None
 ) -> List[str]:
