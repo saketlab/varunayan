@@ -1,9 +1,35 @@
 import datetime as dt
+import logging
 import os
 import tempfile
 from typing import Dict, List
 
 import cdsapi  # pyright: ignore
+
+sup_log: bool = False
+
+
+class BlockInfoFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelno != logging.INFO
+
+
+def set_v_downloader(verbosity: int):
+    global sup_log
+    logger = logging.getLogger("datapi.legacy_api_client")
+
+    if verbosity == 0:
+        logger.addFilter(BlockInfoFilter())
+        sup_log = True
+    elif verbosity == 1 or verbosity == 2:
+        # Remove the filter if it exists
+        logger.filters = [
+            f for f in logger.filters if not isinstance(f, BlockInfoFilter)
+        ]
+        sup_log = False
+    else:
+        logger.addFilter(BlockInfoFilter())
+        sup_log = True
 
 
 def download_era5_single_lvl(

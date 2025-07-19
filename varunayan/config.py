@@ -4,7 +4,22 @@ import sys
 
 from .util import get_logger
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
+
+
+def set_v_config(verbosity: int):
+
+    if verbosity == 0:
+        logger.setLevel(logging.WARNING)
+
+    elif verbosity == 1:
+        logger.setLevel(logging.INFO)
+
+    elif verbosity == 2:
+        logger.setLevel(logging.DEBUG)
+
+    else:
+        logger.setLevel(logging.WARNING)
 
 
 def check_cdsapi_config() -> bool:

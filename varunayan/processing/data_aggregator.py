@@ -7,7 +7,22 @@ import pandas as pd
 from ..util.logging_utils import get_logger
 from .variable_lists import exclude_cols, max_vars, min_vars, rate_vars, sum_vars
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
+
+
+def set_v_data_agg(verbosity: int):
+
+    if verbosity == 0:
+        logger.setLevel(logging.WARNING)
+
+    elif verbosity == 1:
+        logger.setLevel(logging.INFO)
+
+    elif verbosity == 2:
+        logger.setLevel(logging.DEBUG)
+
+    else:
+        logger.setLevel(logging.WARNING)
 
 
 # pyright: reportUnknownMemberType=false
@@ -102,11 +117,11 @@ def aggregate_by_frequency(
     special_cols = sum_cols + max_cols + min_cols + rate_cols
     avg_cols = [col for col in var_cols if col not in special_cols]
 
-    logger.info(f"Sum columns: {sum_cols}")
-    logger.info(f"Max columns: {max_cols}")
-    logger.info(f"Min columns: {min_cols}")
-    logger.info(f"Rate columns: {rate_cols}")
-    logger.info(f"Average columns: {avg_cols}")
+    logger.debug(f"Sum columns: {sum_cols}")
+    logger.debug(f"Max columns: {max_cols}")
+    logger.debug(f"Min columns: {min_cols}")
+    logger.debug(f"Rate columns: {rate_cols}")
+    logger.debug(f"Average columns: {avg_cols}")
 
     # Return original data if hourly frequency requested
     if frequency == "hourly":
@@ -147,7 +162,7 @@ def aggregate_by_frequency(
         "daily": "D",  # Calendar day
         "weekly": "W",  # Weekly
         "monthly": "MS",  # Month start
-        "yearly": "AS",  # Year start
+        "yearly": "YS",  # Year start
     }
 
     if frequency not in freq_map and frequency != "hourly":
@@ -280,9 +295,9 @@ def aggregate_pressure_levels(
         col for col in df.columns if col not in exclude_cols and col not in group_cols
     ]
 
-    logger.info(f"Variables to average: {var_cols}")
+    logger.debug(f"Variables to average: {var_cols}")
     if has_pressure_level:
-        logger.info("Including pressure_level in aggregation groups")
+        logger.debug("Including pressure_level in aggregation groups")
 
     # For hourly data, just do spatial aggregation
     if frequency == "hourly":

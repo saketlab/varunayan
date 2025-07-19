@@ -5,7 +5,22 @@ from typing import List, Optional
 
 from ..util.logging_utils import get_logger
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
+
+
+def set_v_file_han(verbosity: int):
+
+    if verbosity == 0:
+        logger.setLevel(logging.WARNING)
+
+    elif verbosity == 1:
+        logger.setLevel(logging.INFO)
+
+    elif verbosity == 2:
+        logger.setLevel(logging.DEBUG)
+
+    else:
+        logger.setLevel(logging.WARNING)
 
 
 def extract_download(

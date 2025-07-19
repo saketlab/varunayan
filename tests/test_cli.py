@@ -93,6 +93,7 @@ class TestCLIMain:
             pressure_levels=[],
             frequency="daily",
             resolution=0.1,
+            verbosity=0,
         )
 
     @patch("varunayan.cli.era5ify_bbox")
@@ -145,6 +146,7 @@ class TestCLIMain:
             pressure_levels=["1000", "925", "850"],
             frequency="hourly",
             resolution=0.25,
+            verbosity=0,
         )
 
     @patch("varunayan.cli.era5ify_point")
@@ -188,6 +190,7 @@ class TestCLIMain:
             dataset_type="single",
             pressure_levels=[],
             frequency="monthly",
+            verbosity=0,
         )
 
     @patch("varunayan.cli.logger")  # Patch the actual logger instance

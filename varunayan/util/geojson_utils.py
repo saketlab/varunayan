@@ -6,7 +6,22 @@ from typing import Any, Dict, List, Tuple
 
 from .logging_utils import get_logger
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
+
+
+def set_v_geoj_utl(verbosity: int):
+
+    if verbosity == 0:
+        logger.setLevel(logging.WARNING)
+
+    elif verbosity == 1:
+        logger.setLevel(logging.INFO)
+
+    elif verbosity == 2:
+        logger.setLevel(logging.DEBUG)
+
+    else:
+        logger.setLevel(logging.WARNING)
 
 
 def extract_coords_from_geometry(geometry: Dict[str, Any]) -> List[List[float]]:

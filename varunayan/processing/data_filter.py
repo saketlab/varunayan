@@ -10,7 +10,22 @@ from shapely.geometry import Point
 
 from ..util.logging_utils import get_logger
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
+
+
+def set_v_data_fil(verbosity: int):
+
+    if verbosity == 0:
+        logger.setLevel(logging.WARNING)
+
+    elif verbosity == 1:
+        logger.setLevel(logging.INFO)
+
+    elif verbosity == 2:
+        logger.setLevel(logging.DEBUG)
+
+    else:
+        logger.setLevel(logging.WARNING)
 
 
 # pyright: reportUnknownMemberType=false
@@ -22,7 +37,7 @@ def filter_netcdf_by_shapefile(
     by first identifying unique lat/lon pairs that are inside the polygon, then filtering the dataset.
     This is much more efficient than converting the entire dataset to DataFrame first.
     """
-    logger.info("Starting optimized filtering process...")
+    logger.info("Starting filtering process...")
     start_time = dt.datetime.now()
 
     # Convert GeoJSON to GeoDataFrame for efficient spatial operations
@@ -91,12 +106,12 @@ def filter_netcdf_by_shapefile(
     points_inside_count = len(inside_coords)
     points_outside_count = total_unique_points - points_inside_count
 
-    logger.info(
+    logger.debug(
         f"✓ Coordinate filtering completed in {filter_time.total_seconds():.2f} seconds"
     )
-    logger.info(f"  - Points inside: {points_inside_count}")
-    logger.info(f"  - Points outside: {points_outside_count}")
-    logger.info(
+    logger.debug(f"  - Points inside: {points_inside_count}")
+    logger.debug(f"  - Points outside: {points_outside_count}")
+    logger.debug(
         f"  - Percentage inside: {points_inside_count/total_unique_points*100:.2f}%"
     )
 
@@ -115,19 +130,19 @@ def filter_netcdf_by_shapefile(
         )
 
         # Additional debugging info
-        logger.info("\nDataset coordinate ranges:")
-        logger.info(f"  Latitude: {lats.min():.4f} to {lats.max():.4f}")
-        logger.info(f"  Longitude: {lons.min():.4f} to {lons.max():.4f}")
+        logger.debug("\nDataset coordinate ranges:")
+        logger.debug(f"  Latitude: {lats.min():.4f} to {lats.max():.4f}")
+        logger.debug(f"  Longitude: {lons.min():.4f} to {lons.max():.4f}")
 
         # Print shapefile bounds
-        logger.info("\nShapefile bounds (west, south, east, north):")
+        logger.debug("\nShapefile bounds (west, south, east, north):")
         bounds = unified_polygon.bounds
         if isinstance(bounds, tuple):  # type: ignore
-            logger.info(
+            logger.debug(
                 f"  {bounds[0]:.4f}, {bounds[1]:.4f}, {bounds[2]:.4f}, {bounds[3]:.4f}"
             )
         else:
-            logger.info(f"  {bounds}")
+            logger.debug(f"  {bounds}")
 
         raise ValueError("No points found inside the specified shapefile")
 
@@ -136,16 +151,16 @@ def filter_netcdf_by_shapefile(
     dataset_filter_start = dt.datetime.now()
 
     # First convert the dataset to DataFrame
-    logger.info("  Converting dataset to DataFrame...")
+    logger.debug("  Converting dataset to DataFrame...")
     df = ds.to_dataframe().reset_index()
     original_rows = len(df)
-    logger.info(f"  ✓ Converted to DataFrame with {original_rows} rows")
+    logger.debug(f"  ✓ Converted to DataFrame with {original_rows} rows")
 
     # Create a set of (lat, lon) tuples for fast lookup
     inside_coord_tuples = set(
         zip(inside_coords["latitude"], inside_coords["longitude"])
     )
-    logger.info(
+    logger.debug(
         f"  ✓ Created lookup set with {len(inside_coord_tuples)} coordinate pairs"
     )
 
@@ -165,10 +180,10 @@ def filter_netcdf_by_shapefile(
     filtered_df = filtered_df.drop(columns=["coord_pair"])
 
     filtered_rows = len(filtered_df)
-    logger.info(f"  ✓ Filtered from {original_rows} to {filtered_rows} rows")
+    logger.debug(f"  ✓ Filtered from {original_rows} to {filtered_rows} rows")
 
     dataset_filter_time = dt.datetime.now() - dataset_filter_start
-    logger.info(
+    logger.debug(
         f"✓ Dataset filtering completed in {dataset_filter_time.total_seconds():.2f} seconds"
     )
 
@@ -190,7 +205,7 @@ def get_unique_coordinates_in_polygon(
     Alternative helper function that returns just the unique lat/lon pairs inside the polygon.
     This can be useful for other operations or caching coordinate filtering results.
     """
-    logger.info("Extracting unique coordinates inside polygon...")
+    logger.debug("Extracting unique coordinates inside polygon...")
 
     # Convert GeoJSON to GeoDataFrame
     if isinstance(geojson_data, dict):  # type: ignore

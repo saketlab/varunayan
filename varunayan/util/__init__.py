@@ -6,6 +6,7 @@ from .geojson_utils import (
     get_bounding_box,
     is_valid_geojson,
     load_json_with_encoding,
+    set_v_geoj_utl,
 )
 from .logging_utils import Colors, get_logger
 
@@ -19,4 +20,5 @@ __all__ = [
     "create_temp_geojson",
     "Colors",
     "get_logger",
+    "set_v_geoj_utl",
 ]

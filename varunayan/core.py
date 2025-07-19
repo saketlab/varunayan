@@ -14,13 +14,20 @@ import pandas as pd
 import xarray as xr
 from shapely.geometry import Point
 
-from .config import ensure_cdsapi_config
-from .download import download_era5_pressure_lvl, download_era5_single_lvl
+from .config import ensure_cdsapi_config, set_v_config
+from .download import (
+    download_era5_pressure_lvl,
+    download_era5_single_lvl,
+    set_v_downloader,
+)
 from .processing import (
     aggregate_by_frequency,
     aggregate_pressure_levels,
     extract_download,
     filter_netcdf_by_shapefile,
+    set_v_data_agg,
+    set_v_data_fil,
+    set_v_file_han,
     sum_vars,
 )
 from .util import (
@@ -32,9 +39,11 @@ from .util import (
     get_logger,
     is_valid_geojson,
     load_json_with_encoding,
+    set_v_geoj_utl,
 )
 
-logger = get_logger(level=logging.INFO)
+logger = get_logger(level=logging.DEBUG)
+always_logger = get_logger(name="log_always", level=logging.INFO)
 
 SUM_VARS = sum_vars
 
@@ -55,6 +64,31 @@ class ProcessingParams:
     west: Optional[float] = None
     geojson_file: Optional[str] = None
     geojson_data: Optional[Dict[str, Any]] = None
+
+
+def set_verbosity(verbosity: int):
+
+    if verbosity == 0:
+        logger.setLevel(logging.WARNING)
+
+    elif verbosity == 1:
+        logger.setLevel(logging.INFO)
+
+    elif verbosity == 2:
+        logger.setLevel(logging.DEBUG)
+
+    else:
+        logger.warning(
+            f"Invalid verbosity level: {verbosity}. Defaulting to WARNING level (verbosity level = 0)."
+        )
+        logger.setLevel(logging.WARNING)
+
+    set_v_data_agg(verbosity)
+    set_v_data_fil(verbosity)
+    set_v_file_han(verbosity)
+    set_v_geoj_utl(verbosity)
+    set_v_config(verbosity)
+    set_v_downloader(verbosity)
 
 
 def download_with_retry(
@@ -232,12 +266,12 @@ def process_era5_data(
     for i, nc_file in enumerate(nc_files, 1):
         if not nc_file.lower().endswith(".nc"):
             continue
-        logger.info(
+        logger.debug(
             f"  Processing file {i}/{len(nc_files)}: {os.path.basename(nc_file)}"
         )
         try:
             ds: xr.Dataset = xr.open_dataset(nc_file)
-            logger.info(f"  ✓ Loaded: Dimensions: {ds.sizes}")
+            logger.debug(f"  ✓ Loaded: Dimensions: {ds.sizes}")
             datasets.append(ds)
         except Exception as e:
             logger.error(
@@ -264,7 +298,7 @@ def process_era5_data(
     initial_rows = len(df)
     df = df.drop_duplicates(subset=dup_cols)
     if initial_rows - len(df) > 0:
-        logger.info(
+        logger.debug(
             f"  {Colors.YELLOW}✓ Removed {initial_rows - len(df)} duplicate rows{Colors.RESET}"
         )
 
@@ -330,7 +364,7 @@ def save_results(
     """Save all results to files"""
 
     output_dir = f"{params.request_id}_output"
-    logger.info(f"\nSaving files to output directory: {output_dir}")
+    always_logger.info(f"\nSaving files to output directory: {output_dir}")
     os.makedirs(output_dir, exist_ok=True)
 
     # Save aggregated data
@@ -338,17 +372,17 @@ def save_results(
         output_dir, f"{params.request_id}_{params.frequency}_data.csv"
     )
     aggregated_df.to_csv(csv_output, index=False)
-    logger.info(f"  Saved final data to: {csv_output}")
+    always_logger.info(f"  Saved final data to: {csv_output}")
 
     # Save unique coordinates
     csv_output = os.path.join(output_dir, f"{params.request_id}_unique_latlongs.csv")
     unique_latlongs.to_csv(csv_output, index=False)
-    logger.info(f"  Saved unique coordinates to: {csv_output}")
+    always_logger.info(f"  Saved unique coordinates to: {csv_output}")
 
     # Save raw data
     csv_output = os.path.join(output_dir, f"{params.request_id}_raw_data.csv")
     raw_df.to_csv(csv_output, index=False)
-    logger.info(f"  Saved raw data to: {csv_output}")
+    always_logger.info(f"  Saved raw data to: {csv_output}")
 
 
 def process_era5(params: ProcessingParams):
@@ -405,20 +439,22 @@ def process_era5(params: ProcessingParams):
 def print_processing_header(params: ProcessingParams):
     """Print processing header information"""
     dataset_type = "PRESSURE LEVEL" if params.pressure_levels else "SINGLE LEVEL"
-    logger.info(f"\n{'='*60}")
-    logger.info(f"{Colors.BLUE}STARTING ERA5 {dataset_type} PROCESSING{Colors.RESET}")
-    logger.info(f"{'='*60}")
-    logger.info(f"Request ID: {params.request_id}")
-    logger.info(f"Variables: {params.variables}")
+    always_logger.info(f"\n{'='*60}")
+    always_logger.info(
+        f"{Colors.BLUE}STARTING ERA5 {dataset_type} PROCESSING{Colors.RESET}"
+    )
+    always_logger.info(f"{'='*60}")
+    always_logger.info(f"Request ID: {params.request_id}")
+    always_logger.info(f"Variables: {params.variables}")
     if params.pressure_levels:
-        logger.info(f"Pressure Levels: {params.pressure_levels}")
-    logger.info(
+        always_logger.info(f"Pressure Levels: {params.pressure_levels}")
+    always_logger.info(
         f"Date Range: {params.start_date.strftime('%Y-%m-%d')} to {params.end_date.strftime('%Y-%m-%d')}"
     )
-    logger.info(f"Frequency: {params.frequency}")
-    logger.info(f"Resolution: {params.resolution}°")
+    always_logger.info(f"Frequency: {params.frequency}")
+    always_logger.info(f"Resolution: {params.resolution}°")
     if params.geojson_file:
-        logger.info(f"GeoJSON File: {params.geojson_file}")
+        always_logger.info(f"GeoJSON File: {params.geojson_file}")
 
 
 def validate_inputs(params: ProcessingParams):
@@ -436,11 +472,11 @@ def validate_inputs(params: ProcessingParams):
 
 def load_and_validate_geojson(geojson_file: str) -> Dict[str, Any]:
     """Load and validate GeoJSON file"""
-    logger.info("\n--- Loading GeoJSON File ---")
+    logger.debug("\n--- Loading GeoJSON File ---")
     geojson_data = load_json_with_encoding(geojson_file)
     if not is_valid_geojson(geojson_data):
         geojson_data = convert_to_geojson(geojson_data)
-    logger.info(f"{Colors.GREEN}✓ GeoJSON loaded successfully{Colors.RESET}")
+    logger.debug(f"{Colors.GREEN}✓ GeoJSON loaded successfully{Colors.RESET}")
 
     return geojson_data
 
@@ -461,9 +497,9 @@ def print_bounding_box(params: ProcessingParams):
 
 def print_processing_strategy(params: ProcessingParams):
     """Print processing strategy information"""
-    logger.info("\n--- Processing Strategy ---")
+    logger.debug("\n--- Processing Strategy ---")
     use_monthly = params.frequency in ["monthly", "yearly"]
-    logger.info(f"Using monthly dataset: {use_monthly}")
+    logger.debug(f"Using monthly dataset: {use_monthly}")
 
     if use_monthly:
         total_units = (
@@ -477,11 +513,13 @@ def print_processing_strategy(params: ProcessingParams):
         max_per_chunk = 14
 
     needs_chunking = total_units > max_per_chunk
-    logger.info(
+    logger.debug(
         f"Total {'months' if use_monthly else 'days'} to process: {total_units}"
     )
-    logger.info(f"Max {'months' if use_monthly else 'days'} per chunk: {max_per_chunk}")
-    logger.info(f"Needs chunking: {needs_chunking}")
+    logger.debug(
+        f"Max {'months' if use_monthly else 'days'} per chunk: {max_per_chunk}"
+    )
+    logger.debug(f"Needs chunking: {needs_chunking}")
 
 
 def calculate_map_dimensions(
@@ -554,30 +592,30 @@ def print_processing_footer(
     params: ProcessingParams, result_df: pd.DataFrame, total_start_time: float
 ):
     """Print processing footer information"""
-    logger.info(f"\n{'='*60}")
-    logger.info(f"{Colors.GREEN}PROCESSING COMPLETE{Colors.RESET}")
-    logger.info(f"{'='*60}")
+    always_logger.info(f"\n{'='*60}")
+    always_logger.info(f"{Colors.GREEN}PROCESSING COMPLETE{Colors.RESET}")
+    always_logger.info(f"{'='*60}")
 
-    logger.info(f"\n{Colors.CYAN}RESULTS SUMMARY:{Colors.RESET}")
-    logger.info(f"{'-'*40}")
-    logger.info(f"Variables processed: {len(params.variables)}")
-    logger.info(
+    always_logger.info(f"\n{Colors.CYAN}RESULTS SUMMARY:{Colors.RESET}")
+    always_logger.info(f"{'-'*40}")
+    always_logger.info(f"Variables processed: {len(params.variables)}")
+    always_logger.info(
         f"Time period:         {params.start_date.date()} to {params.end_date.date()}"
     )
-    logger.info(f"Final output shape:  {result_df.shape}")
+    always_logger.info(f"Final output shape:  {result_df.shape}")
 
     elapsed_time = time.time() - total_start_time
-    logger.info(f"Total complete processing time: {elapsed_time:.2f} seconds")
+    always_logger.info(f"Total complete processing time: {elapsed_time:.2f} seconds")
 
-    logger.info("\nFirst 5 rows of aggregated data:")
-    logger.info(result_df.head())
+    always_logger.info("\nFirst 5 rows of aggregated data:")
+    always_logger.info(result_df.head())
 
     dataset_type = "PRESSURE LEVEL" if params.pressure_levels else "SINGLE LEVEL"
-    logger.info(f"\n{'='*60}")
-    logger.info(
+    always_logger.info(f"\n{'='*60}")
+    always_logger.info(
         f"{Colors.BLUE}ERA5 {dataset_type} PROCESSING COMPLETED SUCCESSFULLY{Colors.RESET}"
     )
-    logger.info(f"{'='*60}")
+    always_logger.info(f"{'='*60}")
 
 
 # Public functions
@@ -591,10 +629,13 @@ def era5ify_geojson(
     pressure_levels: Optional[List[str]] = None,
     frequency: str = "hourly",
     resolution: float = 0.25,
+    verbosity: int = 0,
 ) -> pd.DataFrame:
     """Public function for processing with GeoJSON"""
     start_dt = parse_date(start_date)
     end_dt = parse_date(end_date)
+
+    set_verbosity(verbosity)
 
     # Validate dataset type
     dataset_type = dataset_type.lower()
@@ -642,10 +683,13 @@ def era5ify_bbox(
     pressure_levels: Optional[List[str]] = None,
     frequency: str = "hourly",
     resolution: float = 0.25,
+    verbosity: int = 0,
 ) -> pd.DataFrame:
     """Public function for processing with bounding box"""
     start_dt = parse_date(start_date)
     end_dt = parse_date(end_date)
+
+    set_verbosity(verbosity)
 
     # Validate dataset type
     dataset_type = dataset_type.lower()
@@ -693,6 +737,7 @@ def era5ify_point(
     dataset_type: str = "single",
     pressure_levels: Optional[List[str]] = None,
     frequency: str = "hourly",
+    verbosity: int = 0,
 ) -> pd.DataFrame:
 
     # Validate coordinates
@@ -702,6 +747,8 @@ def era5ify_point(
         raise ValueError(
             f"Invalid longitude: {longitude}. Must be between -180 and 180"
         )
+
+    set_verbosity(verbosity)
 
     # Create a small circular GeoJSON around the point
     # Using 0.06 degree radius (0.12 degree diameter) to capture nearest ERA5 grid point
@@ -799,7 +846,8 @@ def era5ify_point(
             dataset_type=dataset_type,
             pressure_levels=pressure_levels,
             frequency=frequency,
-            resolution=0.1,  # High resolution to get the nearest grid point
+            resolution=0.1,
+            verbosity=verbosity,
         )
     finally:
         pass
