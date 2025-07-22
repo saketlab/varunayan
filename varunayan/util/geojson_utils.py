@@ -112,7 +112,7 @@ def load_json_with_encoding(file_path: str) -> Dict[str, Any]:
 
     if file_path.startswith("http://") or file_path.startswith("https://"):
         try:
-            response = requests.get(file_path)
+            response = requests.get(file_path, timeout=10)
             response.raise_for_status()
             raw_content = response.content  # Cache the response content
             for encoding in encodings:
