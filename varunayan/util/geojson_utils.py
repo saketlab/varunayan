@@ -114,9 +114,10 @@ def load_json_with_encoding(file_path: str) -> Dict[str, Any]:
         try:
             response = requests.get(file_path)
             response.raise_for_status()
+            raw_content = response.content  # Cache the response content
             for encoding in encodings:
                 try:
-                    content = response.content.decode(encoding)
+                    content = raw_content.decode(encoding)
                     data: Dict[str, Any] = json.loads(content)
                     logging.debug(
                         f"Successfully loaded JSON from URL with {encoding} encoding"
