@@ -126,8 +126,8 @@ def load_json_with_encoding(file_path: str) -> Dict[str, Any]:
                     continue
                 except json.JSONDecodeError:
                     continue
-        except Exception as e:
-            raise ValueError(f"Error fetching JSON from URL: {e}")
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"Network error while fetching JSON from URL: {e}")
     else:
         for encoding in encodings:
             try:
