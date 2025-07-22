@@ -43,7 +43,11 @@ jobs:
         # Convert demo notebook to markdown
         jupyter nbconvert --to markdown notebooks/Demo.ipynb --output-dir docs/notebooks/
         # Convert India temperature change notebook to markdown  
-        jupyter nbconvert --to markdown notebooks/India_temp_change.ipynb --output-dir docs/notebooks/
+        jupyter nbconvert --to markdown notebooks/temperature_change_in_India_1941-2024.ipynb --output-dir docs/notebooks/
+        # Convert umbrella notebook to markdown  
+        jupyter nbconvert --to markdown notebooks/umbrella_sales_India.ipynb --output-dir docs/notebooks/
+        # Convert sunscreen notebook to markdown  
+        jupyter nbconvert --to markdown notebooks/sunscreen_sales_California.ipynb --output-dir docs/notebooks/
     
     - name: Generate API documentation
       run: |
