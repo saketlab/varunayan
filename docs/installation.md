@@ -4,7 +4,7 @@
 :class: note
 
 - **Python 3.8+** - Varunayan supports Python 3.8 and higher
-- **CDS API access** - Registration required (free)
+- **CDS API Token** - Registration required (free)
 ```
 
 ## Quick Install
@@ -120,46 +120,24 @@ Varunayan requires access to the Copernicus Climate Data Store (CDS) API to down
 
 ### Step 1: Register for CDS Access
 
-1. Go to [CDS Registration](https://cds.climate.copernicus.eu/user/register)
+1. Go to [CDS Website](https://cds.climate.copernicus.eu/)
 2. Create a free account
-3. Accept the terms and conditions
 
-### Step 2: Get Your API Key
+### Step 2: Get Your API Token
 
 1. Log in to [CDS](https://cds.climate.copernicus.eu/)
-2. Go to your [API key page](https://cds.climate.copernicus.eu/api-how-to)
-3. Copy your UID and API key
+2. Go to your [Profile](https://cds.climate.copernicus.eu/profile)
+3. Copy your API Token
 
 ### Step 3: Configure API Access
 
-### Automatic Setup
-```bash
-# Create configuration file
-cat > ~/.cdsapirc << EOF
-url: https://cds.climate.copernicus.eu/api/v2
-key: YOUR_UID:YOUR_API_KEY
-EOF
-```
-
-### Manual Setup
-Create a file at `~/.cdsapirc` with:
-```text
-url: https://cds.climate.copernicus.eu/api/v2
-key: YOUR_UID:YOUR_API_KEY
-```
-
-### Windows Setup
-Create a file at `%USERPROFILE%\.cdsapirc` with:
-```text
-url: https://cds.climate.copernicus.eu/api/v2
-key: YOUR_UID:YOUR_API_KEY
-```
+`varunayan` will automatically handle the API configuration. No need to manually create or edit the `.cdsapirc` file! Just run the package and provide your API token when prompted.
 
 ```{admonition} Security Note
 :class: tip
 
-Replace `YOUR_UID` and `YOUR_API_KEY` with your actual credentials from the CDS portal.
-Keep your API key secure and never commit it to version control.
+The API token you provide is **only used to generate the `.cdsapirc` file** for configuring access to the CDS API.  
+`varunayan` does **not store, transmit, or use your token for anything else.**
 ```
 
 ## Verify Installation
@@ -190,17 +168,6 @@ for func in ['era5ify_geojson', 'era5ify_bbox', 'era5ify_point']:
         print(f"  ✗ {func}")
 ```
 
-### CDS API
-```python
-# Test CDS API connection
-try:
-    import cdsapi
-    c = cdsapi.Client()
-    print("✓ CDS API configured correctly")
-except Exception as e:
-    print(f"✗ CDS API error: {e}")
-```
-
 ## Troubleshooting
 
 ```{admonition} Common Issues
@@ -213,11 +180,10 @@ except Exception as e:
 **Permission errors**: Use `--user` flag: `pip install --user varunayan`
 
 **Version conflicts**: Create a virtual environment:
-```bash
-python -m venv varunayan-env
-source varunayan-env/bin/activate  # On Windows: varunayan-env\Scripts\activate
-pip install varunayan
-```
+
+    python -m venv varunayan-env
+    source varunayan-env/bin/activate  # On Windows: varunayan-env\Scripts\activate
+    pip install varunayan
 ```
 
 ## Next Steps
