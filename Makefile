@@ -142,19 +142,19 @@ docs-convert:
 	else \
 		echo "Warning: $(NOTEBOOKS_DIR)/temperature_change_in_India_1941-2024.ipynb not found"; \
 	fi
-	@if [ -f "$(NOTEBOOKS_DIR)/umbrella_sales_India-2024.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/umbrella_sales_India-2024.ipynb \
+	@if [ -f "$(NOTEBOOKS_DIR)/umbrella_sales_India.ipynb" ]; then \
+		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/umbrella_sales_India.ipynb \
 			--output-dir $(DOCS_DIR)/tutorials/ \
 			--output india_temperature_notebook; \
 	else \
-		echo "Warning: $(NOTEBOOKS_DIR)/umbrella_sales_India-2024.ipynb not found"; \
+		echo "Warning: $(NOTEBOOKS_DIR)/umbrella_sales_India.ipynb not found"; \
 	fi
-	@if [ -f "$(NOTEBOOKS_DIR)/sunscreen_sales_California-2024.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/sunscreen_sales_California-2024.ipynb \
+	@if [ -f "$(NOTEBOOKS_DIR)/sunscreen_sales_California.ipynb" ]; then \
+		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/sunscreen_sales_California.ipynb \
 			--output-dir $(DOCS_DIR)/tutorials/ \
 			--output india_temperature_notebook; \
 	else \
-		echo "Warning: $(NOTEBOOKS_DIR)/sunscreen_sales_California-2024.ipynb not found"; \
+		echo "Warning: $(NOTEBOOKS_DIR)/sunscreen_sales_California.ipynb not found"; \
 	fi
 
 .PHONY: docs-build
