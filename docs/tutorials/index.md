@@ -18,7 +18,7 @@ These tutorials are based on Jupyter notebooks that demonstrate the key features
 
 #### Demo Tutorial
 Complete demonstration of all Varunayan functions including:
-- **GeoJSON processing** with India and Latvia examples
+- **GeoJSON processing** with example of India's region
 - **Bounding box analysis** for custom regions
 - **Point-based data extraction** for specific locations
 - **Pressure level data** analysis

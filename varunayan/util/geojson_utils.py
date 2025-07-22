@@ -4,6 +4,8 @@ import os
 import tempfile
 from typing import Any, Dict, List, Tuple
 
+import requests
+
 from .logging_utils import get_logger
 
 logger = get_logger(level=logging.DEBUG)
@@ -95,35 +97,56 @@ def get_bounding_box(geojson_data: Dict[str, Any]) -> Tuple[float, float, float,
 
 def load_json_with_encoding(file_path: str) -> Dict[str, Any]:
     """
-    Load a JSON file with appropriate encoding detection.
+    Load a JSON file from local path or URL with appropriate encoding detection.
 
     Args:
-        file_path: Path to the JSON file
+        file_path: Path or URL to the JSON file
 
     Returns:
         Parsed JSON data as a dictionary
 
     Raises:
-        ValueError: If the file cannot be parsed as JSON with any encoding
+        ValueError: If the file cannot be parsed as JSON
     """
     encodings = ["utf-8", "utf-16", "latin-1", "cp1252"]
 
-    for encoding in encodings:
+    if file_path.startswith("http://") or file_path.startswith("https://"):
         try:
-            with open(file_path, "r", encoding=encoding) as f:
-                data: Dict[str, Any] = json.load(f)
-                logging.debug(f"Successfully loaded JSON file with {encoding} encoding")
-                return data
-        except UnicodeDecodeError:
-            continue
-        except json.JSONDecodeError:
-            continue
-        except Exception:
-            continue
+            response = requests.get(file_path, timeout=10)
+            response.raise_for_status()
+            raw_content = response.content  # Cache the response content
+            for encoding in encodings:
+                try:
+                    content = raw_content.decode(encoding)
+                    data: Dict[str, Any] = json.loads(content)
+                    logging.debug(
+                        f"Successfully loaded JSON from URL with {encoding} encoding"
+                    )
+                    return data
+                except UnicodeDecodeError:
+                    continue
+                except json.JSONDecodeError:
+                    continue
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"Network error while fetching JSON from URL: {e}")
+    else:
+        for encoding in encodings:
+            try:
+                with open(file_path, "r", encoding=encoding) as f:
+                    data: Dict[str, Any] = json.load(f)
+                    logging.debug(
+                        f"Successfully loaded JSON file with {encoding} encoding"
+                    )
+                    return data
+            except UnicodeDecodeError:
+                continue
+            except json.JSONDecodeError:
+                continue
+            except Exception:
+                continue
 
-    # If we get here, none of the encodings worked
     raise ValueError(
-        f"Could not load {file_path} as valid JSON with any common encoding"
+        f"Could not load JSON from {file_path} with any supported encoding"
     )
 
 
