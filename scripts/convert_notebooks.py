@@ -100,13 +100,12 @@ These vignettes demonstrate usage of Varunayan for different use cases.
         toctree_entries.append(rel_path)
     
     markdown_stems = {Path(md_file).stem for _, md_file in converted_notebooks}
-    notebook_entries = []
     for notebook_path in sorted(notebook_files, key=lambda x: x.stem):
         notebook_stem = notebook_path.stem.lower().replace(' ', '_').replace('-', '_')
         if notebook_stem not in markdown_stems:
-            notebook_entries.append(notebook_path.name)
+            print(f"Warning: Notebook '{notebook_path.name}' failed to convert and will not be included in the index.")
     
-    for entry in toctree_entries + notebook_entries:
+    for entry in toctree_entries:
         content += f"{entry}\n"
     
     content += "```\n\n"
