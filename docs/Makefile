@@ -33,39 +33,8 @@ help:
 # Convert notebooks to markdown before building
 .PHONY: notebooks
 notebooks:
-	@echo "Converting notebooks to markdown..."
-	@if [ -f "../notebooks/Demo.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown ../notebooks/Demo.ipynb \
-			--output-dir tutorials/ \
-			--output demo_tutorial_notebook; \
-		echo "Converted Demo.ipynb"; \
-	else \
-		echo "Warning: ../notebooks/Demo.ipynb not found"; \
-	fi
-	@if [ -f "../notebooks/temperature_change_in_India_1941-2024.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown ../notebooks/temperature_change_in_India_1941-2024.ipynb \
-			--output-dir tutorials/ \
-			--output india_temperature_notebook; \
-		echo "Converted temperature_change_in_India_1941-2024.ipynb"; \
-	else \
-		echo "Warning: ../notebooks/temperature_change_in_India_1941-2024.ipynb not found"; \
-	fi
-	@if [ -f "../notebooks/umbrella_sales_India.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown ../notebooks/umbrella_sales_India.ipynb \
-			--output-dir tutorials/ \
-			--output india_temperature_notebook; \
-		echo "Converted umbrella_sales_India.ipynb"; \
-	else \
-		echo "Warning: ../notebooks/umbrella_sales_India.ipynb not found"; \
-	fi
-	@if [ -f "../notebooks/sunscreen_sales_California.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown ../notebooks/sunscreen_sales_California.ipynb \
-			--output-dir tutorials/ \
-			--output india_temperature_notebook; \
-		echo "Converted sunscreen_sales_California.ipynb"; \
-	else \
-		echo "Warning: ../notebooks/sunscreen_sales_California.ipynb not found"; \
-	fi
+	@echo "Converting notebooks to markdown using automated script..."
+	cd .. && $(PYTHON) scripts/convert_notebooks.py
 
 # Build HTML documentation
 .PHONY: html

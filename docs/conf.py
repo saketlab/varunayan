@@ -85,16 +85,21 @@ nb_source_dir = "../notebooks"
 # Copy notebooks to docs directory for processing
 
 if os.path.exists("../notebooks"):
-    # Copy notebooks to tutorials directory
-    notebook_files = [
-        "Demo.ipynb",
-        "India_temp_change.ipynb",
-    ]
-    for nb in notebook_files:
-        src = f"../notebooks/{nb}"
-        dst = f"tutorials/{nb}"
-        if os.path.exists(src):
-            shutil.copy2(src, dst)
+    # Automatically discover and copy notebooks to tutorials directory
+    import glob
+    notebook_pattern = "../notebooks/*.ipynb"
+    discovered_notebooks = glob.glob(notebook_pattern)
+    
+    print(f"Auto-discovered {len(discovered_notebooks)} notebook(s)")
+    for src_path in discovered_notebooks:
+        nb_name = os.path.basename(src_path)
+        dst = f"tutorials/{nb_name}"
+        if os.path.exists(src_path):
+            shutil.copy2(src_path, dst)
+            print(f"Copied {nb_name} to tutorials directory")
+            
+    # Also ensure we include the notebooks in the build
+    nb_execution_excludepatterns.extend([f"tutorials/{os.path.basename(nb)}" for nb in discovered_notebooks])
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "*.rst.bak"]
