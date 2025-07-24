@@ -127,35 +127,8 @@ docs-clean:
 
 .PHONY: docs-convert
 docs-convert:
-	@echo "Converting notebooks to markdown..."
-	@if [ -f "$(NOTEBOOKS_DIR)/Demo.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/Demo.ipynb \
-			--output-dir $(DOCS_DIR)/tutorials/ \
-			--output demo_tutorial_notebook; \
-	else \
-		echo "Warning: $(NOTEBOOKS_DIR)/demo.ipynb not found"; \
-	fi
-	@if [ -f "$(NOTEBOOKS_DIR)/temperature_change_in_India_1941-2024.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/temperature_change_in_India_1941-2024.ipynb \
-			--output-dir $(DOCS_DIR)/tutorials/ \
-			--output india_temperature_notebook; \
-	else \
-		echo "Warning: $(NOTEBOOKS_DIR)/temperature_change_in_India_1941-2024.ipynb not found"; \
-	fi
-	@if [ -f "$(NOTEBOOKS_DIR)/umbrella_sales_India.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/umbrella_sales_India.ipynb \
-			--output-dir $(DOCS_DIR)/tutorials/ \
-			--output india_temperature_notebook; \
-	else \
-		echo "Warning: $(NOTEBOOKS_DIR)/umbrella_sales_India.ipynb not found"; \
-	fi
-	@if [ -f "$(NOTEBOOKS_DIR)/sunscreen_sales_California.ipynb" ]; then \
-		$(JUPYTER) nbconvert --to markdown $(NOTEBOOKS_DIR)/sunscreen_sales_California.ipynb \
-			--output-dir $(DOCS_DIR)/tutorials/ \
-			--output india_temperature_notebook; \
-	else \
-		echo "Warning: $(NOTEBOOKS_DIR)/sunscreen_sales_California.ipynb not found"; \
-	fi
+	@echo "Converting notebooks to markdown using automated script..."
+	$(PYTHON) scripts/convert_notebooks.py
 
 .PHONY: docs-build
 docs-build: docs-convert

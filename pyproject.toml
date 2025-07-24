@@ -159,6 +159,7 @@ exclude = [
     "/.github",
     "/docs",
     "/tests",
+    "/scripts",
     "/.gitignore",
     "/.pre-commit-config.yaml",
 ]
