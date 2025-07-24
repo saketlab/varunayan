@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 import json
+import re
 from pathlib import Path
 from typing import List, Dict, Tuple
 
@@ -48,6 +49,27 @@ def get_notebook_title(notebook_path: Path) -> str:
         return notebook_path.stem.replace('_', ' ').replace('-', ' ').title()
 
 
+def strip_ansi_escape_sequences(text: str) -> str:
+    ansi_escape_pattern = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape_pattern.sub('', text)
+
+
+def post_process_markdown(markdown_path: Path) -> None:
+    try:
+        with open(markdown_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        cleaned_content = strip_ansi_escape_sequences(content)
+        
+        with open(markdown_path, 'w', encoding='utf-8') as f:
+            f.write(cleaned_content)
+        
+        print(f"Post-processed {markdown_path.name} to remove ANSI escape sequences")
+        
+    except Exception as e:
+        print(f"Warning: Could not post-process {markdown_path}: {e}")
+
+
 def convert_notebook(notebook_path: Path, output_dir: str = "docs/tutorials") -> Tuple[bool, str]:
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -65,6 +87,8 @@ def convert_notebook(notebook_path: Path, output_dir: str = "docs/tutorials") ->
         
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         markdown_file = output_path / f"{output_name}.md"
+        
+        post_process_markdown(markdown_file)
         
         print(f"Converted {notebook_path.name} -> {markdown_file}")
         return True, str(markdown_file)
