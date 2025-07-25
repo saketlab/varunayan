@@ -3,13 +3,21 @@
 ```{admonition} What is Varunayan?
 :class: tip
 
-Varunayan =  Varun + ayan
+**Varunayan =  Varun + ayan**
+- **Varun** in the vedic mythology was the god of sky, order, truth, water and magic. 
+- **Ayan** means path in Sanskrit.
+**Varunayan**: A smooth path to access clean climate data
 
-Varun in the vedic mythology was the god of sky, order, truth, water and magic. 
+---
 
-Varunayan is a Python package for downloading and processing **ERA5 climate data**. 
-It provides both command-line and Python APIs for extracting analysis-ready climate data 
-for custom geographical regions using GeoJSON files, bounding boxes, or point coordinates.
+**Varunayan** is a Python package for downloading and processing **ERA5 climate data**. 
+It provides both **command-line** and **Python APIs** for extracting analysis-ready climate data 
+for custom geographical regions using:
+- GeoJSON files
+- Bounding boxes 
+- Point coordinates
+
+> Stop spending hours on data wrangling. Focus on your research — Varunayan takes care of the climate data.
 ```
 
 

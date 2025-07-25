@@ -87,9 +87,10 @@ nb_source_dir = "../notebooks"
 if os.path.exists("../notebooks"):
     # Automatically discover and copy notebooks to tutorials directory
     import glob
+
     notebook_pattern = "../notebooks/*.ipynb"
     discovered_notebooks = glob.glob(notebook_pattern)
-    
+
     print(f"Auto-discovered {len(discovered_notebooks)} notebook(s)")
     for src_path in discovered_notebooks:
         nb_name = os.path.basename(src_path)
@@ -97,9 +98,11 @@ if os.path.exists("../notebooks"):
         if os.path.exists(src_path):
             shutil.copy2(src_path, dst)
             print(f"Copied {nb_name} to tutorials directory")
-            
+
     # Also ensure we include the notebooks in the build
-    nb_execution_excludepatterns.extend([f"tutorials/{os.path.basename(nb)}" for nb in discovered_notebooks])
+    nb_execution_excludepatterns.extend(
+        [f"tutorials/{os.path.basename(nb)}" for nb in discovered_notebooks]
+    )
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "*.rst.bak"]
