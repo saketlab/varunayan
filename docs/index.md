@@ -6,7 +6,7 @@
 **Varunayan =  Varun + ayan**
 - **Varun** in the vedic mythology was the god of sky, order, truth, water and magic. 
 - **Ayan** means path in Sanskrit.
-**Varunayan**: A smooth path to access clean climate data
+- **Varunayan**: A smooth path to access clean climate data
 
 ---
 
