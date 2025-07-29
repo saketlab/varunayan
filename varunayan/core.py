@@ -381,6 +381,8 @@ def save_results(
     always_logger.info(f"  Saved unique coordinates to: {csv_output}")
 
     if save_raw:
+        # Drop unwanted columns
+        raw_df = raw_df.drop(columns=["number", "expver"], errors="ignore")
         # Save raw data
         csv_output = os.path.join(output_dir, f"{params.request_id}_raw_data.csv")
         raw_df.to_csv(csv_output, index=False)
