@@ -305,7 +305,7 @@ def process_era5_data(
     return df
 
 
-def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame):
+def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame, save_raw: bool):
     """Handle aggregation and saving of results"""
     # Temporal aggregation
     logger.info(
@@ -325,7 +325,7 @@ def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame):
         adjust_sum_variables(aggregated_df, params.frequency)
 
     # Save results
-    save_results(params, aggregated_df, unique_latlongs, df)
+    save_results(params, aggregated_df, unique_latlongs, df, save_raw)
 
     return aggregated_df
 
@@ -360,6 +360,7 @@ def save_results(
     aggregated_df: pd.DataFrame,
     unique_latlongs: pd.DataFrame,
     raw_df: pd.DataFrame,
+    save_raw: bool,
 ):
     """Save all results to files"""
 
@@ -379,13 +380,14 @@ def save_results(
     unique_latlongs.to_csv(csv_output, index=False)
     always_logger.info(f"  Saved unique coordinates to: {csv_output}")
 
-    # Save raw data
-    csv_output = os.path.join(output_dir, f"{params.request_id}_raw_data.csv")
-    raw_df.to_csv(csv_output, index=False)
-    always_logger.info(f"  Saved raw data to: {csv_output}")
+    if save_raw:
+        # Save raw data
+        csv_output = os.path.join(output_dir, f"{params.request_id}_raw_data.csv")
+        raw_df.to_csv(csv_output, index=False)
+        always_logger.info(f"  Saved raw data to: {csv_output}")
 
 
-def process_era5(params: ProcessingParams):
+def process_era5(params: ProcessingParams, save_raw: bool):
     """Main entry point for ERA5 processing"""
     ensure_cdsapi_config()
     total_start_time = time.time()
@@ -430,7 +432,7 @@ def process_era5(params: ProcessingParams):
     if processed_df is None:
         raise ValueError("No valid data processed during chunking.")
 
-    final_result = aggregate_and_save(params, processed_df)
+    final_result = aggregate_and_save(params, processed_df, save_raw)
     print_processing_footer(params, final_result, total_start_time)
     return final_result
 
@@ -630,6 +632,7 @@ def era5ify_geojson(
     frequency: str = "hourly",
     resolution: float = 0.25,
     verbosity: int = 0,
+    save_raw: bool = True,
 ) -> pd.DataFrame:
     """Public function for processing with GeoJSON"""
     start_dt = parse_date(start_date)
@@ -664,8 +667,8 @@ def era5ify_geojson(
             geojson_file=temp_geojson_file,
             geojson_data=geojson_data,
         )
+        return process_era5(params, save_raw)
 
-        return process_era5(params)
     finally:
         cleanup_temp_files(request_id, temp_geojson_file)
 
@@ -684,6 +687,7 @@ def era5ify_bbox(
     frequency: str = "hourly",
     resolution: float = 0.25,
     verbosity: int = 0,
+    save_raw: bool = True,
 ) -> pd.DataFrame:
     """Public function for processing with bounding box"""
     start_dt = parse_date(start_date)
@@ -721,8 +725,8 @@ def era5ify_bbox(
             east=east,
             west=west,
         )
+        return process_era5(params, save_raw)
 
-        return process_era5(params)
     finally:
         cleanup_temp_files(request_id, temp_geojson_file)
 
@@ -738,6 +742,7 @@ def era5ify_point(
     pressure_levels: Optional[List[str]] = None,
     frequency: str = "hourly",
     verbosity: int = 0,
+    save_raw: bool = True,
 ) -> pd.DataFrame:
 
     # Validate coordinates
@@ -848,6 +853,7 @@ def era5ify_point(
             frequency=frequency,
             resolution=0.1,
             verbosity=verbosity,
+            save_raw=save_raw,
         )
     finally:
         pass
