@@ -318,6 +318,7 @@ def test_aggregate_and_save(
     mock_save: MagicMock,
     basic_params: ProcessingParams,
     temp_dir: Path,
+    save_raw: bool = True,
 ):
     test_df = pd.DataFrame(
         {
@@ -332,7 +333,7 @@ def test_aggregate_and_save(
     # Mock aggregation to return the same dataframe
     mock_agg.return_value = (test_df, pd.DataFrame())
 
-    result = aggregate_and_save(basic_params, test_df)
+    result = aggregate_and_save(basic_params, test_df, save_raw)
 
     # Assertions
     assert isinstance(result, pd.DataFrame)
@@ -638,9 +639,10 @@ def test_process_era5(
         start_date=dt.datetime(2020, 1, 1),
         end_date=dt.datetime(2020, 1, 2),
     )
+    save_raw = True
 
     # Call the function
-    result = process_era5(params)
+    result = process_era5(params, save_raw)
 
     # Verify
     print(result)
