@@ -32,36 +32,28 @@ def main():
     subparsers.required = True
 
     def str2bool(v: str):
-        if isinstance(v, bool): #type: ignore
+        if isinstance(v, bool):  # type: ignore
             return v
-        if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        if v.lower() in ("yes", "true", "t", "y", "1"):
             return True
-        elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        elif v.lower() in ("no", "false", "f", "n", "0"):
             return False
         else:
-            raise argparse.ArgumentTypeError('Boolean value expected.')
+            raise argparse.ArgumentTypeError("Boolean value expected.")
 
     # Common arguments function
     def add_common_args(subparser: argparse.ArgumentParser):
         subparser.add_argument(
-            "--request-id",
-            required=True,
-            help="Unique request identifier"
+            "--request-id", required=True, help="Unique request identifier"
         )
         subparser.add_argument(
-            "--variables",
-            required=True,
-            help="Comma-separated variable names"
+            "--variables", required=True, help="Comma-separated variable names"
         )
         subparser.add_argument(
-            "--start",
-            required=True,
-            help="Start date (YYYY-MM-DD or YYYY-M-D)"
+            "--start", required=True, help="Start date (YYYY-MM-DD or YYYY-M-D)"
         )
         subparser.add_argument(
-            "--end",
-            required=True,
-            help="End date (YYYY-MM-DD or YYYY-M-D)"
+            "--end", required=True, help="End date (YYYY-MM-DD or YYYY-M-D)"
         )
         subparser.add_argument(
             "--dataset-type",
@@ -97,7 +89,7 @@ def main():
             "--save-raw",
             type=str2bool,
             default=True,
-            help="Option to save raw data, True by default. Pass it as False if raw data is not needed."
+            help="Option to save raw data, True by default. Pass it as False if raw data is not needed.",
         )
 
     # GeoJSON/JSON file mode
@@ -171,7 +163,7 @@ def main():
             frequency=args.freq,
             resolution=args.res,
             verbosity=args.verbosity,
-            save_raw=args.save_raw
+            save_raw=args.save_raw,
         )
 
     elif args.mode == "bbox":
@@ -190,7 +182,7 @@ def main():
             frequency=args.freq,
             resolution=args.res,
             verbosity=args.verbosity,
-            save_raw=args.save_raw
+            save_raw=args.save_raw,
         )
 
     elif args.mode == "point":
@@ -206,5 +198,5 @@ def main():
             pressure_levels=pressure_levels,
             frequency=args.freq,
             verbosity=args.verbosity,
-            save_raw=args.save_raw
+            save_raw=args.save_raw,
         )
