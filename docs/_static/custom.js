@@ -249,21 +249,16 @@ function setupVersionSwitcher() {
 
 function loadVersionSwitcher(currentVersion) {
     // Try to load versions.json
-    fetch('/_static/versions.json')
+    const basePath = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+    const versionsPath = basePath + '_static/versions.json';
+    
+    fetch(versionsPath)
         .then(response => response.json())
         .then(versions => {
             createVersionSwitcher(versions, currentVersion);
         })
         .catch(error => {
-            // Fallback: try relative path
-            fetch('../_static/versions.json')
-                .then(response => response.json())
-                .then(versions => {
-                    createVersionSwitcher(versions, currentVersion);
-                })
-                .catch(error => {
-                    console.log('No versions.json found, single version documentation');
-                });
+            console.log('No versions.json found, single version documentation');
         });
 }
 
