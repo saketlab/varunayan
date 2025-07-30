@@ -31,13 +31,6 @@ Use the version selector in the sidebar to view changes for different versions.
   - Temporal aggregation by frequency (daily, monthly, yearly)
   - Smart handling of sum variables (precipitation, radiation) during aggregation
 
-```{admonition} Getting Started
-:class: tip
-
-- Install with: `pip install git+https://github.com/saketlab/varunayan`
-- Set up your CDS API credentials in `~/.cdsapirc`
-- Check out the [quickstart tutorial](tutorials/index.md) for examples
-```
 
 ---
 
