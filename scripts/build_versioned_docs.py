@@ -80,21 +80,15 @@ def main():
         build_cmd = f"sphinx-build -b html {docs_dir} {docs_dir}/_build/html"
     
     try:
-        result = subprocess.run(
-            build_cmd, shell=True, cwd=project_root, text=True
-        )
-        if result.returncode == 0:
-            if tags:
-                print("Versioned documentation built successfully!")
-            else:
-                print("Documentation built successfully!")
-            print(f"Documentation available at: {docs_dir}/_build/html/")
-            print("\nTo serve locally:")
-            print(f"  cd {docs_dir}/_build/html && python -m http.server 8000")
-            print("  Then visit: http://localhost:8000")
+        run_command(build_cmd, cwd=project_root)
+        if tags:
+            print("Versioned documentation built successfully!")
         else:
-            print("Build failed. Check the output above for errors.")
-            sys.exit(1)
+            print("Documentation built successfully!")
+        print(f"Documentation available at: {docs_dir}/_build/html/")
+        print("\nTo serve locally:")
+        print(f"  cd {docs_dir}/_build/html && python -m http.server 8000")
+        print("  Then visit: http://localhost:8000")
     except KeyboardInterrupt:
         print("\nBuild interrupted by user")
         sys.exit(1)
