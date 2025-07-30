@@ -208,8 +208,8 @@ def get_git_tags():
         if result.returncode == 0:
             tags = [tag.strip() for tag in result.stdout.split('\n') if tag.strip()]
             return sorted(tags, key=lambda x: tuple(map(int, x.lstrip('v').split('.'))), reverse=True)
-    except:
-        pass
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as e:
+        print(f"Error while fetching git tags: {e}")
     return []
 
 # Get available versions
