@@ -52,8 +52,11 @@ def main():
     # Check if we're in a git repository
     try:
         run_command("git status", cwd=project_root)
-    except:
+    except subprocess.CalledProcessError:
         print("Error: Not in a git repository or git not available")
+        sys.exit(1)
+    except FileNotFoundError:
+        print("Error: Git executable not found")
         sys.exit(1)
     
     # Check for git tags
