@@ -22,6 +22,7 @@ extensions = [
     "sphinx_design",
     "sphinx_togglebutton",
     "sphinx_tabs.tabs",
+    "sphinx_multiversion",
 ]
 
 # AutoAPI configuration
@@ -147,6 +148,10 @@ html_theme_options = {
     },
     "theme_switcher_button": False,  # Disable theme switcher
     "show_navbar_depth": 1,
+    "switcher": {
+        "json_url": "_static/versions.json",
+        "version_match": release,
+    },
 }
 
 # Copy button configuration
@@ -182,3 +187,48 @@ html_context = {
     "github_version": "main",
     "conf_py_path": "/docs/",
 }
+
+# Sphinx-multiversion configuration
+smv_tag_whitelist = r'^v\d+\.\d+\.\d+.*$'  # Match tags like v0.1.0, v1.0.0, etc.
+smv_branch_whitelist = r'^(main|master)$'  # Include main/master branches
+smv_remote_whitelist = r'^(origin)$'  # Only use origin remote
+smv_released_pattern = r'^tags/.*$'  # Pattern for released versions
+smv_outputdir_format = '{ref.name}'  # Output directory format
+smv_prefer_remote_refs = False  # Use local refs when available
+
+# Dynamic version detection
+import subprocess
+import os
+
+def get_git_tags():
+    """Get available git tags for version switching."""
+    try:
+        result = subprocess.run(['git', 'tag', '-l', 'v*'], 
+                              capture_output=True, text=True, cwd=os.path.dirname(__file__))
+        if result.returncode == 0:
+            tags = [tag.strip() for tag in result.stdout.split('\n') if tag.strip()]
+            return sorted(tags, key=lambda x: tuple(map(int, x.lstrip('v').split('.'))), reverse=True)
+    except:
+        pass
+    return []
+
+# Get available versions
+available_tags = get_git_tags()
+has_multiple_versions = len(available_tags) > 0
+
+# Version-specific template variables
+html_context["versions"] = []
+html_context["current_version"] = release
+html_context["has_multiple_versions"] = has_multiple_versions
+
+# Update theme options based on whether we have multiple versions
+if has_multiple_versions:
+    html_theme_options["switcher"] = {
+        "json_url": "_static/versions.json",
+        "version_match": release,
+    }
+else:
+    html_theme_options.pop("switcher", None)
+
+# Template for version switcher
+smv_latest_version = "main"  # Point to the latest development version
