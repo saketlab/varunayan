@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add loading animations
     setupLoadingAnimations();
+    
+    // Setup version switcher
+    setupVersionSwitcher();
 });
 
 function setupEnhancedSearch() {
@@ -86,7 +89,7 @@ function setupCodeCopy() {
         if (!pre.querySelector('.copybtn')) {
             const copyBtn = document.createElement('button');
             copyBtn.className = 'copybtn';
-            copyBtn.innerHTML = '📋';
+            copyBtn.innerHTML = 'Copy';
             copyBtn.title = 'Copy to clipboard';
             copyBtn.style.position = 'absolute';
             copyBtn.style.top = '0.5rem';
@@ -98,9 +101,9 @@ function setupCodeCopy() {
             copyBtn.addEventListener('click', function() {
                 const code = pre.textContent || pre.innerText;
                 navigator.clipboard.writeText(code).then(() => {
-                    copyBtn.innerHTML = '✅';
+                    copyBtn.innerHTML = 'Copied!';
                     setTimeout(() => {
-                        copyBtn.innerHTML = '📋';
+                        copyBtn.innerHTML = 'Copy';
                     }, 2000);
                 });
             });
@@ -231,3 +234,121 @@ function addSearchHint() {
 
 // Initialize search hint
 document.addEventListener('DOMContentLoaded', addSearchHint);
+
+// Version switcher functionality
+function setupVersionSwitcher() {
+    // Check if we're in a versioned documentation setup
+    const currentPath = window.location.pathname;
+    const versionMatch = currentPath.match(/\/(v\d+\.\d+\.\d+|main)\//);
+    
+    if (versionMatch) {
+        const currentVersion = versionMatch[1];
+        loadVersionSwitcher(currentVersion);
+    }
+}
+
+function loadVersionSwitcher(currentVersion) {
+    // Try to load versions.json
+    const basePath = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+    const versionsPath = basePath + '_static/versions.json';
+    
+    fetch(versionsPath)
+        .then(response => response.json())
+        .then(versions => {
+            createVersionSwitcher(versions, currentVersion);
+        })
+        .catch(error => {
+            console.log('No versions.json found, single version documentation');
+        });
+}
+
+function createVersionSwitcher(versions, currentVersion) {
+    const navbar = document.querySelector('.bd-navbar');
+    if (!navbar || versions.length <= 1) return;
+    
+    const switcherContainer = document.createElement('div');
+    switcherContainer.className = 'version-switcher';
+    switcherContainer.style.cssText = `
+        position: relative;
+        display: inline-block;
+        margin-left: 1rem;
+    `;
+    
+    const switcherButton = document.createElement('button');
+    switcherButton.className = 'version-switcher-button';
+    switcherButton.innerHTML = `Version ${currentVersion} ▼`;
+    switcherButton.style.cssText = `
+        background: var(--bs-primary);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    `;
+    
+    const dropdown = document.createElement('div');
+    dropdown.className = 'version-dropdown';
+    dropdown.style.cssText = `
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        min-width: 150px;
+        z-index: 1000;
+        display: none;
+    `;
+    
+    versions.forEach(version => {
+        const link = document.createElement('a');
+        link.href = version.url;
+        link.textContent = version.name;
+        link.style.cssText = `
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        `;
+        
+        if (version.version === currentVersion) {
+            link.style.backgroundColor = '#f8f9fa';
+            link.style.fontWeight = 'bold';
+        }
+        
+        link.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#e9ecef';
+        });
+        
+        link.addEventListener('mouseleave', function() {
+            if (version.version !== currentVersion) {
+                this.style.backgroundColor = 'white';
+            }
+        });
+        
+        dropdown.appendChild(link);
+    });
+    
+    switcherButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    });
+    
+    document.addEventListener('click', function() {
+        dropdown.style.display = 'none';
+    });
+    
+    switcherContainer.appendChild(switcherButton);
+    switcherContainer.appendChild(dropdown);
+    
+    // Add to navbar
+    const navbarNav = navbar.querySelector('.navbar-nav');
+    if (navbarNav) {
+        navbarNav.appendChild(switcherContainer);
+    }
+}

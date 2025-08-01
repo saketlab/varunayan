@@ -23,3 +23,4 @@ These vignettes demonstrate usage of Varunayan for different use cases.
 - [Sunscreen Sales and Temperature Trends in California (2004–2024)](05_sunscreen_sales_california.md)
 - [Total Precipitation and Malaria and Dengue Public Interest Trends in India (2004-2024)](06_malaria_dengue_public_interest_trend.md)
 - [Peak Month of Precipitation and Annual Rainfall Trends in India (2000–2024)](07_rainfall_peak_India.md)
+- [Comparison of ERA5 and IMD Daily Temperature Extremes Across Maharashtra (2024)](08_era5_imd_temp_comparison.md)

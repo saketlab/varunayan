@@ -1,8 +1,8 @@
-name: Deploy to GitHub Pages
+# DEPRECATED: Use docs-versioned.yml instead for automatic versioned documentation
+# This workflow is kept for manual deployments only
+name: Deploy to GitHub Pages (Legacy)
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 permissions:

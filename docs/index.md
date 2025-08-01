@@ -99,6 +99,7 @@ autoapi/index
 :maxdepth: 1
 :caption: Development
 
+changelog
 DEPENDENCIES
 ```
 

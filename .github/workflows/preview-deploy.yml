@@ -77,7 +77,7 @@ jobs:
                   issue_number: context.issue.number,
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  body: `📖 **Documentation Preview Ready!**\n\n🔗 **Preview URL:** ${successStatus.target_url}\n\nThis preview will be updated with each new commit to this PR.`
+                  body: `**Documentation Preview Ready!**\n\n**Preview URL:** ${successStatus.target_url}\n\nThis preview will be updated with each new commit to this PR.`
                 });
               }
             }

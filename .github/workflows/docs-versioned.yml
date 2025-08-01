@@ -1,0 +1,156 @@
+name: Build and Deploy Versioned Documentation
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "docs-${{ github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for versioning
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[docs-build]
+        pip install sphinx-multiversion
+    
+    - name: Check for version tags
+      id: check-tags
+      run: |
+        TAGS=$(git tag -l 'v*' | wc -l)
+        echo "tag_count=$TAGS" >> $GITHUB_OUTPUT
+        if [ $TAGS -gt 0 ]; then
+          echo "has_tags=true" >> $GITHUB_OUTPUT
+          echo "Found $TAGS version tags"
+        else
+          echo "has_tags=false" >> $GITHUB_OUTPUT
+          echo "No version tags found"
+        fi
+    
+    - name: Create docs structure
+      run: |
+        mkdir -p docs/notebooks
+        mkdir -p docs/_static
+        mkdir -p docs/_templates
+    
+    - name: Convert notebooks to markdown
+      run: |
+        if [ -f "scripts/convert_notebooks.py" ]; then
+          python scripts/convert_notebooks.py
+        fi
+    
+    - name: Generate API documentation
+      run: |
+        sphinx-apidoc -o docs/api varunayan --force --separate
+    
+    - name: Build versioned documentation
+      if: steps.check-tags.outputs.has_tags == 'true'
+      run: |
+        echo "Building versioned documentation with sphinx-multiversion..."
+        sphinx-multiversion docs docs/_build/html
+        
+        # Create redirect for root to latest version
+        echo "Creating redirect to latest version..."
+        LATEST_TAG=$(git tag -l 'v*' | sort -V | tail -1)
+        echo "Latest tag: $LATEST_TAG"
+        
+        cat > docs/_build/html/index.html << EOF
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Redirecting to latest documentation</title>
+            <meta http-equiv="refresh" content="0; url=./$LATEST_TAG/">
+            <link rel="canonical" href="./$LATEST_TAG/">
+        </head>
+        <body>
+            <p>If you are not redirected automatically, <a href="./$LATEST_TAG/">click here</a>.</p>
+        </body>
+        </html>
+        EOF
+    
+    - name: Build single-version documentation  
+      if: steps.check-tags.outputs.has_tags == 'false'
+      run: |
+        echo "Building single-version documentation with sphinx..."
+        cd docs
+        sphinx-build -b html . _build/html
+    
+    - name: Create versions.json for version switcher
+      if: steps.check-tags.outputs.has_tags == 'true'
+      run: |
+        echo "Creating versions.json..."
+        python -c "
+        import json
+        import subprocess
+        import os
+        
+        # Get all version tags
+        result = subprocess.run(['git', 'tag', '-l', 'v*'], capture_output=True, text=True)
+        tags = result.stdout.strip().split('\n') if result.stdout.strip() else []
+        tags = [tag for tag in tags if tag]  # Remove empty strings
+        tags.sort(key=lambda x: tuple(map(int, x.lstrip('v').split('.'))), reverse=True)
+        
+        versions = []
+        for tag in tags:
+            versions.append({
+                'name': tag,
+                'version': tag,
+                'url': f'./{tag}/',
+                'preferred': tag == tags[0] if tags else False
+            })
+        
+        # Add main/development version
+        versions.append({
+            'name': 'main (development)',
+            'version': 'main', 
+            'url': './main/',
+            'preferred': False
+        })
+        
+        os.makedirs('docs/_build/html/_static', exist_ok=True)
+        with open('docs/_build/html/_static/versions.json', 'w') as f:
+            json.dump(versions, f, indent=2)
+        
+        print('Created versions.json with versions:', [v['name'] for v in versions])
+        "
+    
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: docs/_build/html
+
+  deploy:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-docs
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
