@@ -1,13 +1,13 @@
 [
   {
-    "name": "main",
-    "version": "main",
-    "url": "https://saketlab.github.io/varunayan/main/",
+    "name": "latest (main)",
+    "version": "0.1.0",
+    "url": "https://saketlab.github.io/varunayan/",
     "preferred": true
   },
   {
     "name": "v0.1.0", 
-    "version": "0.1.0",
+    "version": "v0.1.0",
     "url": "https://saketlab.github.io/varunayan/v0.1.0/"
   }
 ]
