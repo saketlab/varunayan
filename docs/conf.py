@@ -147,6 +147,10 @@ html_theme_options = {
     },
     "theme_switcher_button": False,  # Disable theme switcher
     "show_navbar_depth": 1,
+    "switcher": {
+        "json_url": "_static/versions.json",
+        "version_match": release,
+    },
 }
 
 # Copy button configuration
@@ -175,10 +179,18 @@ html_js_files = [
 
 # Social cards (for sharing)
 html_baseurl = "https://saketlab.github.io/varunayan/"
+
+# Version switcher configuration
+# Enable version switcher with current version
 html_context = {
     "display_github": True,
     "github_user": "saketlab",
     "github_repo": "varunayan",
     "github_version": "main",
     "conf_py_path": "/docs/",
+    "current_version": release,
+    "versions": [
+        {"name": "latest (main)", "version": "0.1.0", "url": "https://saketlab.github.io/varunayan/", "preferred": True},
+        {"name": "v0.1.0", "version": "v0.1.0", "url": "https://saketlab.github.io/varunayan/v0.1.0/"}
+    ]
 }
