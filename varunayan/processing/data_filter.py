@@ -33,171 +33,181 @@ def filter_netcdf_by_shapefile(
     ds: xr.Dataset, geojson_data: Dict[str, Any]
 ) -> pd.DataFrame:
     """
-    Filter a NetCDF dataset to only include grid points that fall within the GeoJSON polygon
-    by first identifying unique lat/lon pairs that are inside the polygon, then filtering the dataset.
-    This is much more efficient than converting the entire dataset to DataFrame first.
+    Filter a NetCDF dataset to only include grid points that fall within the GeoJSON polygon(s).
+    Internally handles multi-feature GeoJSONs by matching points to each feature individually,
+    then taking the union of all matched points.
+
+    Parameters:
+        ds: xarray Dataset
+        geojson_data: Loaded GeoJSON (as dict or GeoDataFrame)
+
+    Returns:
+        A pandas DataFrame with filtered points.
     """
+    from shapely.geometry import Point
+    from shapely.validation import make_valid
+    import geopandas as gpd
+    import pandas as pd
+    import numpy as np
+    import warnings
+
     logger.info("Starting filtering process...")
     start_time = dt.datetime.now()
 
-    # Convert GeoJSON to GeoDataFrame for efficient spatial operations
-    if isinstance(geojson_data, dict):  # type: ignore
-        gdf = gpd.GeoDataFrame.from_features(  # type: ignore
-            geojson_data["features"] if "features" in geojson_data else [geojson_data]
-        )
+    # Step 0: Convert GeoJSON to GeoDataFrame
+    if isinstance(geojson_data, dict):  #type:ignore
+        features = geojson_data.get("features", [geojson_data])
+        gdf = gpd.GeoDataFrame.from_features(features)
     else:
         gdf = geojson_data
 
-    # Make sure the CRS is set
     if gdf.crs is None:
-        gdf.crs = "EPSG:4326"  # WGS84 - standard for geographic coordinates
+        gdf.crs = "EPSG:4326"
 
-    # Create a unified geometry from all polygons in the GeoDataFrame
-    unified_polygon = gdf.geometry.union_all()
+    num_features = len(gdf) #type:ignore
 
-    # Step 1: Extract unique lat/lon coordinates from the NetCDF dataset
+    # Step 1: Extract all lat/lon combinations
     logger.info("→ Extracting unique lat/lon coordinates from dataset...")
 
-    # Get the coordinate arrays
-    lats: np.ndarray = (  # type: ignore
-        ds.coords["latitude"].values
-        if "latitude" in ds.coords
-        else ds.coords["lat"].values
-    )
-    lons: np.ndarray = (  # type: ignore
-        ds.coords["longitude"].values
-        if "longitude" in ds.coords
-        else ds.coords["lon"].values
-    )
+    lats = ds.coords["latitude"].values if "latitude" in ds.coords else ds.coords["lat"].values #type:ignore
+    lons = ds.coords["longitude"].values if "longitude" in ds.coords else ds.coords["lon"].values   #type:ignore
 
-    # Create all possible lat/lon combinations (grid points)
-    lon_grid, lat_grid = np.meshgrid(lons, lats)  # type: ignore
-    unique_coords = pd.DataFrame(
-        {"latitude": lat_grid.flatten(), "longitude": lon_grid.flatten()}
-    ).drop_duplicates()
+    lon_grid, lat_grid = np.meshgrid(lons, lats)    #type:ignore
+    unique_coords = pd.DataFrame({
+        "latitude": lat_grid.flatten(),
+        "longitude": lon_grid.flatten()
+    }).drop_duplicates()
 
-    total_unique_points = len(unique_coords)
-    logger.info(f"✓ Found {total_unique_points} unique lat/lon combinations")
+    total_points = len(unique_coords)
+    logger.info(f"✓ Found {total_points} unique lat/lon combinations")
 
-    # Step 2: Filter unique coordinates to find which ones are inside the polygon
-    logger.info("→ Filtering unique coordinates against polygon...")
-    filter_start = dt.datetime.now()
-
-    # Create Point geometries for unique coordinates
+    # Add geometry column
     unique_coords["geometry"] = [
-        Point(lon, lat)
-        for lon, lat in zip(unique_coords["longitude"], unique_coords["latitude"])
+        Point(lon, lat) for lon, lat in zip(unique_coords["longitude"], unique_coords["latitude"])
     ]
+    gdf_points = gpd.GeoDataFrame(unique_coords, geometry="geometry", crs="EPSG:4326")
 
-    # Convert to GeoDataFrame
-    gdf_unique_points = gpd.GeoDataFrame(
-        unique_coords, geometry="geometry", crs="EPSG:4326"
-    )
+    # Step 1.5: Comprehensive geometry validation and repair
+    logger.info("→ Validating and repairing geometries...")
+    
+    # First check for invalid geometries
+    invalid_mask = ~gdf.is_valid
+    invalid_count = invalid_mask.sum()
+    
+    if invalid_count > 0:
+        logger.warning(f"Found {invalid_count} invalid geometries. Attempting repair...")
+        
+        # Try multiple repair strategies
+        for idx in gdf[invalid_mask].index:
+            original_geom = gdf.loc[idx, 'geometry']
+            
+            # Strategy 1: buffer(0) - fixes self-intersections and other topology issues
+            try:
+                buffered = original_geom.buffer(0)  #type:ignore
+                if buffered.is_valid and not buffered.is_empty:
+                    gdf.loc[idx, 'geometry'] = buffered
+                    continue
+            except Exception as e:
+                logger.debug(f"Buffer(0) failed for feature {idx}: {e}")
+            
+            # Strategy 2: make_valid() - Shapely's built-in repair function
+            try:
+                repaired = make_valid(original_geom)    #type:ignore
+                if repaired.is_valid and not repaired.is_empty:
+                    gdf.loc[idx, 'geometry'] = repaired #type:ignore
+                    continue
+            except Exception as e:
+                logger.debug(f"make_valid() failed for feature {idx}: {e}")
+            
+            # Strategy 3: Small buffer operation
+            try:
+                small_buffer = original_geom.buffer(1e-10).buffer(-1e-10)   #type:ignore
+                if small_buffer.is_valid and not small_buffer.is_empty:
+                    gdf.loc[idx, 'geometry'] = small_buffer
+                    continue
+            except Exception as e:
+                logger.debug(f"Small buffer operation failed for feature {idx}: {e}")
+            
+            # If all repair strategies fail, log and mark for removal
+            logger.warning(f"Could not repair geometry for feature {idx}. Will be excluded.")
+    
+    # Remove any remaining invalid or empty geometries
+    original_count = len(gdf)
+    gdf = gdf[gdf.is_valid & ~gdf.is_empty]
+    removed_count = original_count - len(gdf)
+    
+    if removed_count > 0:
+        logger.warning(f"Removed {removed_count} invalid/empty geometries")
+    
+    logger.info(f"✓ {len(gdf)} valid features retained after geometry validation")
 
-    # Filter points that are within the polygon
-    inside_coords = gdf_unique_points[
-        gdf_unique_points.geometry.intersects(unified_polygon)
-    ].copy()
+    if gdf.empty:
+        raise ValueError("All features in the GeoJSON were invalid and could not be fixed.")
 
-    # Drop the geometry column and keep only lat/lon
-    inside_coords = inside_coords[["latitude", "longitude"]].copy()
+    # Step 2: Filtering with error handling
+    logger.info("→ Filtering coordinates by feature geometries...")
+    filter_start = dt.datetime.now()
+    matched_list = []  # Collect DataFrames in a list instead
 
+    for idx, feature in gdf.iterrows(): #type:ignore
+        try:
+            geom = feature.geometry
+            
+            # Additional validation before intersection
+            if not geom.is_valid or geom.is_empty:
+                logger.warning(f"Skipping invalid/empty geometry for feature {idx}")
+                continue
+                
+            # Perform intersection with error handling
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                points_in_geom = gdf_points[gdf_points.geometry.intersects(geom)]
+                
+            if not points_in_geom.empty:
+                matched_list.append(points_in_geom)
+                logger.debug(f"Feature {idx}: {len(points_in_geom)} points matched")
+            
+        except Exception as e:
+            logger.error(f"Error processing feature {idx}: {e}")
+            logger.warning(f"Skipping feature {idx} due to geometry error")
+            continue
+
+    # Concatenate all matched DataFrames at once
+    if matched_list:
+        matched = pd.concat(matched_list, ignore_index=True)    #type:ignore
+        # Drop duplicates (union of all points across features)
+        matched = matched.drop_duplicates(subset=["latitude", "longitude"])
+    else:
+        # Create empty GeoDataFrame with same structure as gdf_points
+        matched = gpd.GeoDataFrame(columns=gdf_points.columns, geometry="geometry", crs="EPSG:4326")
     filter_time = dt.datetime.now() - filter_start
-    points_inside_count = len(inside_coords)
-    points_outside_count = total_unique_points - points_inside_count
 
-    logger.debug(
-        f"✓ Coordinate filtering completed in {filter_time.total_seconds():.2f} seconds"
-    )
-    logger.debug(f"  - Points inside: {points_inside_count}")
-    logger.debug(f"  - Points outside: {points_outside_count}")
-    logger.debug(
-        f"  - Percentage inside: {points_inside_count/total_unique_points*100:.2f}%"
-    )
+    logger.info(f"✓ Spatial filtering done in {filter_time.total_seconds():.2f} seconds")
+    logger.info(f"✓ Total matched points: {len(matched)}")
 
-    # Verify we found points inside
-    if points_inside_count == 0:
-        logger.warning("\n!!! WARNING: No points found inside the shapefile !!!")
-        logger.warning("Possible reasons:")
-        logger.warning(
-            "1. The selected variable may not have valid values in the specified region."
-        )
-        logger.warning(
-            "2. The region is too small or falls outside the spatial coverage of the dataset."
-        )
-        logger.warning(
-            "3. All dataset grid points fall outside the shapefile boundaries."
-        )
+    if matched.empty:
+        raise ValueError("No points found inside any features in the GeoJSON.")
 
-        # Additional debugging info
-        logger.debug("\nDataset coordinate ranges:")
-        logger.debug(f"  Latitude: {lats.min():.4f} to {lats.max():.4f}")
-        logger.debug(f"  Longitude: {lons.min():.4f} to {lons.max():.4f}")
-
-        # Print shapefile bounds
-        logger.debug("\nShapefile bounds (west, south, east, north):")
-        bounds = unified_polygon.bounds
-        if isinstance(bounds, tuple):  # type: ignore
-            logger.debug(
-                f"  {bounds[0]:.4f}, {bounds[1]:.4f}, {bounds[2]:.4f}, {bounds[3]:.4f}"
-            )
-        else:
-            logger.debug(f"  {bounds}")
-
-        raise ValueError("No points found inside the specified shapefile")
-
-    # Step 3: Use the inside coordinates to filter the original dataset
-    logger.info("→ Filtering original dataset using inside coordinates...")
-    dataset_filter_start = dt.datetime.now()
-
-    # First convert the dataset to DataFrame
-    logger.debug("  Converting dataset to DataFrame...")
+    # Step 3: Join with original dataset
     df = ds.to_dataframe().reset_index()
-    original_rows = len(df)
-    logger.debug(f"  ✓ Converted to DataFrame with {original_rows} rows")
-
-    # Create a set of (lat, lon) tuples for fast lookup
-    inside_coord_tuples = set(
-        zip(inside_coords["latitude"], inside_coords["longitude"])
-    )
-    logger.debug(
-        f"  ✓ Created lookup set with {len(inside_coord_tuples)} coordinate pairs"
-    )
-
-    # Filter the DataFrame to keep only rows where (lat, lon) pair is in the inside set
-    logger.info("  Filtering DataFrame rows...")
     lat_col = "latitude" if "latitude" in df.columns else "lat"
     lon_col = "longitude" if "longitude" in df.columns else "lon"
 
-    # Create a boolean mask for rows where the lat/lon combination is inside
-    df["coord_pair"] = list(zip(df[lat_col], df[lon_col]))
-    mask = df["coord_pair"].isin(inside_coord_tuples)
-
-    # Apply the filter
-    filtered_df = df[mask].copy()
-
-    # Remove the temporary column
-    filtered_df = filtered_df.drop(columns=["coord_pair"])
-
-    filtered_rows = len(filtered_df)
-    logger.debug(f"  ✓ Filtered from {original_rows} to {filtered_rows} rows")
-
-    dataset_filter_time = dt.datetime.now() - dataset_filter_start
-    logger.debug(
-        f"✓ Dataset filtering completed in {dataset_filter_time.total_seconds():.2f} seconds"
+    # Merge using lat/lon
+    logger.info("→ Merging matched points with dataset values...")
+    final_df = pd.merge(
+        matched[["latitude", "longitude"]],
+        df,
+        left_on=["latitude", "longitude"],
+        right_on=[lat_col, lon_col],
+        how="inner"
     )
 
-    end_time = dt.datetime.now()
-    total_time = (end_time - start_time).total_seconds()
+    logger.info("✓ Merge complete")
+    logger.info(f"→ Final dataset shape: {final_df.shape}")
+    logger.info(f"✓ Total processing time: {(dt.datetime.now() - start_time).total_seconds():.2f} seconds")
 
-    logger.info("\n--- Final Filtering Results ---")
-    logger.info(f"Total processing time: {total_time:.2f} seconds")
-    logger.info(f"Final DataFrame shape: {filtered_df.shape}")
-    logger.info(f"Rows in final dataset: {len(filtered_df)}")
-
-    return filtered_df
-
-
+    return final_df
 def get_unique_coordinates_in_polygon(
     ds: xr.Dataset, geojson_data: Dict[str, Any]
 ) -> pd.DataFrame:
