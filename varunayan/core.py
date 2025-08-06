@@ -536,48 +536,58 @@ def calculate_map_dimensions(
     MIN_DIMENSION = 8
 
     if geo_width == 0 or geo_height == 0:
-        return 20, 20  # Fallback for invalid bbox
+        return 15, 15  # Fallback for invalid bbox
 
     avg = (geo_height + geo_width) / 2
-    width = int(geo_width * 20 / avg * 2)
-    height = int(geo_height * 20 / avg)
+    width = int(geo_width * 15 / avg * 2)
+    height = int(geo_height * 15 / avg)
     return max(width, MIN_DIMENSION), max(height, MIN_DIMENSION)
 
 
+from shapely.geometry import shape, Point
+from shapely.ops import unary_union
+import numpy as np
+
 def draw_geojson_ascii(geojson_data: Dict[str, Any]):
     """
-    Draws a mini ASCII map showing the GeoJSON polygon
-    :param geojson_data: Loaded GeoJSON data
-    :param width: Width of ASCII art in characters
-    :param height: Height of ASCII art in characters
+    Draws a mini ASCII map showing the GeoJSON polygons.
+    :param geojson_data: Loaded GeoJSON data (must be FeatureCollection)
     """
     try:
-        import numpy as np
-        from shapely.geometry import shape
+        # Combine all geometries in the GeoJSON into a single geometry
+        geometries = [shape(feature["geometry"]) for feature in geojson_data.get("features", [])]
+        if len(geometries) > 100:
+            print("Too many features in GeoJSON (more than 100). Skipping mini map.")
+            return
+        if not geometries:
+            print("No geometries found in GeoJSON.")
+            return
+
+        combined_geom = unary_union(geometries)
+        combined_geom = combined_geom.simplify(0.05, preserve_topology=True)
 
         # Get bounding box
         west, south, east, north = get_bounding_box(geojson_data)
 
+        # Calculate dimensions of the ASCII grid
         width, height = calculate_map_dimensions(west, east, south, north)
 
-        # Create grid
+        # Generate grid coordinates
         x = np.linspace(west, east, width)
         y = np.linspace(south, north, height)
 
-        # Create polygon from GeoJSON
-        geom = shape(geojson_data["features"][0]["geometry"])
-
-        # Draw ASCII art
+        # Print header
         print(
-            f"\n{Colors.BLUE}MINI MAP ({west:.2f}°W to {east:.2f}°E, {south:.2f}°S to {north:.2f}°N):{Colors.RESET}"
+            f"\n{Colors.BLUE}MINI MAP (Longitude: {west:.2f}° to {east:.2f}°, Latitude: {south:.2f}° to {north:.2f}°):{Colors.RESET}"
         )
         print("┌" + "─" * width + "┐")
 
+        # Render the ASCII map
         for j in range(height - 1, -1, -1):
             row = ["│"]
             for i in range(width):
-                point = (x[i], y[j])
-                if geom.contains(Point(point)):
+                point = Point(x[i], y[j])
+                if combined_geom.covers(point):
                     row.append(f"{Colors.GREEN}■{Colors.RESET}")
                 else:
                     row.append(f"{Colors.RED}·{Colors.RESET}")
