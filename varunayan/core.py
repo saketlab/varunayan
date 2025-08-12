@@ -544,9 +544,10 @@ def calculate_map_dimensions(
     return max(width, MIN_DIMENSION), max(height, MIN_DIMENSION)
 
 
-from shapely.geometry import shape, Point
-from shapely.ops import unary_union
 import numpy as np
+from shapely.geometry import Point, shape
+from shapely.ops import unary_union
+
 
 def draw_geojson_ascii(geojson_data: Dict[str, Any]):
     """
@@ -555,7 +556,9 @@ def draw_geojson_ascii(geojson_data: Dict[str, Any]):
     """
     try:
         # Combine all geometries in the GeoJSON into a single geometry
-        geometries = [shape(feature["geometry"]) for feature in geojson_data.get("features", [])]
+        geometries = [
+            shape(feature["geometry"]) for feature in geojson_data.get("features", [])
+        ]
         if len(geometries) > 100:
             print("Too many features in GeoJSON (more than 100). Skipping mini map.")
             return
