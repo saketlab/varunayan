@@ -70,12 +70,12 @@ def filter_netcdf_by_shapefile(
     # Step 1: Extract all lat/lon combinations
     logger.info("→ Extracting unique lat/lon coordinates from dataset...")
 
-    lats = (    # type:ignore
+    lats = (  # type:ignore
         ds.coords["latitude"].values
         if "latitude" in ds.coords
         else ds.coords["lat"].values
     )
-    lons = (    # type:ignore
+    lons = (  # type:ignore
         ds.coords["longitude"].values
         if "longitude" in ds.coords
         else ds.coords["lon"].values
