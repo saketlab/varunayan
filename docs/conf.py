@@ -190,7 +190,16 @@ html_context = {
     "conf_py_path": "/docs/",
     "current_version": release,
     "versions": [
-        {"name": "latest (main)", "version": "0.1.0", "url": "https://saketlab.github.io/varunayan/", "preferred": True},
-        {"name": "v0.1.0", "version": "v0.1.0", "url": "https://saketlab.github.io/varunayan/v0.1.0/"}
-    ]
+        {
+            "name": "latest (main)",
+            "version": "0.1.0",
+            "url": "https://saketlab.github.io/varunayan/",
+            "preferred": True,
+        },
+        {
+            "name": "v0.1.0",
+            "version": "v0.1.0",
+            "url": "https://saketlab.github.io/varunayan/v0.1.0/",
+        },
+    ],
 }
