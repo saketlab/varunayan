@@ -1,6 +1,6 @@
 import datetime as dt
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import geopandas as gpd
 import numpy as np
@@ -30,7 +30,7 @@ def set_v_data_fil(verbosity: int):
 
 # pyright: reportUnknownMemberType=false
 def filter_netcdf_by_shapefile(
-    ds: xr.Dataset, geojson_data: Dict[str, Any]
+    ds: xr.Dataset, geojson_data: Dict[str, Any], dist_feature: Optional[str] = None
 ) -> pd.DataFrame:
     """
     Filter a NetCDF dataset to only include grid points that fall within the GeoJSON polygon(s).
@@ -40,16 +40,13 @@ def filter_netcdf_by_shapefile(
     Parameters:
         ds: xarray Dataset
         geojson_data: Loaded GeoJSON (as dict or GeoDataFrame)
+        dist_feature: Name of the attribute/property in the GeoJSON to use as feature identifier
 
     Returns:
-        A pandas DataFrame with filtered points.
+        A pandas DataFrame with filtered points and feature identification.
     """
     import warnings
 
-    import geopandas as gpd
-    import numpy as np
-    import pandas as pd
-    from shapely.geometry import Point
     from shapely.validation import make_valid
 
     logger.info("Starting filtering process...")
@@ -66,6 +63,13 @@ def filter_netcdf_by_shapefile(
         gdf.crs = "EPSG:4326"
 
     num_features = len(gdf)  # type:ignore
+
+    # Check if dist_feature exists in the GeoDataFrame
+    if dist_feature and dist_feature not in gdf.columns:
+        logger.warning(
+            f"Feature '{dist_feature}' not found in GeoJSON. Available columns: {list(gdf.columns)}"
+        )
+        dist_feature = None
 
     # Step 1: Extract all lat/lon combinations
     logger.info("→ Extracting unique lat/lon coordinates from dataset...")
@@ -110,7 +114,7 @@ def filter_netcdf_by_shapefile(
 
         # Try multiple repair strategies
         for idx in gdf[invalid_mask].index:
-            original_geom = gdf.loc[idx, "geometry"]
+            original_geom = gdf.loc[idx, "geometry"]  # type: ignore
 
             # Strategy 1: buffer(0) - fixes self-intersections and other topology issues
             try:
@@ -159,7 +163,7 @@ def filter_netcdf_by_shapefile(
             "All features in the GeoJSON were invalid and could not be fixed."
         )
 
-    # Step 2: Filtering with error handling
+    # Step 2: Filtering with error handling and feature identification
     logger.info("→ Filtering coordinates by feature geometries...")
     filter_start = dt.datetime.now()
     matched_list = []  # Collect DataFrames in a list instead
@@ -176,11 +180,20 @@ def filter_netcdf_by_shapefile(
             # Perform intersection with error handling
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=RuntimeWarning)
-                points_in_geom = gdf_points[gdf_points.geometry.intersects(geom)]
+                points_in_geom = gdf_points[gdf_points.geometry.intersects(geom)].copy()
 
             if not points_in_geom.empty:
+                # Add feature identifier
+                if dist_feature:
+                    feature_name = feature[dist_feature]
+                else:
+                    feature_name = f"feature_{idx}"
+
+                points_in_geom["feature"] = feature_name
                 matched_list.append(points_in_geom)
-                logger.debug(f"Feature {idx}: {len(points_in_geom)} points matched")
+                logger.debug(
+                    f"Feature {idx} ({feature_name}): {len(points_in_geom)} points matched"
+                )
 
         except Exception as e:
             logger.error(f"Error processing feature {idx}: {e}")
@@ -190,12 +203,15 @@ def filter_netcdf_by_shapefile(
     # Concatenate all matched DataFrames at once
     if matched_list:
         matched = pd.concat(matched_list, ignore_index=True)  # type:ignore
-        # Drop duplicates (union of all points across features)
-        matched = matched.drop_duplicates(subset=["latitude", "longitude"])
+        # For points that belong to multiple features, keep all associations
+        # (don't drop duplicates based on lat/lon since we want feature info)
+        logger.info(f"✓ Found points in {len(matched_list)} features")  # type: ignore
     else:
-        # Create empty GeoDataFrame with same structure as gdf_points
+        # Create empty GeoDataFrame with same structure as gdf_points plus feature column
         matched = gpd.GeoDataFrame(
-            columns=gdf_points.columns, geometry="geometry", crs="EPSG:4326"
+            columns=list(gdf_points.columns) + ["feature"],
+            geometry="geometry",
+            crs="EPSG:4326",
         )
     filter_time = dt.datetime.now() - filter_start
 
@@ -214,13 +230,25 @@ def filter_netcdf_by_shapefile(
 
     # Merge using lat/lon
     logger.info("→ Merging matched points with dataset values...")
-    final_df = pd.merge(
-        matched[["latitude", "longitude"]],
-        df,
-        left_on=["latitude", "longitude"],
-        right_on=[lat_col, lon_col],
-        how="inner",
-    )
+
+    if dist_feature:
+        # Include feature column in merge
+        final_df = pd.merge(
+            matched[["latitude", "longitude", "feature"]],
+            df,
+            left_on=["latitude", "longitude"],
+            right_on=[lat_col, lon_col],
+            how="inner",
+        )
+    else:
+        # Original behavior - no feature column
+        final_df = pd.merge(
+            matched[["latitude", "longitude"]],
+            df,
+            left_on=["latitude", "longitude"],
+            right_on=[lat_col, lon_col],
+            how="inner",
+        )
 
     logger.info("✓ Merge complete")
     logger.info(f"→ Final dataset shape: {final_df.shape}")

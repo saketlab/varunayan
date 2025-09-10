@@ -35,6 +35,8 @@ def aggregate_by_frequency(
     The function first aggregates data spatially (across points) for each timestamp,
     then performs temporal aggregation based on the specified frequency.
 
+    If a 'feature' column is present, aggregation is performed separately for each feature.
+
     Parameters:
         df: DataFrame containing ERA5 data with latitude/longitude points and timestamps
         frequency: One of 'hourly', 'daily', 'weekly', 'monthly', 'yearly'
@@ -46,6 +48,17 @@ def aggregate_by_frequency(
     logger.info(f"Aggregating data to {frequency} frequency...")
 
     frequency = frequency.lower()
+
+    # Check if feature column exists
+    has_features = "feature" in df.columns
+    if has_features:
+        logger.info(
+            "Feature column detected - performing separate aggregation for each feature"
+        )
+        features = df["feature"].unique()  # type:ignore
+        logger.info(
+            f"Found {len(features)} unique features: {list(features)}"
+        )  # type:ignore
 
     # Store unique lat/lon pairs for reference (not used in aggregation)
     unique_latlongs = (
@@ -83,7 +96,9 @@ def aggregate_by_frequency(
         time_col = "valid_time"
 
     # Improved column matching for different categories
-    var_cols = [col for col in df.columns if col not in exclude_cols]
+    var_cols = [
+        col for col in df.columns if col not in exclude_cols and col != "feature"
+    ]
 
     # Match columns that should be summed (more flexible matching)
     sum_cols: List[str] = []
@@ -123,15 +138,84 @@ def aggregate_by_frequency(
     logger.debug(f"Rate columns: {rate_cols}")
     logger.debug(f"Average columns: {avg_cols}")
 
+    if has_features:
+        # Process each feature separately
+        feature_results = []
+
+        for feature in features:  # type:ignore
+            logger.debug(f"Processing feature: {feature}")
+            feature_df = df[df["feature"] == feature].copy()  # type:ignore
+
+            # Process this feature using the same logic as the original function
+            result_df = _process_single_feature(
+                feature_df,
+                frequency,
+                time_col,
+                sum_cols,
+                max_cols,  # type:ignore
+                min_cols,
+                rate_cols,
+                avg_cols,
+                keep_original_time,
+            )
+
+            # Add feature identifier back to results
+            result_df["feature"] = feature
+            feature_results.append(result_df)
+
+        # Combine all feature results
+        final_result = pd.concat(feature_results, ignore_index=True)  # type:ignore
+
+    else:
+        # Original behavior - no features
+        final_result = _process_single_feature(
+            df,
+            frequency,
+            time_col,
+            sum_cols,
+            max_cols,
+            min_cols,
+            rate_cols,
+            avg_cols,
+            keep_original_time,
+        )
+
+    return final_result, unique_latlongs
+
+
+def _process_single_feature(
+    df: pd.DataFrame,
+    frequency: str,
+    time_col: str,
+    sum_cols: List[str],
+    max_cols: List[str],
+    min_cols: List[str],
+    rate_cols: List[str],
+    avg_cols: List[str],
+    keep_original_time: bool,
+) -> pd.DataFrame:
+    """
+    Helper function to process aggregation for a single feature or the entire dataset.
+    """
     # Return original data if hourly frequency requested
+    print("Column data types:")
+    for col_list, name in [
+        (avg_cols, "avg"),
+        (sum_cols, "sum"),
+        (max_cols, "max"),
+        (min_cols, "min"),
+        (rate_cols, "rate"),
+    ]:
+        for col in col_list:
+            if col in df.columns:
+                print(f"{name} - {col}: {df[col].dtype}, sample: {df[col].iloc[0]}")
+
     if frequency == "hourly":
         # For hourly, just aggregate across spatial points for each hour
         spatial_agg = df.groupby([time_col], as_index=False).agg(
             {
                 **{col: "mean" for col in avg_cols},
-                **{
-                    col: "mean" for col in sum_cols
-                },  # Even sum vars are averaged spatially
+                **{col: "mean" for col in sum_cols},  # Sum vars are averaged spatially
                 **{
                     col: "max" for col in max_cols
                 },  # Max vars take maximum across points
@@ -155,7 +239,7 @@ def aggregate_by_frequency(
         if not keep_original_time:
             spatial_agg = spatial_agg.drop(columns=[time_col])
 
-        return spatial_agg, unique_latlongs
+        return spatial_agg
 
     # Define frequency mapping for pandas resampling
     freq_map = {
@@ -232,7 +316,7 @@ def aggregate_by_frequency(
     if not keep_original_time:
         result = result.drop(columns=[time_col])
 
-    return result, unique_latlongs
+    return result
 
 
 # pyright: reportUnknownMemberType=false
@@ -244,11 +328,14 @@ def aggregate_pressure_levels(
 
     All variables are aggregated using mean values (both spatially and temporally).
 
+    If a 'feature' column is present, aggregation is performed separately for each feature.
+
     Parameters:
         df: DataFrame containing ERA5 pressure level data with columns:
             - latitude, longitude: Spatial coordinates
             - valid_time or time: Timestamps
             - pressure_level: Pressure level in hPa
+            - feature (optional): Feature identifier
             - Other columns: Meteorological variables
         frequency: One of 'hourly', 'daily', 'weekly', 'monthly', 'yearly'
         keep_original_time: Whether to keep the original time column
@@ -257,6 +344,17 @@ def aggregate_pressure_levels(
         Tuple of (aggregated DataFrame, unique lat/lon DataFrame)
     """
     logger.info(f"Aggregating pressure level data to {frequency} frequency...")
+
+    # Check if feature column exists
+    has_features = "feature" in df.columns
+    if has_features:
+        logger.info(
+            "Feature column detected - performing separate aggregation for each feature"
+        )
+        features = df["feature"].unique()  # type:ignore
+        logger.info(
+            f"Found {len(features)} unique features: {list(features)}"
+        )  # type:ignore
 
     # Store unique lat/lon pairs for reference
     unique_latlongs = (
@@ -273,6 +371,49 @@ def aggregate_pressure_levels(
     # Identify pressure level column if exists
     has_pressure_level = "pressure_level" in df.columns
 
+    if has_features:
+        # Process each feature separately
+        feature_results = []
+
+        for feature in features:  # type:ignore
+            logger.debug(f"Processing pressure level data for feature: {feature}")
+            feature_df = df[df["feature"] == feature].copy()  # type:ignore
+
+            # Process this feature using the same logic as the original function
+            result_df = _process_pressure_levels_single_feature(
+                feature_df,
+                frequency,
+                time_col,
+                has_pressure_level,
+                keep_original_time,  # type:ignore
+            )
+
+            # Add feature identifier back to results
+            result_df["feature"] = feature
+            feature_results.append(result_df)
+
+        # Combine all feature results
+        final_result = pd.concat(feature_results, ignore_index=True)  # type:ignore
+
+    else:
+        # Original behavior - no features
+        final_result = _process_pressure_levels_single_feature(
+            df, frequency, time_col, has_pressure_level, keep_original_time
+        )
+
+    return final_result, unique_latlongs
+
+
+def _process_pressure_levels_single_feature(
+    df: pd.DataFrame,
+    frequency: str,
+    time_col: str,
+    has_pressure_level: bool,
+    keep_original_time: bool,
+) -> pd.DataFrame:
+    """
+    Helper function to process pressure level aggregation for a single feature or the entire dataset.
+    """
     # Grouping columns - always include time, optionally include pressure_level
     group_cols = [time_col]
     if has_pressure_level:
@@ -288,6 +429,7 @@ def aggregate_pressure_levels(
         "expver",
         "number",
         "valid_time",
+        "feature",  # Exclude feature column from aggregation variables
     }
 
     # All other columns are variables to be averaged
@@ -313,7 +455,7 @@ def aggregate_pressure_levels(
         if not keep_original_time:
             agg_df = agg_df.drop(columns=[time_col])
 
-        return agg_df, unique_latlongs
+        return agg_df
 
     # For other frequencies, first spatial then temporal aggregation
 
@@ -370,4 +512,4 @@ def aggregate_pressure_levels(
     if not keep_original_time:
         result_df = result_df.drop(columns=[time_col])
 
-    return result_df, unique_latlongs
+    return result_df

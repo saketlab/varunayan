@@ -286,7 +286,9 @@ def process_era5_data(
 
     # Apply filtering if GeoJSON provided
     if params.geojson_data:
-        df = filter_netcdf_by_shapefile(merged_ds, params.geojson_data)
+        df = filter_netcdf_by_shapefile(
+            merged_ds, params.geojson_data, dist_feature_to_pass
+        )
     else:
         df = merged_ds.to_dataframe().reset_index()
 
@@ -635,6 +637,9 @@ def print_processing_footer(
     always_logger.info(f"{'='*60}")
 
 
+dist_feature_to_pass: Optional[str] = None
+
+
 # Public functions
 def era5ify_geojson(
     request_id: str,
@@ -642,6 +647,7 @@ def era5ify_geojson(
     start_date: str,
     end_date: str,
     json_file: str,
+    dist_feature: Optional[str] = None,
     dataset_type: str = "single",
     pressure_levels: Optional[List[str]] = None,
     frequency: str = "hourly",
@@ -652,6 +658,10 @@ def era5ify_geojson(
     """Public function for processing with GeoJSON"""
     start_dt = parse_date(start_date)
     end_dt = parse_date(end_date)
+
+    # set global variable for distinguishing feature
+    global dist_feature_to_pass
+    dist_feature_to_pass = dist_feature
 
     set_verbosity(verbosity)
 
