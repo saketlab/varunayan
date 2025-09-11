@@ -57,8 +57,8 @@ def aggregate_by_frequency(
         )
         features = df["feature"].unique()  # type:ignore
         logger.info(
-            f"Found {len(features)} unique features: {list(features)}"
-        )  # type:ignore
+            f"Found {len(features)} unique features: {list(features)}"  # type:ignore
+        )
 
     # Store unique lat/lon pairs for reference (not used in aggregation)
     unique_latlongs = (
@@ -148,11 +148,11 @@ def aggregate_by_frequency(
 
             # Process this feature using the same logic as the original function
             result_df = _process_single_feature(
-                feature_df,
+                feature_df,  # type:ignore
                 frequency,
                 time_col,
                 sum_cols,
-                max_cols,  # type:ignore
+                max_cols,
                 min_cols,
                 rate_cols,
                 avg_cols,
@@ -198,18 +198,6 @@ def _process_single_feature(
     Helper function to process aggregation for a single feature or the entire dataset.
     """
     # Return original data if hourly frequency requested
-    print("Column data types:")
-    for col_list, name in [
-        (avg_cols, "avg"),
-        (sum_cols, "sum"),
-        (max_cols, "max"),
-        (min_cols, "min"),
-        (rate_cols, "rate"),
-    ]:
-        for col in col_list:
-            if col in df.columns:
-                print(f"{name} - {col}: {df[col].dtype}, sample: {df[col].iloc[0]}")
-
     if frequency == "hourly":
         # For hourly, just aggregate across spatial points for each hour
         spatial_agg = df.groupby([time_col], as_index=False).agg(
@@ -353,8 +341,8 @@ def aggregate_pressure_levels(
         )
         features = df["feature"].unique()  # type:ignore
         logger.info(
-            f"Found {len(features)} unique features: {list(features)}"
-        )  # type:ignore
+            f"Found {len(features)} unique features: {list(features)}"  # type:ignore
+        )
 
     # Store unique lat/lon pairs for reference
     unique_latlongs = (
@@ -381,11 +369,11 @@ def aggregate_pressure_levels(
 
             # Process this feature using the same logic as the original function
             result_df = _process_pressure_levels_single_feature(
-                feature_df,
+                feature_df,  # type:ignore
                 frequency,
                 time_col,
                 has_pressure_level,
-                keep_original_time,  # type:ignore
+                keep_original_time,
             )
 
             # Add feature identifier back to results
