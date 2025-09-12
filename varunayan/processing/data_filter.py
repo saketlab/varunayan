@@ -1,6 +1,6 @@
 import datetime as dt
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 import geopandas as gpd
 import numpy as np
@@ -30,7 +30,9 @@ def set_v_data_fil(verbosity: int):
 
 # pyright: reportUnknownMemberType=false
 def filter_netcdf_by_shapefile(
-    ds: xr.Dataset, geojson_data: Dict[str, Any], dist_feature: Optional[str] = None
+    ds: xr.Dataset,
+    geojson_data: Dict[str, Any],
+    dist_features: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """
     Filter a NetCDF dataset to only include grid points that fall within the GeoJSON polygon(s).
@@ -40,7 +42,7 @@ def filter_netcdf_by_shapefile(
     Parameters:
         ds: xarray Dataset
         geojson_data: Loaded GeoJSON (as dict or GeoDataFrame)
-        dist_feature: Name of the attribute/property in the GeoJSON to use as feature identifier
+        dist_features: List of attribute/property names in the GeoJSON to use as composite feature identifier
 
     Returns:
         A pandas DataFrame with filtered points and feature identification.
@@ -64,12 +66,20 @@ def filter_netcdf_by_shapefile(
 
     num_features = len(gdf)  # type:ignore
 
-    # Check if dist_feature exists in the GeoDataFrame
-    if dist_feature and dist_feature not in gdf.columns:
-        logger.warning(
-            f"Feature '{dist_feature}' not found in GeoJSON. Available columns: {list(gdf.columns)}"
-        )
-        dist_feature = None
+    # Check if all dist_features exist in the GeoDataFrame
+    if dist_features:
+        missing_features = [feat for feat in dist_features if feat not in gdf.columns]
+        if missing_features:
+            logger.warning(
+                f"Features {missing_features} not found in GeoJSON. Available columns: {list(gdf.columns)}"
+            )
+            # Remove missing features from the list
+            dist_features = [feat for feat in dist_features if feat in gdf.columns]
+            if not dist_features:
+                logger.warning(
+                    "No valid feature columns found. Proceeding without feature identification."
+                )
+                dist_features = None
 
     # Step 1: Extract all lat/lon combinations
     logger.info("→ Extracting unique lat/lon coordinates from dataset...")
@@ -183,17 +193,38 @@ def filter_netcdf_by_shapefile(
                 points_in_geom = gdf_points[gdf_points.geometry.intersects(geom)].copy()
 
             if not points_in_geom.empty:
-                # Add feature identifier
-                if dist_feature:
-                    feature_name = feature[dist_feature]
+                # Create composite feature identifier from multiple attributes
+                if dist_features:
+                    # Create composite key by combining values with separator
+                    feature_values = []
+                    for feat_name in dist_features:
+                        feat_value = feature[feat_name]
+                        # Handle None/NaN values
+                        if pd.isna(feat_value):
+                            feat_value = "None"
+                        feature_values.append(str(feat_value))
+
+                    # Join with a separator (you can customize this)
+                    composite_key = "_".join(feature_values)  # type: ignore
+                    points_in_geom["feature"] = composite_key
+
+                    # Optionally, also add individual feature columns for easier access
+                    for feat_name in dist_features:
+                        points_in_geom[feat_name] = feature[feat_name]
                 else:
                     feature_name = f"feature_{idx}"
+                    points_in_geom["feature"] = feature_name
 
-                points_in_geom["feature"] = feature_name
                 matched_list.append(points_in_geom)
-                logger.debug(
-                    f"Feature {idx} ({feature_name}): {len(points_in_geom)} points matched"
-                )
+
+                if dist_features:
+                    logger.debug(
+                        f"Feature {idx} ({composite_key}): {len(points_in_geom)} points matched"  # type: ignore
+                    )
+                else:
+                    logger.debug(
+                        f"Feature {idx} (feature_{idx}): {len(points_in_geom)} points matched"
+                    )
 
         except Exception as e:
             logger.error(f"Error processing feature {idx}: {e}")
@@ -207,9 +238,12 @@ def filter_netcdf_by_shapefile(
         # (don't drop duplicates based on lat/lon since we want feature info)
         logger.info(f"✓ Found points in {len(matched_list)} features")  # type: ignore
     else:
-        # Create empty GeoDataFrame with same structure as gdf_points plus feature column
+        # Create empty GeoDataFrame with same structure
+        base_columns = list(gdf_points.columns) + ["feature"]
+        if dist_features:
+            base_columns.extend(dist_features)
         matched = gpd.GeoDataFrame(
-            columns=list(gdf_points.columns) + ["feature"],
+            columns=base_columns,
             geometry="geometry",
             crs="EPSG:4326",
         )
@@ -231,10 +265,11 @@ def filter_netcdf_by_shapefile(
     # Merge using lat/lon
     logger.info("→ Merging matched points with dataset values...")
 
-    if dist_feature:
-        # Include feature column in merge
+    if dist_features:
+        # Include feature column and individual feature columns in merge
+        merge_columns = ["latitude", "longitude", "feature"] + dist_features
         final_df = pd.merge(
-            matched[["latitude", "longitude", "feature"]],
+            matched[merge_columns],
             df,
             left_on=["latitude", "longitude"],
             right_on=[lat_col, lon_col],
@@ -243,7 +278,7 @@ def filter_netcdf_by_shapefile(
     else:
         # Original behavior - no feature column
         final_df = pd.merge(
-            matched[["latitude", "longitude"]],
+            matched[["latitude", "longitude", "feature"]],
             df,
             left_on=["latitude", "longitude"],
             right_on=[lat_col, lon_col],
@@ -252,6 +287,15 @@ def filter_netcdf_by_shapefile(
 
     logger.info("✓ Merge complete")
     logger.info(f"→ Final dataset shape: {final_df.shape}")
+
+    # Log some info about the composite keys if used
+    if dist_features and not final_df.empty:
+        unique_composites = final_df["feature"].nunique()
+        logger.info(f"✓ Found {unique_composites} unique composite feature identifiers")
+        logger.debug(
+            f"Sample composite keys: {final_df['feature'].unique()[:5].tolist()}"
+        )
+
     logger.info(
         f"✓ Total processing time: {(dt.datetime.now() - start_time).total_seconds():.2f} seconds"
     )

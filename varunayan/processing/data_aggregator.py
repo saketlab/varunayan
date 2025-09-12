@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -27,7 +27,10 @@ def set_v_data_agg(verbosity: int):
 
 # pyright: reportUnknownMemberType=false
 def aggregate_by_frequency(
-    df: pd.DataFrame, frequency: str, keep_original_time: bool = False
+    df: pd.DataFrame,
+    frequency: str,
+    keep_original_time: bool = False,
+    dist_features: Optional[List[str]] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Aggregate ERA5 data by the specified frequency for multiple points within a polygon.
@@ -129,7 +132,11 @@ def aggregate_by_frequency(
             rate_cols.append(col)
 
     # Average columns are those not covered by other aggregation methods
-    special_cols = sum_cols + max_cols + min_cols + rate_cols
+    special_cols = (
+        sum_cols + max_cols + min_cols + rate_cols + dist_features
+        if dist_features
+        else sum_cols + max_cols + min_cols + rate_cols
+    )
     avg_cols = [col for col in var_cols if col not in special_cols]
 
     logger.debug(f"Sum columns: {sum_cols}")
@@ -309,7 +316,10 @@ def _process_single_feature(
 
 # pyright: reportUnknownMemberType=false
 def aggregate_pressure_levels(
-    df: pd.DataFrame, frequency: str = "hourly", keep_original_time: bool = False
+    df: pd.DataFrame,
+    frequency: str = "hourly",
+    keep_original_time: bool = False,
+    dist_features: Optional[List[str]] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Aggregate ERA5 pressure level data by the specified frequency.
@@ -386,7 +396,12 @@ def aggregate_pressure_levels(
     else:
         # Original behavior - no features
         final_result = _process_pressure_levels_single_feature(
-            df, frequency, time_col, has_pressure_level, keep_original_time
+            df,
+            frequency,
+            time_col,
+            has_pressure_level,
+            keep_original_time,
+            dist_features,
         )
 
     return final_result, unique_latlongs
@@ -398,6 +413,7 @@ def _process_pressure_levels_single_feature(
     time_col: str,
     has_pressure_level: bool,
     keep_original_time: bool,
+    dist_features: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """
     Helper function to process pressure level aggregation for a single feature or the entire dataset.
@@ -419,6 +435,10 @@ def _process_pressure_levels_single_feature(
         "valid_time",
         "feature",  # Exclude feature column from aggregation variables
     }
+
+    exclude_cols = (
+        exclude_cols.union(set(dist_features)) if dist_features else exclude_cols
+    )
 
     # All other columns are variables to be averaged
     var_cols = [
