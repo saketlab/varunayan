@@ -132,11 +132,9 @@ def aggregate_by_frequency(
             rate_cols.append(col)
 
     # Average columns are those not covered by other aggregation methods
-    special_cols = (
-        sum_cols + max_cols + min_cols + rate_cols + dist_features
-        if dist_features
-        else sum_cols + max_cols + min_cols + rate_cols
-    )
+    # Ensure dist_features is a list for safe concatenation
+    dist_features = dist_features if isinstance(dist_features, list) else []
+    special_cols = sum_cols + max_cols + min_cols + rate_cols + dist_features
     avg_cols = [col for col in var_cols if col not in special_cols]
 
     logger.debug(f"Sum columns: {sum_cols}")
