@@ -149,7 +149,7 @@ def main():
     variables = [v.strip() for v in args.variables.split(",")]
 
     dist_features = []
-    if args.dist_features.strip():
+    if args.dist_features and args.dist_features.strip():
         dist_features = [feat.strip() for feat in args.dist_features.split(",")]
 
     # Parse pressure levels if provided
