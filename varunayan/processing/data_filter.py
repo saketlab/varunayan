@@ -1,6 +1,6 @@
 import datetime as dt
 import logging
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 import geopandas as gpd
 import numpy as np
