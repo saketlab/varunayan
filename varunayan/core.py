@@ -64,6 +64,7 @@ class ProcessingParams:
     west: Optional[float] = None
     geojson_file: Optional[str] = None
     geojson_data: Optional[Dict[str, Any]] = None
+    dist_features: Optional[List[str]] = None
 
 
 def set_verbosity(verbosity: int):
@@ -286,7 +287,9 @@ def process_era5_data(
 
     # Apply filtering if GeoJSON provided
     if params.geojson_data:
-        df = filter_netcdf_by_shapefile(merged_ds, params.geojson_data)
+        df = filter_netcdf_by_shapefile(
+            merged_ds, params.geojson_data, params.dist_features
+        )
     else:
         df = merged_ds.to_dataframe().reset_index()
 
@@ -316,7 +319,9 @@ def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame, save_raw: boo
     agg_func = (
         aggregate_pressure_levels if params.pressure_levels else aggregate_by_frequency
     )
-    aggregated_df, unique_latlongs = agg_func(df, params.frequency)
+    aggregated_df, unique_latlongs = agg_func(
+        df, params.frequency, False, params.dist_features
+    )
     elapsed = time.time() - start_time
     logger.info(f"Aggregation completed in:   {elapsed:.2f} seconds")
 
@@ -642,6 +647,7 @@ def era5ify_geojson(
     start_date: str,
     end_date: str,
     json_file: str,
+    dist_features: Optional[List[str]] = None,
     dataset_type: str = "single",
     pressure_levels: Optional[List[str]] = None,
     frequency: str = "hourly",
@@ -681,6 +687,7 @@ def era5ify_geojson(
             pressure_levels=pressure_levels if dataset_type == "pressure" else None,
             geojson_file=temp_geojson_file,
             geojson_data=geojson_data,
+            dist_features=dist_features,
         )
         return process_era5(params, save_raw)
 
@@ -739,6 +746,7 @@ def era5ify_bbox(
             south=south,
             east=east,
             west=west,
+            dist_features=None,
         )
         return process_era5(params, save_raw)
 

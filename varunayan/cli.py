@@ -100,6 +100,10 @@ def main():
     geojson_parser.add_argument(
         "--geojson", required=True, help="Path to GeoJSON or JSON file"
     )
+    geojson_parser.add_argument(
+        "--dist-features",
+        help="Distinguishing feature name/s in GeoJSON (e.g., 'state' or 'region')",
+    )
 
     # Bounding box mode
     bbox_parser = subparsers.add_parser(
@@ -144,9 +148,14 @@ def main():
 
     variables = [v.strip() for v in args.variables.split(",")]
 
+    if args.mode == "geojson":
+        dist_features = []
+        if args.dist_features and args.dist_features.strip():
+            dist_features = [feat.strip() for feat in args.dist_features.split(",")]
+
     # Parse pressure levels if provided
     pressure_levels = []
-    if args.pressure_levels.strip():
+    if args.pressure_levels and args.pressure_levels.strip():
         pressure_levels = [level.strip() for level in args.pressure_levels.split(",")]
 
     # Process based on mode
@@ -158,6 +167,7 @@ def main():
             start_date=args.start,  # Pass as string to match function signature
             end_date=args.end,  # Pass as string to match function signature
             json_file=args.geojson,
+            dist_features=dist_features,  # type: ignore
             dataset_type=args.dataset_type,
             pressure_levels=pressure_levels,
             frequency=args.freq,
