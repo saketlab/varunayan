@@ -148,7 +148,7 @@ def main():
 
     variables = [v.strip() for v in args.variables.split(",")]
 
-    if args.mode == 'geojson':
+    if args.mode == "geojson":
         dist_features = []
         if args.dist_features and args.dist_features.strip():
             dist_features = [feat.strip() for feat in args.dist_features.split(",")]
@@ -167,7 +167,7 @@ def main():
             start_date=args.start,  # Pass as string to match function signature
             end_date=args.end,  # Pass as string to match function signature
             json_file=args.geojson,
-            dist_features=dist_features,    #type: ignore
+            dist_features=dist_features,  # type: ignore
             dataset_type=args.dataset_type,
             pressure_levels=pressure_levels,
             frequency=args.freq,

@@ -871,7 +871,9 @@ def test_process_era5_data_with_geojson_filtering(
     # Assertions
     assert isinstance(result, pd.DataFrame)
     assert len(result) == 10  # Should match filtered data
-    mock_filter.assert_called_once_with(mock_ds, basic_params.geojson_data, None)   # None is for the distinguishing features parameter which is not a basic parameter
+    mock_filter.assert_called_once_with(
+        mock_ds, basic_params.geojson_data, None
+    )  # None is for the distinguishing features parameter which is not a basic parameter
 
 
 @patch("varunayan.core.logger")
