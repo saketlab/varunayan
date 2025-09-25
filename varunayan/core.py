@@ -320,7 +320,7 @@ def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame, save_raw: boo
         aggregate_pressure_levels if params.pressure_levels else aggregate_by_frequency
     )
     aggregated_df, unique_latlongs = agg_func(  # type: ignore
-        df, params.frequency, False, params.dist_features   # type: ignore
+        df, params.frequency, False, params.dist_features  # type: ignore
     )
     elapsed = time.time() - start_time
     logger.info(f"Aggregation completed in:   {elapsed:.2f} seconds")
