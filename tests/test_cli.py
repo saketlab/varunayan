@@ -89,6 +89,7 @@ class TestCLIMain:
             start_date="2023-01-01",
             end_date="2023-01-31",
             json_file="test.geojson",
+            dist_features=[],
             dataset_type="single",
             pressure_levels=[],
             frequency="daily",
