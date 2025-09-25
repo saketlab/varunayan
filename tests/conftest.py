@@ -68,6 +68,7 @@ def basic_params():
         south=20.5,
         east=80.0,
         west=80.5,
+        dist_features=None,
     )
 
 
@@ -85,6 +86,7 @@ def basic_params_mo():
         south=20.5,
         east=80.0,
         west=80.5,
+        dist_features=None,
     )
 
 
@@ -104,6 +106,7 @@ def pressure_params():
         south=37.5,
         east=-122.0,
         west=-122.5,
+        dist_features=None,
     )
 
 

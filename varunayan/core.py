@@ -64,6 +64,7 @@ class ProcessingParams:
     west: Optional[float] = None
     geojson_file: Optional[str] = None
     geojson_data: Optional[Dict[str, Any]] = None
+    dist_features: Optional[List[str]] = None
 
 
 def set_verbosity(verbosity: int):
@@ -287,7 +288,7 @@ def process_era5_data(
     # Apply filtering if GeoJSON provided
     if params.geojson_data:
         df = filter_netcdf_by_shapefile(
-            merged_ds, params.geojson_data, dist_features_to_pass
+            merged_ds, params.geojson_data, params.dist_features
         )
     else:
         df = merged_ds.to_dataframe().reset_index()
@@ -319,7 +320,7 @@ def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame, save_raw: boo
         aggregate_pressure_levels if params.pressure_levels else aggregate_by_frequency
     )
     aggregated_df, unique_latlongs = agg_func(
-        df, params.frequency, False, dist_features_to_pass
+        df, params.frequency, False, params.dist_features
     )
     elapsed = time.time() - start_time
     logger.info(f"Aggregation completed in:   {elapsed:.2f} seconds")
@@ -639,9 +640,6 @@ def print_processing_footer(
     always_logger.info(f"{'='*60}")
 
 
-dist_features_to_pass: Optional[List[str]] = None
-
-
 # Public functions
 def era5ify_geojson(
     request_id: str,
@@ -660,10 +658,6 @@ def era5ify_geojson(
     """Public function for processing with GeoJSON"""
     start_dt = parse_date(start_date)
     end_dt = parse_date(end_date)
-
-    # set global variable for distinguishing feature
-    global dist_features_to_pass
-    dist_features_to_pass = dist_features
 
     set_verbosity(verbosity)
 
@@ -693,6 +687,7 @@ def era5ify_geojson(
             pressure_levels=pressure_levels if dataset_type == "pressure" else None,
             geojson_file=temp_geojson_file,
             geojson_data=geojson_data,
+            dist_features=dist_features,
         )
         return process_era5(params, save_raw)
 
@@ -751,6 +746,7 @@ def era5ify_bbox(
             south=south,
             east=east,
             west=west,
+            dist_features=None,
         )
         return process_era5(params, save_raw)
 
