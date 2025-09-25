@@ -333,7 +333,7 @@ def test_aggregate_and_save(
     # Mock aggregation to return the same dataframe
     mock_agg.return_value = (test_df, pd.DataFrame())
 
-    result = aggregate_and_save(basic_params, test_df, save_raw)
+    result = aggregate_and_save(basic_params, test_df, save_raw)    #type:ignore
 
     # Assertions
     assert isinstance(result, pd.DataFrame)
