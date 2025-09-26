@@ -6,20 +6,6 @@
 <p align="center">
   <img src="docs/_static/varunayan_logo.png" alt="Varunayan Logo" width="200"/>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </p>
 
 A Python package for downloading and processing ERA5 climate data.
