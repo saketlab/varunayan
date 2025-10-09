@@ -655,7 +655,26 @@ def era5ify_geojson(
     verbosity: int = 0,
     save_raw: bool = True,
 ) -> pd.DataFrame:
-    """Public function for processing with GeoJSON"""
+    """
+    Public function for querying data for a GeoJSON.
+
+    Args:
+        request_id (str): Unique identifier for the request.
+        variables (List[str]): List of variables to download.
+        start_date (str): Start date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
+        end_date (str): End date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
+        json_file (str): Path to the GeoJSON file.
+        dist_features (List[str] | None, optional): List of feature properties to distinguish different areas in the GeoJSON. Defaults to None.
+        dataset_type (str, optional): Type of dataset. Either 'single' (single level) or 'pressure' (pressure level). Defaults to 'single'.
+        pressure_levels (List[str] | None, optional): List of pressure levels to download (e.g., ["1000", "925", "850"]). Defaults to None.
+        frequency (str, optional): Frequency of the data ('hourly', 'daily', 'weekly', 'monthly', 'yearly'). Defaults to 'hourly'.
+        resolution (float, optional): Spatial resolution in degrees (0.25, 0.1, 0.5, etc.). Defaults to 0.25, minimum is 0.1.
+        verbosity (int, optional): Verbosity level (0 for no output, 1 for info output, 2 for debug/complete output). Defaults to 0.
+        save_raw (bool, optional): Whether to save the raw data. Defaults to True.
+
+    Returns:
+        DataFrame: A DataFrame containing the processed data for the region described by GeoJSON.
+    """
     start_dt = parse_date(start_date)
     end_dt = parse_date(end_date)
 
@@ -711,7 +730,28 @@ def era5ify_bbox(
     verbosity: int = 0,
     save_raw: bool = True,
 ) -> pd.DataFrame:
-    """Public function for processing with bounding box"""
+    """
+    Public function for querying data for a defined bounding box (north, south, east, west bounds).
+
+    Args:
+        request_id (str): Unique identifier for the request.
+        variables (List[str]): List of variables to download.
+        start_date (str): Start date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
+        end_date (str): End date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
+        north (float): Northern bound of the bounding box.
+        south (float): Southern bound of the bounding box.
+        east (float): Eastern bound of the bounding box.
+        west (float): Western bound of the bounding box.
+        dataset_type (str, optional): Type of dataset. Either 'single' (single level) or 'pressure' (pressure level). Defaults to 'single'.
+        pressure_levels (List[str] | None, optional): List of pressure levels to download (e.g., ["1000", "925", "850"]). Defaults to None.
+        frequency (str, optional): Frequency of the data ('hourly', 'daily', 'weekly', 'monthly', 'yearly'). Defaults to 'hourly'.
+        resolution (float, optional): Spatial resolution in degrees (0.25, 0.1, 0.5, etc.). Defaults to 0.25, minimum is 0.1.
+        verbosity (int, optional): Verbosity level (0 for no output, 1 for info output, 2 for debug/complete output). Defaults to 0.
+        save_raw (bool, optional): Whether to save the raw data. Defaults to True.
+
+    Returns:
+        DataFrame: A DataFrame containing the processed data for the specified bbox.
+    """
     start_dt = parse_date(start_date)
     end_dt = parse_date(end_date)
 
@@ -767,6 +807,25 @@ def era5ify_point(
     verbosity: int = 0,
     save_raw: bool = True,
 ) -> pd.DataFrame:
+    """
+    Public function for querying data for a single geographical point (latitude, longitude).
+
+    Args:
+        request_id (str): Unique identifier for the request.
+        variables (List[str]): List of variables to download.
+        start_date (str): Start date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
+        end_date (str): End date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
+        latitude (float): Latitude of the point of interest.
+        longitude (float): Longitude of the point of interest.
+        dataset_type (str, optional): Type of dataset. Either 'single' (single level) or 'pressure' (pressure level). Defaults to 'single'.
+        pressure_levels (List[str] | None, optional): List of pressure levels to download (e.g., ["1000", "925", "850"]). Defaults to None.
+        frequency (str, optional): Frequency of the data ('hourly', 'daily', 'weekly', 'monthly', 'yearly'). Defaults to 'hourly'.
+        verbosity (int, optional): Verbosity level (0 for no output, 1 for info output, 2 for debug/complete output). Defaults to 0.
+        save_raw (bool, optional): Whether to save the raw data. Defaults to True.
+
+    Returns:
+        DataFrame: A DataFrame containing the processed data for the specified point.
+    """
 
     # Validate coordinates
     if not (-90 <= latitude <= 90):
