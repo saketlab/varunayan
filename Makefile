@@ -52,6 +52,7 @@ help:
 	@echo "  build           Build distribution packages"
 	@echo "  clean           Clean all build artifacts"
 	@echo "  dist-check      Check distribution packages"
+	@echo "  upload          Upload distribution packages to PyPI"
 	@echo ""
 	@echo "CI Simulation:"
 	@echo "  ci-local        Simulate CI pipeline locally"
@@ -176,6 +177,11 @@ clean:
 dist-check: build
 	@echo "Checking distribution packages..."
 	$(PYTHON) -m twine check $(DIST_DIR)/*
+
+.PHONY: upload
+upload: dist-check
+	@echo "Uploading distribution packages to PyPI..."
+	$(PYTHON) -m twine upload $(DIST_DIR)/*
 
 # CI Simulation targets
 .PHONY: ci-local
