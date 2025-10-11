@@ -65,7 +65,7 @@ def filter_netcdf_by_shapefile(
         gdf.crs = "EPSG:4326"
 
     num_features = len(gdf)  # type:ignore
-    logger.info("✓ GeoJSON contains %d feature(s)", num_features)
+    logger.info(f"✓ GeoJSON contains {num_features} feature(s)")
 
     # Check if all dist_features exist in the GeoDataFrame
     if dist_features:
