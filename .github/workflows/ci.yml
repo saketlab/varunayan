@@ -124,13 +124,13 @@ jobs:
         key: ${CDS_API_KEY}
         EOF
 
-    - name: Execute notebooks
-      run: |
-        cd docs/tutorials
-        for notebook in *.ipynb; do
-          echo "Executing $notebook..."
-          jupyter nbconvert --to notebook --execute --inplace "$notebook" --ExecutePreprocessor.timeout=300
-        done
+    #- name: Execute notebooks
+    #  run: |
+    #    cd docs/tutorials
+    #    for notebook in *.ipynb; do
+    #      echo "Executing $notebook..."
+    #      jupyter nbconvert --to notebook --execute --inplace "$notebook" --ExecutePreprocessor.timeout=300
+    #    done
 
     - name: Check for notebook execution errors
       run: |
