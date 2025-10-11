@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from typing import Optional, Tuple
 
 from .util import get_logger
 
@@ -94,11 +95,12 @@ def ensure_cdsapi_config() -> None:
         logger.info("✓ CDS API configuration check skipped in test environment.")
         return
 
-    # Check if CDS_API_KEY environment variable is set (for CI/CD)
-    if os.environ.get("CDS_API_KEY"):
-        api_key = os.environ["CDS_API_KEY"]
+    # Check if CDS API credentials are available via environment variables (for CI/CD)
+    env_credentials = _get_env_credentials()
+    if env_credentials:
+        api_url, api_key = env_credentials
         try:
-            _create_config_file(api_key)
+            _create_config_file(api_key, api_url)
             logger.info("✓ CDS API configuration created from environment variable.")
             return
         except Exception as e:
@@ -115,7 +117,7 @@ def ensure_cdsapi_config() -> None:
     if not sys.stdin or not hasattr(sys.stdin, "isatty") or not sys.stdin.isatty():
         raise RuntimeError(
             "CDS API configuration is missing and interactive setup is unavailable. "
-            "Set the CDS_API_KEY environment variable or create ~/.cdsapirc manually."
+            "Set the CDS_API_KEY/CDSAPI_KEY environment variable or create ~/.cdsapirc manually."
         )
 
     try:
@@ -140,10 +142,37 @@ def ensure_cdsapi_config() -> None:
         sys.exit(1)
 
 
-def _create_config_file(api_key: str) -> None:
+def _get_env_credentials() -> Optional[Tuple[str, str]]:
+    """Retrieve CDS API credentials from supported environment variables."""
+    key_var_names = ("CDS_API_KEY", "CDSAPI_KEY")
+    url_var_names = ("CDS_API_URL", "CDSAPI_URL")
+
+    api_key: Optional[str] = None
+    for var_name in key_var_names:
+        value = os.environ.get(var_name)
+        if value:
+            api_key = value.strip()
+            break
+
+    if not api_key:
+        return None
+
+    api_url = "https://cds.climate.copernicus.eu/api"
+    for var_name in url_var_names:
+        value = os.environ.get(var_name)
+        if value:
+            api_url = value.strip()
+            break
+
+    return api_url, api_key
+
+
+def _create_config_file(
+    api_key: str, api_url: str = "https://cds.climate.copernicus.eu/api"
+) -> None:
     """Create the CDS API configuration file."""
     config_path = os.path.expanduser("~/.cdsapirc")
-    config_content = f"url: https://cds.climate.copernicus.eu/api\nkey: {api_key}"
+    config_content = f"url: {api_url}\nkey: {api_key}"
 
     try:
         with open(config_path, "w") as f:
