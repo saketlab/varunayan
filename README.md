@@ -8,12 +8,16 @@ A Python package for downloading and processing ERA5 climate data.
 
 ## Installation
 
-Clone the repo, then in the local directory:
+Install the latest release from PyPI:
 
 ```bash
-pip install -e . 
+pip install varunayan
+```
 
+For development, clone the repository and install it locally:
 
+```bash
+pip install -e .
 ```
 
 ## Quick Start
