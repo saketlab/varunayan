@@ -87,6 +87,12 @@ docs = [
     "markdown-it-py>=2.0",
     "mdit-py-plugins>=0.3.0",
 ]
+notebooks = [
+    "ipykernel>=6.0",
+    "nbclient>=0.8",
+    "nbconvert>=7.0",
+    "jupyter-client>=7.0",
+]
 docs-build = [
     # Minimal dependencies for CI/CD documentation building
     "sphinx>=4.0",
@@ -143,7 +149,7 @@ quality = [
     "types-requests",
     "pandas-stubs",
 ]
-all = ["varunayan[dev,docs,docs-serve,build,test,quality]"]
+all = ["varunayan[dev,docs,docs-serve,build,test,quality,notebooks]"]
 
 [project.scripts]
 varunayan = "varunayan.cli:main"
