@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List, Optional
 
 
-def get_available_datasets():
+def get_available_datasets() -> List[str]:
     """
     Get list of available dataset types
 
@@ -11,7 +11,7 @@ def get_available_datasets():
     return ["single", "pressure", "all"]  # Update this when adding new datasets
 
 
-def get_single_levels_dataset():
+def get_single_levels_dataset() -> Dict[str, List[Dict[str, Any]]]:
     """
     Helper function to combine all single level variable categories
 
@@ -53,7 +53,7 @@ def get_single_levels_dataset():
     }
 
 
-def get_pressure_levels_dataset():
+def get_pressure_levels_dataset() -> List[Dict[str, Any]]:
     """
     Helper function to get pressure level variables
 
@@ -66,7 +66,7 @@ def get_pressure_levels_dataset():
 
 
 # pyright: reportUnknownMemberType=false
-def describe_variables(variable_names: List[str], dataset_type: str):
+def describe_variables(variable_names: List[str], dataset_type: str) -> Dict[str, str]:
     """
     Get descriptions for specific variables
 
@@ -75,7 +75,7 @@ def describe_variables(variable_names: List[str], dataset_type: str):
         dataset_type (str): Dataset type to search ("single", "pressure", "all", or any other registered dataset)
     """
     # Define available datasets and their processors
-    dataset_processors: Dict[str, Callable[..., Any]] = {
+    dataset_processors: Dict[str, Callable[..., List[Dict[str, Any]]]] = {
         "single": _process_single_dataset,
         "pressure": _process_pressure_dataset,
         # Easy to add more datasets here:
@@ -98,7 +98,7 @@ def describe_variables(variable_names: List[str], dataset_type: str):
         available_types = list(dataset_processors.keys()) + ["all"]
         raise ValueError(f"dataset_type must be one of: {available_types}")
 
-    descriptions = {}
+    descriptions: Dict[str, str] = {}
 
     # Print header
     print(f"\n=== Variable Descriptions ({dataset_type.upper()} LEVELS) ===")
@@ -119,8 +119,10 @@ def describe_variables(variable_names: List[str], dataset_type: str):
             print(f"\n{var_name}:")
             print("  Variable not found")
 
+    return descriptions
 
-def search_variable(pattern: Optional[str], dataset_type: str = "all"):
+
+def search_variable(pattern: Optional[str], dataset_type: str = "all") -> None:
     """
     Search for variables in the dataset by pattern
 
@@ -134,7 +136,7 @@ def search_variable(pattern: Optional[str], dataset_type: str = "all"):
     dataset_type = dataset_type.strip().lower()
 
     # Define available datasets and their processors
-    dataset_processors: Dict[str, Callable[..., Any]] = {
+    dataset_processors: Dict[str, Callable[[str], List[Dict[str, Any]]]] = {
         "single": _process_single_dataset,
         "pressure": _process_pressure_dataset,
         # Easy to add more datasets here:
@@ -156,13 +158,14 @@ def search_variable(pattern: Optional[str], dataset_type: str = "all"):
         raise ValueError(f"dataset_type must be one of: {available_types}")
 
     # If no search pattern provided, return all variables
+    matches: List[Dict[str, Any]]
     if pattern is None:
         matches = dataset
         print(f"\n=== ALL VARIABLES ({dataset_type.upper()} LEVELS) ===")
         print(f"Total variables found: {len(matches)}")
     else:
         pattern = pattern.lower()
-        matches: List[Dict[str, Any]] = []
+        matches = []
 
         for var in dataset:
             if pattern in var["name"].lower():

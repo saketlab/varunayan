@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ from .variable_lists import exclude_cols, max_vars, min_vars, rate_vars, sum_var
 logger = get_logger(level=logging.DEBUG)
 
 
-def set_v_data_agg(verbosity: int):
+def set_v_data_agg(verbosity: int) -> None:
 
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
@@ -58,10 +58,13 @@ def aggregate_by_frequency(
         logger.info(
             "Feature column detected - performing separate aggregation for each feature"
         )
-        features = df["feature"].unique()  # type:ignore
-        logger.info(
-            f"Found {len(features)} unique features: {list(features)}"  # type:ignore
+        features_array = df["feature"].dropna().unique()
+        features: List[Any] = (
+            features_array.tolist()
+            if hasattr(features_array, "tolist")
+            else list(features_array)
         )
+        logger.info(f"Found {len(features)} unique features: {features}")
 
     # Store unique lat/lon pairs for reference (not used in aggregation)
     unique_latlongs = (
@@ -70,7 +73,7 @@ def aggregate_by_frequency(
 
     # Ensure time column is properly formatted
     if "valid_time" in df.columns:
-        if not np.issubdtype(df["valid_time"].dtype, np.datetime64):  # type: ignore
+        if not pd.api.types.is_datetime64_any_dtype(df["valid_time"]):
             df["valid_time"] = pd.to_datetime(df["valid_time"], errors="coerce")
         df["date"] = df["valid_time"].dt.date
         df["hour"] = df["valid_time"].dt.hour
@@ -87,10 +90,8 @@ def aggregate_by_frequency(
         if not isinstance(df["date"].iloc[0], pd.Timestamp):
             df["date"] = pd.to_datetime(df["date"])
 
-        if isinstance(df["time"].iloc[0], str):
-            df["hour"] = pd.to_datetime(df["time"]).dt.hour
-        else:
-            df["hour"] = df["time"].apply(lambda t: t.hour)  # type: ignore
+        time_series = pd.to_datetime(df["time"], errors="coerce")
+        df["hour"] = time_series.dt.hour
 
         # Create valid_time column for resampling
         df["valid_time"] = pd.to_datetime(df["date"]) + pd.to_timedelta(
@@ -145,15 +146,15 @@ def aggregate_by_frequency(
 
     if has_features:
         # Process each feature separately
-        feature_results = []
+        feature_results: List[pd.DataFrame] = []
 
-        for feature in features:  # type:ignore
+        for feature in features:
             logger.debug(f"Processing feature: {feature}")
-            feature_df = df[df["feature"] == feature].copy()  # type:ignore
+            feature_df = df[df["feature"] == feature].copy()
 
             # Process this feature using the same logic as the original function
             result_df = _process_single_feature(
-                feature_df,  # type:ignore
+                feature_df,
                 frequency,
                 time_col,
                 sum_cols,
@@ -169,7 +170,7 @@ def aggregate_by_frequency(
             feature_results.append(result_df)
 
         # Combine all feature results
-        final_result = pd.concat(feature_results, ignore_index=True)  # type:ignore
+        final_result = pd.concat(feature_results, ignore_index=True)
 
     else:
         # Original behavior - no features
@@ -347,10 +348,13 @@ def aggregate_pressure_levels(
         logger.info(
             "Feature column detected - performing separate aggregation for each feature"
         )
-        features = df["feature"].unique()  # type:ignore
-        logger.info(
-            f"Found {len(features)} unique features: {list(features)}"  # type:ignore
+        features_array = df["feature"].dropna().unique()
+        features: List[Any] = (
+            features_array.tolist()
+            if hasattr(features_array, "tolist")
+            else list(features_array)
         )
+        logger.info(f"Found {len(features)} unique features: {features}")
 
     # Store unique lat/lon pairs for reference
     unique_latlongs = (
@@ -361,7 +365,7 @@ def aggregate_pressure_levels(
     time_col = "valid_time" if "valid_time" in df.columns else "time"
 
     # Ensure time column is properly formatted
-    if not np.issubdtype(df[time_col].dtype, np.datetime64):  # type: ignore
+    if not pd.api.types.is_datetime64_any_dtype(df[time_col]):
         df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
 
     # Identify pressure level column if exists
@@ -369,15 +373,15 @@ def aggregate_pressure_levels(
 
     if has_features:
         # Process each feature separately
-        feature_results = []
+        feature_results: List[pd.DataFrame] = []
 
-        for feature in features:  # type:ignore
+        for feature in features:
             logger.debug(f"Processing pressure level data for feature: {feature}")
-            feature_df = df[df["feature"] == feature].copy()  # type:ignore
+            feature_df = df[df["feature"] == feature].copy()
 
             # Process this feature using the same logic as the original function
             result_df = _process_pressure_levels_single_feature(
-                feature_df,  # type:ignore
+                feature_df,
                 frequency,
                 time_col,
                 has_pressure_level,
@@ -389,7 +393,7 @@ def aggregate_pressure_levels(
             feature_results.append(result_df)
 
         # Combine all feature results
-        final_result = pd.concat(feature_results, ignore_index=True)  # type:ignore
+        final_result = pd.concat(feature_results, ignore_index=True)
 
     else:
         # Original behavior - no features
@@ -480,24 +484,30 @@ def _process_pressure_levels_single_feature(
     # For pressure levels, we need to group by pressure level before resampling
     if has_pressure_level:
         # Get unique pressure levels
-        pressure_levels = df["pressure_level"].unique()  # type: ignore
+        pressure_levels_array = df["pressure_level"].dropna().unique()
+        pressure_levels: List[Any] = (
+            pressure_levels_array.tolist()
+            if hasattr(pressure_levels_array, "tolist")
+            else list(pressure_levels_array)
+        )
 
-        # Initialize empty DataFrame for results
-        result_df = pd.DataFrame()
+        level_frames: List[pd.DataFrame] = []
 
         # Process each pressure level separately
         for level in pressure_levels:
             # Filter data for this pressure level
-            level_data = temporal_agg[temporal_agg["pressure_level"] == level]  # type: ignore
+            level_data = temporal_agg[temporal_agg["pressure_level"] == level]
 
             # Resample and average variables
-            resampled = level_data[var_cols].resample(freq_map[frequency]).mean()  # type: ignore
+            resampled = (
+                level_data[var_cols].resample(freq_map[frequency]).mean().reset_index()
+            )
 
             # Add pressure level back
             resampled["pressure_level"] = level
+            level_frames.append(resampled)
 
-            # Combine results
-            result_df = pd.concat([result_df, resampled.reset_index()])  # type: ignore
+        result_df = pd.concat(level_frames, ignore_index=True)
     else:
         # No pressure levels - simple resample
         result_df = (

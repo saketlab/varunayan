@@ -1,6 +1,7 @@
 import argparse
 import datetime as dt
 import logging
+from typing import List, Optional, Union
 
 from .core import era5ify_bbox, era5ify_geojson, era5ify_point
 from .util.logging_utils import get_logger
@@ -8,7 +9,7 @@ from .util.logging_utils import get_logger
 logger = get_logger(level=logging.DEBUG)
 
 
-def parse_flexible_date(date_string: str):
+def parse_flexible_date(date_string: str) -> dt.datetime:
     """Parse date string in either YYYY-M-D or YYYY-MM-DD format"""
     try:
         # Try YYYY-MM-DD format first
@@ -24,15 +25,15 @@ def parse_flexible_date(date_string: str):
             )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="ERA5ify your climate data.")
 
     # Create subparsers for different modes
     subparsers = parser.add_subparsers(dest="mode", help="Processing mode")
     subparsers.required = True
 
-    def str2bool(v: str):
-        if isinstance(v, bool):  # type: ignore
+    def str2bool(v: Union[str, bool]) -> bool:
+        if isinstance(v, bool):
             return v
         if v.lower() in ("yes", "true", "t", "y", "1"):
             return True
@@ -42,7 +43,7 @@ def main():
             raise argparse.ArgumentTypeError("Boolean value expected.")
 
     # Common arguments function
-    def add_common_args(subparser: argparse.ArgumentParser):
+    def add_common_args(subparser: argparse.ArgumentParser) -> None:
         subparser.add_argument(
             "--request-id", required=True, help="Unique request identifier"
         )
@@ -148,13 +149,12 @@ def main():
 
     variables = [v.strip() for v in args.variables.split(",")]
 
-    if args.mode == "geojson":
-        dist_features = []
-        if args.dist_features and args.dist_features.strip():
-            dist_features = [feat.strip() for feat in args.dist_features.split(",")]
+    dist_features: Optional[List[str]] = None
+    if args.mode == "geojson" and args.dist_features and args.dist_features.strip():
+        dist_features = [feat.strip() for feat in args.dist_features.split(",")]
 
     # Parse pressure levels if provided
-    pressure_levels = []
+    pressure_levels: Optional[List[str]] = None
     if args.pressure_levels and args.pressure_levels.strip():
         pressure_levels = [level.strip() for level in args.pressure_levels.split(",")]
 
@@ -167,7 +167,7 @@ def main():
             start_date=args.start,  # Pass as string to match function signature
             end_date=args.end,  # Pass as string to match function signature
             json_file=args.geojson,
-            dist_features=dist_features,  # type: ignore
+            dist_features=dist_features,
             dataset_type=args.dataset_type,
             pressure_levels=pressure_levels,
             frequency=args.freq,

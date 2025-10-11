@@ -1,19 +1,20 @@
 import datetime as dt
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, cast
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 import xarray as xr
 from shapely.geometry import Point
+from shapely.geometry.base import BaseGeometry
 
 from ..util.logging_utils import get_logger
 
 logger = get_logger(level=logging.DEBUG)
 
 
-def set_v_data_fil(verbosity: int):
+def set_v_data_fil(verbosity: int) -> None:
 
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
@@ -31,7 +32,7 @@ def set_v_data_fil(verbosity: int):
 # pyright: reportUnknownMemberType=false
 def filter_netcdf_by_shapefile(
     ds: xr.Dataset,
-    geojson_data: Dict[str, Any],
+    geojson_data: Union[Dict[str, Any], gpd.GeoDataFrame],
     dist_features: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """
@@ -55,11 +56,11 @@ def filter_netcdf_by_shapefile(
     start_time = dt.datetime.now()
 
     # Step 0: Convert GeoJSON to GeoDataFrame
-    if isinstance(geojson_data, dict):  # type:ignore
+    if isinstance(geojson_data, dict):
         features = geojson_data.get("features", [geojson_data])
-        gdf = gpd.GeoDataFrame.from_features(features)
+        gdf: gpd.GeoDataFrame = gpd.GeoDataFrame.from_features(features)
     else:
-        gdf = geojson_data
+        gdf = geojson_data.copy()
 
     if gdf.crs is None:
         gdf.crs = "EPSG:4326"
@@ -85,18 +86,12 @@ def filter_netcdf_by_shapefile(
     # Step 1: Extract all lat/lon combinations
     logger.info("→ Extracting unique lat/lon coordinates from dataset...")
 
-    lats = (  # type:ignore
-        ds.coords["latitude"].values
-        if "latitude" in ds.coords
-        else ds.coords["lat"].values
-    )
-    lons = (  # type:ignore
-        ds.coords["longitude"].values
-        if "longitude" in ds.coords
-        else ds.coords["lon"].values
-    )
+    lat_coord = "latitude" if "latitude" in ds.coords else "lat"
+    lon_coord = "longitude" if "longitude" in ds.coords else "lon"
+    lats = np.asarray(ds.coords[lat_coord].values)
+    lons = np.asarray(ds.coords[lon_coord].values)
 
-    lon_grid, lat_grid = np.meshgrid(lons, lats)  # type:ignore
+    lon_grid, lat_grid = np.meshgrid(lons, lats)
     unique_coords = pd.DataFrame(
         {"latitude": lat_grid.flatten(), "longitude": lon_grid.flatten()}
     ).drop_duplicates()
@@ -125,11 +120,11 @@ def filter_netcdf_by_shapefile(
 
         # Try multiple repair strategies
         for idx in gdf[invalid_mask].index:
-            original_geom = gdf.loc[idx, "geometry"]  # type: ignore
+            original_geom = cast(BaseGeometry, gdf.loc[idx, "geometry"])
 
             # Strategy 1: buffer(0) - fixes self-intersections and other topology issues
             try:
-                buffered = original_geom.buffer(0)  # type:ignore
+                buffered = original_geom.buffer(0)
                 if buffered.is_valid and not buffered.is_empty:
                     gdf.loc[idx, "geometry"] = buffered
                     continue
@@ -138,16 +133,16 @@ def filter_netcdf_by_shapefile(
 
             # Strategy 2: make_valid() - Shapely's built-in repair function
             try:
-                repaired = make_valid(original_geom)  # type:ignore
+                repaired = make_valid(original_geom)
                 if repaired.is_valid and not repaired.is_empty:
-                    gdf.loc[idx, "geometry"] = repaired  # type:ignore
+                    gdf.loc[idx, "geometry"] = repaired
                     continue
             except Exception as e:
                 logger.debug(f"make_valid() failed for feature {idx}: {e}")
 
             # Strategy 3: Small buffer operation
             try:
-                small_buffer = original_geom.buffer(1e-10).buffer(-1e-10)  # type:ignore
+                small_buffer = original_geom.buffer(1e-10).buffer(-1e-10)
                 if small_buffer.is_valid and not small_buffer.is_empty:
                     gdf.loc[idx, "geometry"] = small_buffer
                     continue
@@ -177,11 +172,11 @@ def filter_netcdf_by_shapefile(
     # Step 2: Filtering with error handling and feature identification
     logger.info("→ Filtering coordinates by feature geometries...")
     filter_start = dt.datetime.now()
-    matched_list = []  # Collect DataFrames in a list instead
+    matched_list: List[gpd.GeoDataFrame] = []
 
-    for idx, feature in gdf.iterrows():  # type:ignore
+    for idx, feature in gdf.iterrows():
         try:
-            geom = feature.geometry
+            geom = cast(BaseGeometry, feature.geometry)
 
             # Additional validation before intersection
             if not geom.is_valid or geom.is_empty:
@@ -206,7 +201,7 @@ def filter_netcdf_by_shapefile(
                         feature_values.append(str(feat_value))
 
                     # Join with a separator (you can customize this)
-                    composite_key = "_".join(feature_values)  # type: ignore
+                    composite_key = "_".join(feature_values)
                     points_in_geom["feature"] = composite_key
 
                     # Optionally, also add individual feature columns for easier access
@@ -220,7 +215,7 @@ def filter_netcdf_by_shapefile(
 
                 if dist_features:
                     logger.debug(
-                        f"Feature {idx} ({composite_key}): {len(points_in_geom)} points matched"  # type: ignore
+                        f"Feature {idx} ({composite_key}): {len(points_in_geom)} points matched"
                     )
                 else:
                     logger.debug(
@@ -234,10 +229,10 @@ def filter_netcdf_by_shapefile(
 
     # Concatenate all matched DataFrames at once
     if matched_list:
-        matched = pd.concat(matched_list, ignore_index=True)  # type:ignore
+        matched = pd.concat(matched_list, ignore_index=True)
         # For points that belong to multiple features, keep all associations
         # (don't drop duplicates based on lat/lon since we want feature info)
-        logger.info(f"✓ Found points in {len(matched_list)} features")  # type: ignore
+        logger.info(f"✓ Found points in {len(matched_list)} features")
     else:
         # Create empty GeoDataFrame with same structure
         base_columns = list(gdf_points.columns) + ["feature"]
@@ -305,7 +300,7 @@ def filter_netcdf_by_shapefile(
 
 
 def get_unique_coordinates_in_polygon(
-    ds: xr.Dataset, geojson_data: Dict[str, Any]
+    ds: xr.Dataset, geojson_data: Union[Dict[str, Any], gpd.GeoDataFrame]
 ) -> pd.DataFrame:
     """
     Alternative helper function that returns just the unique lat/lon pairs inside the polygon.
@@ -314,12 +309,12 @@ def get_unique_coordinates_in_polygon(
     logger.debug("Extracting unique coordinates inside polygon...")
 
     # Convert GeoJSON to GeoDataFrame
-    if isinstance(geojson_data, dict):  # type: ignore
+    if isinstance(geojson_data, dict):
         gdf = gpd.GeoDataFrame.from_features(
             geojson_data["features"] if "features" in geojson_data else [geojson_data]
         )
     else:
-        gdf = geojson_data
+        gdf = geojson_data.copy()
 
     if gdf.crs is None:
         gdf.crs = "EPSG:4326"
@@ -327,19 +322,13 @@ def get_unique_coordinates_in_polygon(
     unified_polygon = gdf.geometry.union_all()
 
     # Get coordinate arrays
-    lats: np.ndarray = (  # type: ignore
-        ds.coords["latitude"].values
-        if "latitude" in ds.coords
-        else ds.coords["lat"].values
-    )
-    lons: np.ndarray = (  # type: ignore
-        ds.coords["longitude"].values
-        if "longitude" in ds.coords
-        else ds.coords["lon"].values
-    )
+    lat_coord = "latitude" if "latitude" in ds.coords else "lat"
+    lon_coord = "longitude" if "longitude" in ds.coords else "lon"
+    lats = np.asarray(ds.coords[lat_coord].values)
+    lons = np.asarray(ds.coords[lon_coord].values)
 
     # Create grid and unique combinations
-    lon_grid, lat_grid = np.meshgrid(lons, lats)  # type: ignore
+    lon_grid, lat_grid = np.meshgrid(lons, lats)
     unique_coords = pd.DataFrame(
         {"latitude": lat_grid.flatten(), "longitude": lon_grid.flatten()}
     ).drop_duplicates()
@@ -352,4 +341,5 @@ def get_unique_coordinates_in_polygon(
     gdf_points = gpd.GeoDataFrame(unique_coords, geometry="geometry", crs="EPSG:4326")
     inside_coords = gdf_points[gdf_points.geometry.intersects(unified_polygon)]
 
-    return inside_coords[["latitude", "longitude"]].copy()
+    subset = inside_coords[["latitude", "longitude"]].copy()
+    return pd.DataFrame(subset)

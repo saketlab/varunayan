@@ -11,7 +11,7 @@ from .logging_utils import get_logger
 logger = get_logger(level=logging.DEBUG)
 
 
-def set_v_geoj_utl(verbosity: int):
+def set_v_geoj_utl(verbosity: int) -> None:
 
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
@@ -118,26 +118,29 @@ def load_json_with_encoding(file_path: str) -> Dict[str, Any]:
             for encoding in encodings:
                 try:
                     content = raw_content.decode(encoding)
-                    data: Dict[str, Any] = json.loads(content)
+                except UnicodeDecodeError:
+                    continue
+                try:
+                    parsed = json.loads(content)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(parsed, dict):
                     logging.debug(
                         f"Successfully loaded JSON from URL with {encoding} encoding"
                     )
-                    return data
-                except UnicodeDecodeError:
-                    continue
-                except json.JSONDecodeError:
-                    continue
+                    return parsed
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Network error while fetching JSON from URL: {e}")
     else:
         for encoding in encodings:
             try:
                 with open(file_path, "r", encoding=encoding) as f:
-                    data: Dict[str, Any] = json.load(f)
+                    parsed = json.load(f)
+                if isinstance(parsed, dict):
                     logging.debug(
                         f"Successfully loaded JSON file with {encoding} encoding"
                     )
-                    return data
+                    return parsed
             except UnicodeDecodeError:
                 continue
             except json.JSONDecodeError:
@@ -161,7 +164,7 @@ def is_valid_geojson(json_data: Dict[str, Any]) -> bool:
         True if it's valid GeoJSON, False otherwise
     """
     # Check if it's a dictionary
-    if not isinstance(json_data, dict):  # type: ignore
+    if not isinstance(json_data, dict):
         return False
 
     # Basic GeoJSON structure check
@@ -253,16 +256,12 @@ def convert_to_geojson(json_data: Dict[str, Any]) -> Dict[str, Any]:
 
     # Case 3: It contains a bounding box specified as
     # [west, south, east, north]
-    if (
-        "bbox" in json_data
-        and isinstance(json_data["bbox"], list)
-        and len(json_data["bbox"]) >= 4  # type: ignore
-    ):
-        bbox_list: List[Any] = json_data["bbox"]  # type: ignore
-        west: float = float(bbox_list[0])
-        south: float = float(bbox_list[1])
-        east: float = float(bbox_list[2])
-        north: float = float(bbox_list[3])
+    bbox_value = json_data.get("bbox")
+    if isinstance(bbox_value, list) and len(bbox_value) >= 4:
+        west: float = float(bbox_value[0])
+        south: float = float(bbox_value[1])
+        east: float = float(bbox_value[2])
+        north: float = float(bbox_value[3])
         return create_geojson_from_bbox(west, south, east, north)
 
     # Case 4: It contains explicit lat/lon boundaries

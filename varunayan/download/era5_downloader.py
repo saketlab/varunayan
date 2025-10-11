@@ -14,7 +14,7 @@ class BlockInfoFilter(logging.Filter):
         return record.levelno != logging.INFO
 
 
-def set_v_downloader(verbosity: int):
+def set_v_downloader(verbosity: int) -> None:
     global sup_log
     logger = logging.getLogger("datapi.legacy_api_client")
 
@@ -109,7 +109,7 @@ def download_era5_single_lvl(
         }
 
     client = cdsapi.Client()
-    client.retrieve(dataset, request, output_file)  # type: ignore
+    client.retrieve(dataset, request, output_file)
 
     return output_file
 
@@ -192,6 +192,6 @@ def download_era5_pressure_lvl(
         }
 
     client = cdsapi.Client()
-    client.retrieve(dataset, request, output_file)  # type: ignore
+    client.retrieve(dataset, request, output_file)
 
     return output_file

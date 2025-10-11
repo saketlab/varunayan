@@ -7,7 +7,7 @@ from .util import get_logger
 logger = get_logger(level=logging.DEBUG)
 
 
-def set_v_config(verbosity: int):
+def set_v_config(verbosity: int) -> None:
 
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
@@ -56,7 +56,7 @@ def check_cdsapi_config() -> bool:
         return False
 
 
-def setup_cdsapi_config():
+def setup_cdsapi_config() -> None:
     """Interactive setup of CDS API configuration."""
     logger.info("\n=== CDS API Configuration Setup ===")
     logger.info("Get your API key from: https://cds.climate.copernicus.eu/profile")
@@ -83,7 +83,7 @@ def setup_cdsapi_config():
         sys.exit(1)
 
 
-def ensure_cdsapi_config():
+def ensure_cdsapi_config() -> None:
     """
     Ensure CDS API configuration exists and is valid.
     If not, guide the user through setting it up.
