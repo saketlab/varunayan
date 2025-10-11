@@ -113,15 +113,15 @@ jobs:
 
     - name: Configure CDS API credentials
       env:
-        CDS_KEY: ${{ secrets.CDS_KEY }}
+        CDS_API_KEY: ${{ secrets.CDS_API_KEY }}
       run: |
-        if [ -z "$CDS_KEY" ]; then
-          echo "CDS_KEY secret is not set" >&2
+        if [ -z "$CDS_API_KEY" ]; then
+          echo "CDS_API_KEY secret is not set" >&2
           exit 1
         fi
         cat <<'EOF' > ~/.cdsapirc
         url: https://cds.climate.copernicus.eu/api
-        key: ${CDS_KEY}
+        key: ${CDS_API_KEY}
         EOF
 
     - name: Execute notebooks
