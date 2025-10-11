@@ -560,7 +560,7 @@ def calculate_map_dimensions(
     return max(width, MIN_DIMENSION), max(height, MIN_DIMENSION)
 
 
-def draw_geojson_ascii(geojson_data: Dict[str, Any]):
+def draw_geojson_ascii(geojson_data: Dict[str, Any]) -> None:
     """
     Draws a mini ASCII map showing the GeoJSON polygons.
     :param geojson_data: Loaded GeoJSON data (must be FeatureCollection)
