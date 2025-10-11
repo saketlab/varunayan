@@ -111,6 +111,13 @@ def ensure_cdsapi_config() -> None:
 
     logger.info("CDS API configuration not found or invalid.")
 
+    # Avoid prompting when running in non-interactive environments (e.g., CI, nbconvert)
+    if not sys.stdin or not hasattr(sys.stdin, "isatty") or not sys.stdin.isatty():
+        raise RuntimeError(
+            "CDS API configuration is missing and interactive setup is unavailable. "
+            "Set the CDS_API_KEY environment variable or create ~/.cdsapirc manually."
+        )
+
     try:
         setup_cdsapi_config()
 

@@ -111,6 +111,19 @@ jobs:
         pip install -e ".[dev,notebooks]"
         pip install nbconvert
 
+    - name: Configure CDS API credentials
+      env:
+        CDS_KEY: ${{ secrets.CDS_KEY }}
+      run: |
+        if [ -z "$CDS_KEY" ]; then
+          echo "CDS_KEY secret is not set" >&2
+          exit 1
+        fi
+        cat <<'EOF' > ~/.cdsapirc
+        url: https://cds.climate.copernicus.eu/api
+        key: ${CDS_KEY}
+        EOF
+
     - name: Execute notebooks
       run: |
         cd docs/tutorials
