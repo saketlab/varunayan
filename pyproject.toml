@@ -58,7 +58,7 @@ dev = [
 docs = [
     # Core Sphinx dependencies
     "sphinx>=4.0",
-    "sphinx-book-theme>=1.0.0",
+    "furo>=2023.3.27",
     "sphinx-autoapi>=2.0",
     
     # Markdown and content processing
