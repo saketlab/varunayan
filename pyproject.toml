@@ -54,6 +54,8 @@ dev = [
     "mypy>=0.910",
     "flake8>=4.0",
     "pre-commit>=2.15",
+    "types-requests",
+    "pandas-stubs",
 ]
 docs = [
     # Core Sphinx dependencies
@@ -138,6 +140,8 @@ quality = [
     "bandit>=1.7.0",
     "safety>=2.0.0",
     "pylint>=2.12.0",
+    "types-requests",
+    "pandas-stubs",
 ]
 all = ["varunayan[dev,docs,docs-serve,build,test,quality]"]
 
@@ -209,7 +213,7 @@ line_length = 88
 known_first_party = ["varunayan"]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

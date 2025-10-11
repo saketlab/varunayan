@@ -69,7 +69,7 @@ class ProcessingParams:
     dist_features: Optional[List[str]] = None
 
 
-def set_verbosity(verbosity: int):
+def set_verbosity(verbosity: int) -> None:
 
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
@@ -142,6 +142,8 @@ def download_with_retry(
                     f"  {Colors.RED}✗ All {max_retries + 1} download attempts failed{Colors.RESET}"
                 )
                 raise e
+
+    raise RuntimeError("Download failed after maximum retries")
 
 
 def process_time_chunks(
@@ -310,7 +312,9 @@ def process_era5_data(
     return df
 
 
-def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame, save_raw: bool):
+def aggregate_and_save(
+    params: ProcessingParams, df: pd.DataFrame, save_raw: bool
+) -> pd.DataFrame:
     """Handle aggregation and saving of results"""
     # Temporal aggregation
     logger.info(
@@ -318,11 +322,14 @@ def aggregate_and_save(params: ProcessingParams, df: pd.DataFrame, save_raw: boo
     )
 
     start_time = time.time()
-    agg_func = (
+    agg_func: Callable[
+        [pd.DataFrame, str, bool, Optional[List[str]]],
+        Tuple[pd.DataFrame, pd.DataFrame],
+    ] = (
         aggregate_pressure_levels if params.pressure_levels else aggregate_by_frequency
     )
-    aggregated_df, unique_latlongs = agg_func(  # type: ignore
-        df, params.frequency, False, params.dist_features  # type: ignore
+    aggregated_df, unique_latlongs = agg_func(
+        df, params.frequency, False, params.dist_features
     )
     elapsed = time.time() - start_time
     logger.info(f"Aggregation completed in:   {elapsed:.2f} seconds")
@@ -346,9 +353,11 @@ def adjust_sum_variables(df: pd.DataFrame, frequency: str) -> None:
 
     try:
         if frequency == "monthly":
-            df["days_in_month"] = df.apply(
-                lambda row: monthrange(int(row["year"]), int(row["month"]))[1], axis=1  # type: ignore
-            )
+
+            def _days_in_month(row: pd.Series) -> int:
+                return monthrange(int(row["year"]), int(row["month"]))[1]
+
+            df["days_in_month"] = df.apply(_days_in_month, axis=1)
             for var in sum_vars_present:
                 if var in df.columns:
                     df[var] = df[var] * df["days_in_month"]
@@ -368,7 +377,7 @@ def save_results(
     unique_latlongs: pd.DataFrame,
     raw_df: pd.DataFrame,
     save_raw: bool,
-):
+) -> None:
     """Save all results to files"""
 
     output_dir = f"{params.request_id}_output"
@@ -396,7 +405,7 @@ def save_results(
         always_logger.info(f"  Saved raw data to: {csv_output}")
 
 
-def process_era5(params: ProcessingParams, save_raw: bool):
+def process_era5(params: ProcessingParams, save_raw: bool) -> pd.DataFrame:
     """Main entry point for ERA5 processing"""
     ensure_cdsapi_config()
     total_start_time = time.time()
@@ -447,7 +456,7 @@ def process_era5(params: ProcessingParams, save_raw: bool):
 
 
 # Helper functions for printing/logging
-def print_processing_header(params: ProcessingParams):
+def print_processing_header(params: ProcessingParams) -> None:
     """Print processing header information"""
     dataset_type = "PRESSURE LEVEL" if params.pressure_levels else "SINGLE LEVEL"
     always_logger.info(f"\n{'='*60}")
@@ -468,7 +477,7 @@ def print_processing_header(params: ProcessingParams):
         always_logger.info(f"GeoJSON File: {params.geojson_file}")
 
 
-def validate_inputs(params: ProcessingParams):
+def validate_inputs(params: ProcessingParams) -> None:
     """Validate all input parameters"""
     if not params.variables:
         raise ValueError("Variables list cannot be empty")
@@ -492,7 +501,7 @@ def load_and_validate_geojson(geojson_file: str) -> Dict[str, Any]:
     return geojson_data
 
 
-def print_bounding_box(params: ProcessingParams):
+def print_bounding_box(params: ProcessingParams) -> None:
     """Print bounding box information"""
     logger.info("\n--- Bounding Box ---")
     logger.info(f"{Colors.GREEN}✓ Bounding Box calculated:{Colors.RESET}")
@@ -506,7 +515,7 @@ def print_bounding_box(params: ProcessingParams):
         )
 
 
-def print_processing_strategy(params: ProcessingParams):
+def print_processing_strategy(params: ProcessingParams) -> None:
     """Print processing strategy information"""
     logger.debug("\n--- Processing Strategy ---")
     use_monthly = params.frequency in ["monthly", "yearly"]
@@ -609,7 +618,7 @@ def draw_geojson_ascii(geojson_data: Dict[str, Any]):
 
 def print_processing_footer(
     params: ProcessingParams, result_df: pd.DataFrame, total_start_time: float
-):
+) -> None:
     """Print processing footer information"""
     always_logger.info(f"\n{'='*60}")
     always_logger.info(f"{Colors.GREEN}PROCESSING COMPLETE{Colors.RESET}")
@@ -839,10 +848,8 @@ def era5ify_point(
     radius_degrees = 0.06
 
     # Generate circle points (simple approximation)
-    import math
-
     num_points = 16  # Number of points to approximate the circle
-    circle_coords = []
+    circle_coords: List[List[float]] = []
 
     # Handle antimeridian crossing by shifting longitude away from ±180°
     working_longitude = longitude
@@ -949,7 +956,7 @@ def parse_date(date_str: str) -> dt.datetime:
         )
 
 
-def cleanup_temp_files(request_id: str, temp_geojson_file: str):
+def cleanup_temp_files(request_id: str, temp_geojson_file: str) -> None:
     """Clean up temporary files"""
     if os.path.exists(temp_geojson_file):
         os.remove(temp_geojson_file)

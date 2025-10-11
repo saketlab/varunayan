@@ -8,7 +8,7 @@ from ..util.logging_utils import get_logger
 logger = get_logger(level=logging.DEBUG)
 
 
-def set_v_file_han(verbosity: int):
+def set_v_file_han(verbosity: int) -> None:
 
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
@@ -95,7 +95,7 @@ def find_netcdf_files(extraction_dir: str) -> List[str]:
     """
     nc_files: List[str] = []
     for root, _, files in os.walk(extraction_dir):
-        nc_files.extend(  # type: ignore
+        nc_files.extend(
             [os.path.join(root, file) for file in files if file.endswith(".nc")]
         )
     return nc_files
