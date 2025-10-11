@@ -1,7 +1,7 @@
 import argparse
 import datetime as dt
 import logging
-from typing import List, Optional, Union
+from typing import List, Union
 
 from .core import era5ify_bbox, era5ify_geojson, era5ify_point
 from .util.logging_utils import get_logger
@@ -149,12 +149,12 @@ def main() -> None:
 
     variables = [v.strip() for v in args.variables.split(",")]
 
-    dist_features: Optional[List[str]] = None
+    dist_features: List[str] = []
     if args.mode == "geojson" and args.dist_features and args.dist_features.strip():
         dist_features = [feat.strip() for feat in args.dist_features.split(",")]
 
     # Parse pressure levels if provided
-    pressure_levels: Optional[List[str]] = None
+    pressure_levels: List[str] = []
     if args.pressure_levels and args.pressure_levels.strip():
         pressure_levels = [level.strip() for level in args.pressure_levels.split(",")]
 
