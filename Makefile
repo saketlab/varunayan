@@ -27,7 +27,8 @@ help:
 	@echo ""
 	@echo "Available targets:"
 	@echo ""
-	@echo "Development:"
+	@echo "Installation:"
+	@echo "  install            Install package in editable mode"
 	@echo "  install-dev        Install package in development mode with all dependencies"
 	@echo "  install-docs       Install full documentation dependencies"
 	@echo "  install-docs-build Install minimal documentation build dependencies"
@@ -42,7 +43,6 @@ help:
 	@echo ""
 	@echo "Documentation:"
 	@echo "  docs-clean      Clean documentation build directory"
-	@echo "  docs-convert    Convert notebooks to markdown"
 	@echo "  docs-build      Build documentation with Sphinx"
 	@echo "  docs-serve      Build and serve documentation locally"
 	@echo "  docs-deploy     Build documentation as it would be deployed"
@@ -61,7 +61,12 @@ help:
 	@echo "  deps-update     Update dependencies"
 	@echo "  pre-commit      Run pre-commit hooks"
 
-# Development targets
+# Installation targets
+.PHONY: install
+install:
+	@echo "Installing varunayan package..."
+	$(PIP) install -e .
+
 .PHONY: install-dev
 install-dev:
 	@echo "Installing development dependencies..."
@@ -122,16 +127,9 @@ quality: format lint typecheck test
 docs-clean:
 	@echo "Cleaning documentation build directory..."
 	rm -rf $(DOCS_BUILD_DIR)
-	rm -rf $(DOCS_DIR)/tutorials/demo_tutorial_notebook.md
-	rm -rf $(DOCS_DIR)/tutorials/india_temperature_notebook.md
-
-.PHONY: docs-convert
-docs-convert:
-	@echo "Converting notebooks to markdown using automated script..."
-	$(PYTHON) scripts/convert_notebooks.py
 
 .PHONY: docs-build
-docs-build: docs-convert
+docs-build:
 	@echo "Building documentation with Sphinx..."
 	cd $(DOCS_DIR); $(SPHINX_BUILD) -b html . _build/html
 
@@ -150,7 +148,7 @@ docs-deploy: docs-clean install-docs-build docs-build
 	@echo "To preview, run: make docs-serve"
 
 .PHONY: docs-all
-docs-all: docs-clean install-docs docs-convert docs-build
+docs-all: docs-clean install-docs docs-build
 	@echo "Complete documentation build pipeline finished!"
 	@echo "Run 'make docs-serve' to preview the documentation"
 
@@ -284,8 +282,8 @@ help-docs:
 $(DOCS_BUILD_DIR):
 	mkdir -p $(DOCS_BUILD_DIR)
 
-$(BUILD_DIR):
+build-dir:
 	mkdir -p $(BUILD_DIR)
 
-$(DIST_DIR):
+dist-dir:
 	mkdir -p $(DIST_DIR)

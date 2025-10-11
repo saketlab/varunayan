@@ -10,9 +10,11 @@ from calendar import monthrange
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 import xarray as xr
-from shapely.geometry import Point
+from shapely.geometry import Point, shape
+from shapely.ops import unary_union
 
 from .config import ensure_cdsapi_config, set_v_config
 from .download import (
@@ -547,11 +549,6 @@ def calculate_map_dimensions(
     width = int(geo_width * 15 / avg * 2)
     height = int(geo_height * 15 / avg)
     return max(width, MIN_DIMENSION), max(height, MIN_DIMENSION)
-
-
-import numpy as np
-from shapely.geometry import Point, shape
-from shapely.ops import unary_union
 
 
 def draw_geojson_ascii(geojson_data: Dict[str, Any]):

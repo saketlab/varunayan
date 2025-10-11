@@ -1,205 +1,163 @@
+# Configuration file for the Sphinx documentation builder.
+#
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+import importlib
 import os
-import shutil
 import sys
-from typing import Dict, List
 
 sys.path.insert(0, os.path.abspath(".."))
 
-project = "Varunayan"
-copyright = "2025, Atharva Jagtap and Saket Choudhary"
-author = "Atharva Jagtap and Saket Choudhary"
-release = "0.1.0"
+try:
+    from varunayan import __version__ as package_version
+except Exception:
+    package_version = "0.1.0"
+
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
+project = "varunayan"
+copyright = "2025, Mahesh Prajapat and Saket Choudhary"
+author = "Mahesh Prajapat and Saket Choudhary"
+release = package_version
+version = os.environ.get("SMV_CURRENT_VERSION") or os.environ.get(
+    "READTHEDOCS_VERSION_NAME",
+    release,
+)
+
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
+    "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "myst_nb",
-    "autoapi.extension",
+    "sphinx_multiversion",
     "sphinx_copybutton",
-    "sphinx_design",
-    "sphinx_togglebutton",
-    "sphinx_tabs.tabs",
 ]
 
-# AutoAPI configuration
-autoapi_dirs = ["../varunayan"]
-autoapi_type = "python"
-autoapi_generate_api_docs = True
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "tutorials/*.ipynb"]
 
-# Napoleon settings
+language = "en"
+
+# -- Autodoc configuration --------------------------------------------------
+autodoc_default_options = {
+    "members": True,
+    "member-order": "bysource",
+    "special-members": "__init__",
+    "undoc-members": True,
+    "exclude-members": "__weakref__",
+}
+
+# Mock heavy optional dependencies if they are unavailable so autodoc can
+# import varunayan modules without requiring compiled geospatial stacks.
+_OPTIONAL_LIBS = [
+    "geopandas",
+    "geopy",
+    "netCDF4",
+    "rioxarray",
+    "tqdm",
+    "xarray",
+    "cdsapi",
+]
+
+autodoc_mock_imports = []
+for _module in _OPTIONAL_LIBS:
+    try:
+        importlib.import_module(_module)
+    except Exception:
+        autodoc_mock_imports.append(_module)
+
+# -- Napoleon settings -------------------------------------------------------
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
 napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
 
-# Intersphinx mapping
+# -- Intersphinx mapping ----------------------------------------------------
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3/", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
+    "python": ("https://docs.python.org/3", None),
     "pandas": ("https://pandas.pydata.org/docs/", None),
-    "xarray": ("https://xarray.pydata.org/en/stable/", None),
+    "requests": ("https://requests.readthedocs.io/en/latest/", None),
 }
 
-# MyST configuration
-myst_enable_extensions = [
-    "amsmath",
-    "colon_fence",
-    "deflist",
-    "dollarmath",
-    "fieldlist",
-    "html_admonition",
-    "html_image",
-    "linkify",
-    "replacements",
-    "smartquotes",
-    "strikethrough",
-    "substitution",
-    "tasklist",
-]
+# -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-# MyST-NB configuration
-nb_execution_mode = "off"
-nb_execution_timeout = 60
-nb_execution_excludepatterns: List[str] = []
-nb_kernel_rgx_aliases: Dict[str, str] = {}
-nb_output_stderr = "show"
-nb_render_priority = {
-    "html": [
-        "application/vnd.jupyter.widget-view+json",
-        "application/javascript",
-        "text/html",
-        "image/svg+xml",
-        "image/png",
-        "image/jpeg",
-        "text/markdown",
-        "text/latex",
-        "text/plain",
+html_theme = "furo"
+html_static_path = ["_static"]
+html_css_files = ["css/custom.css"]
+
+# Logo configuration
+html_logo = "assets/varunayan.png"
+
+html_sidebars = {
+    "**": [
+        "sidebar/brand.html",
+        "sidebar/search.html",
+        "sidebar/scroll-start.html",
+        "sidebar/navigation.html",
+        "sidebar/versions.html",
+        "sidebar/scroll-end.html",
     ]
 }
 
-# Notebook source directory
-nb_source_dir = "../notebooks"
-# Copy notebooks to docs directory for processing
-
-if os.path.exists("../notebooks"):
-    # Automatically discover and copy notebooks to tutorials directory
-    import glob
-
-    notebook_pattern = "../notebooks/*.ipynb"
-    discovered_notebooks = glob.glob(notebook_pattern)
-
-    print(f"Auto-discovered {len(discovered_notebooks)} notebook(s)")
-    for src_path in discovered_notebooks:
-        nb_name = os.path.basename(src_path)
-        dst = f"tutorials/{nb_name}"
-        if os.path.exists(src_path):
-            shutil.copy2(src_path, dst)
-            print(f"Copied {nb_name} to tutorials directory")
-
-    # Also ensure we include the notebooks in the build
-    nb_execution_excludepatterns.extend(
-        [f"tutorials/{os.path.basename(nb)}" for nb in discovered_notebooks]
-    )
-
-templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "*.rst.bak"]
-
-# Source file extensions
-source_suffix = {
-    ".rst": None,
-    ".md": None,
-    ".ipynb": None,
-}
-
-# Master document
-master_doc = "index"
-
-# Theme configuration
-html_theme = "sphinx_book_theme"
-html_static_path = ["_static"]
-html_title = f"{project} {release}"
-html_short_title = project
-
-# Sphinx Book Theme configuration
+# -- Theme options -----------------------------------------------------------
 html_theme_options = {
-    "repository_url": "https://github.com/saketlab/varunayan",
-    "repository_branch": "main",
-    "path_to_docs": "docs",
-    "use_repository_button": True,
-    "use_edit_page_button": True,
-    "use_issues_button": True,
-    "use_download_button": True,
-    "use_sidenotes": True,
-    "show_toc_level": 2,
     "navigation_with_keys": True,
-    "home_page_in_toc": True,
-    "extra_footer": "<p>Built by the Varunayan team</p>",
-    "analytics": {
-        "google_analytics_id": "",  # Add your GA ID here if needed
+    "sidebar_hide_name": False,  # Show name alongside logo
+    "light_css_variables": {
+        "color-brand-primary": "#1b1b1f",
+        "color-brand-content": "#1b1b1f",
+        "font-stack": '"SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        "font-stack--monospace": '"SF Mono", "JetBrains Mono", Menlo, monospace',
     },
-    "search_bar_text": "Search the documentation...",
-    "logo": {
-        "image_light": "_static/varunayan_logo.png",
-        "image_dark": "_static/varunayan_logo.png",
-    },
-    "theme_switcher_button": False,  # Disable theme switcher
-    "show_navbar_depth": 1,
-    "switcher": {
-        "json_url": "_static/versions.json",
-        "version_match": release,
+    "dark_css_variables": {
+        "color-brand-primary": "#f5f5f7",
+        "color-brand-content": "#f5f5f7",
+        "background-color": "#050505",
+        "background-color-secondary": "#121214",
     },
 }
 
-# Copy button configuration
+# Set default color scheme to dark
+html_css_files = ["css/custom.css"]
+
+# MyST-NB configuration
+nb_execution_mode = "off"
+nb_render_plugin = "default"
+nb_merge_streams = True
+
+# Enable copy button for code cells
+nb_code_prompt_show = "Show code cell {type}"
+nb_code_prompt_hide = "Hide code cell {type}"
+
+# Sphinx copybutton configuration
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
 copybutton_prompt_is_regexp = True
-copybutton_line_continuation_character = "\\"
+copybutton_only_copy_prompt_lines = True
+copybutton_remove_prompts = True
+copybutton_copy_empty_lines = False
 
-# Search configuration
-html_search_language = "en"
-html_search_options = {
-    "type": "default",
-    "scorer": "query_terms",
-    "word_boundaries": True,
-}
-
-# Additional HTML options
-html_favicon = "_static/favicon.ico"
-html_logo = "_static/varunayan_logo.png"
-html_css_files = [
-    "custom.css",
-]
-
-html_js_files = [
-    "custom.js",
-]
-
-# Social cards (for sharing)
-html_baseurl = "https://saketlab.github.io/varunayan/"
-
-# Version switcher configuration
-# Enable version switcher with current version
-html_context = {
-    "display_github": True,
-    "github_user": "saketlab",
-    "github_repo": "varunayan",
-    "github_version": "main",
-    "conf_py_path": "/docs/",
-    "current_version": release,
-    "versions": [
-        {
-            "name": "latest (main)",
-            "version": "0.1.0",
-            "url": "https://saketlab.github.io/varunayan/",
-            "preferred": True,
-        },
-        {
-            "name": "v0.1.0",
-            "version": "v0.1.0",
-            "url": "https://saketlab.github.io/varunayan/v0.1.0/",
-        },
-    ],
-}
+# Sphinx multiversion settings
+smv_branch_whitelist = os.environ.get(
+    "SMV_BRANCH_WHITELIST",
+    r"^(master|main|release/.+|varunayan)$",
+)
+smv_tag_whitelist = os.environ.get("SMV_TAG_WHITELIST", r"^v?\d+\.\d+(\.\d+)?$")
+smv_remote_whitelist = os.environ.get("SMV_REMOTE_WHITELIST", r"^origin$")
+smv_outputdir_format = "{ref.refname}"
+smv_latest_version = os.environ.get("SMV_LATEST_VERSION", "master")
+smv_rename_latest_version = "latest"
