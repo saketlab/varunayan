@@ -106,6 +106,7 @@ Interactive notebooks with hands-on examples:
    notebooks/06_malaria_dengue_public_interest_trend
    notebooks/07_rainfall_peak_India
    notebooks/08_era5_imd_temp_comparison
+   notebooks/09_pressure_level_data
 
 API Reference
 =============
