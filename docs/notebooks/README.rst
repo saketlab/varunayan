@@ -38,6 +38,10 @@ Available Notebooks
    
    Detailed temperature comparison between ERA5 and IMD datasets.
 
+9. **Pressure Level Data** (:doc:`09_pressure_level_data`)
+   
+   Working with atmospheric pressure level data for vertical profiles and multi-level analysis.
+
 Running the Notebooks
 ----------------------
 
