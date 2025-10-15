@@ -100,6 +100,9 @@ html_theme = "furo"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
+# Documentation title without version
+html_title = f"{project} Documentation"
+
 # Logo configuration
 html_logo = "assets/varunayan.png"
 
@@ -154,10 +157,13 @@ copybutton_copy_empty_lines = False
 # Sphinx multiversion settings
 smv_branch_whitelist = os.environ.get(
     "SMV_BRANCH_WHITELIST",
-    r"^(master|main|release/.+|varunayan)$",
+    r"^(master|main|develop)$",
 )
 smv_tag_whitelist = os.environ.get("SMV_TAG_WHITELIST", r"^v?\d+\.\d+(\.\d+)?$")
 smv_remote_whitelist = os.environ.get("SMV_REMOTE_WHITELIST", r"^origin$")
 smv_outputdir_format = "{ref.refname}"
-smv_latest_version = os.environ.get("SMV_LATEST_VERSION", "master")
+smv_latest_version = os.environ.get("SMV_LATEST_VERSION", "main")
 smv_rename_latest_version = "latest"
+
+# Prefer tags over branches for version selection
+smv_prefer_remote_refs = True
