@@ -109,19 +109,19 @@ def ensure_cdsapi_config() -> None:
     Ensure CDS API configuration exists and is valid.
     If not, guide the user through setting it up.
     """
-    # Check if we're in a testing or documentation build environment
+    # Check if we're in a testing, documentation build, or CI/CD environment
     if (
         "pytest" in sys.modules
         or os.environ.get("PYTEST_CURRENT_TEST")
         or "sphinx" in sys.modules
         or os.environ.get("READTHEDOCS")
         or os.environ.get("SPHINX_BUILD")
+        or os.environ.get("GITHUB_ACTIONS")
+        or os.environ.get("NETLIFY")
     ):
-        # In testing or docs build, just log and return without prompting
-        logger.debug("CDS API configuration check skipped in test/docs environment.")
+        logger.debug("CDS API configuration check skipped in test/docs/CI environment.")
         return
 
-    # Check if CDS API credentials are available via environment variables (for CI/CD)
     env_credentials = _get_env_credentials()
     if env_credentials:
         api_url, api_key = env_credentials
