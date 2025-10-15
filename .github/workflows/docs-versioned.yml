@@ -68,6 +68,8 @@ jobs:
     
     - name: Build versioned documentation
       if: steps.check-tags.outputs.has_tags == 'true'
+      env:
+        SPHINX_BUILD: "true"
       run: |
         echo "Building versioned documentation with sphinx-multiversion..."
         sphinx-multiversion docs docs/_build/html
@@ -92,8 +94,10 @@ jobs:
         </html>
         EOF
     
-    - name: Build single-version documentation  
+    - name: Build single-version documentation
       if: steps.check-tags.outputs.has_tags == 'false'
+      env:
+        SPHINX_BUILD: "true"
       run: |
         echo "Building single-version documentation with sphinx..."
         cd docs

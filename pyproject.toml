@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "varunayan"
-version = "0.1.0"
+version = "0.1.1"
 description = "Analysis-ready climate data downloader and processor for custom regions"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Atmospheric Science",
     "Topic :: Scientific/Engineering :: GIS",
     "Operating System :: OS Independent",

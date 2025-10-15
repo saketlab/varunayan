@@ -23,6 +23,27 @@ def set_v_config(verbosity: int) -> None:
         logger.setLevel(logging.WARNING)
 
 
+def set_api_key(
+    api_key: str,
+    api_url: str = "https://cds.climate.copernicus.eu/api",
+) -> None:
+    """Programmatically set the CDS API key for the current session."""
+
+    cleaned_key = api_key.strip() if api_key else ""
+    cleaned_url = api_url.strip() if api_url else ""
+
+    if not cleaned_key:
+        raise ValueError("No API key provided")
+
+    if not cleaned_url:
+        raise ValueError("No API URL provided")
+
+    _create_config_file(cleaned_key, cleaned_url)
+
+    os.environ["CDS_API_KEY"] = cleaned_key
+    os.environ["CDS_API_URL"] = cleaned_url
+
+
 def check_cdsapi_config() -> bool:
     """
     Check if CDS API configuration exists and is valid.
@@ -70,18 +91,17 @@ def setup_cdsapi_config() -> None:
 
     try:
         api_key = input("\nEnter your CDS API key: ").strip()
-
-        if not api_key:
-            raise ValueError("No API key provided")
-
-        _create_config_file(api_key)
-
     except KeyboardInterrupt:
-        logger.error("\nSetup cancelled.")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        sys.exit(1)
+        raise
+    except EOFError as exc:
+        raise RuntimeError(
+            "Input stream closed before a CDS API key was provided."
+        ) from exc
+
+    if not api_key:
+        raise ValueError("No API key provided")
+
+    _create_config_file(api_key)
 
 
 def ensure_cdsapi_config() -> None:
@@ -89,13 +109,19 @@ def ensure_cdsapi_config() -> None:
     Ensure CDS API configuration exists and is valid.
     If not, guide the user through setting it up.
     """
-    # Check if we're in a testing environment
-    if "pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST"):
-        # In testing, just log and return without prompting
-        logger.info("✓ CDS API configuration check skipped in test environment.")
+    # Check if we're in a testing, documentation build, or CI/CD environment
+    if (
+        "pytest" in sys.modules
+        or os.environ.get("PYTEST_CURRENT_TEST")
+        or "sphinx" in sys.modules
+        or os.environ.get("READTHEDOCS")
+        or os.environ.get("SPHINX_BUILD")
+        or os.environ.get("GITHUB_ACTIONS")
+        or os.environ.get("NETLIFY")
+    ):
+        logger.debug("CDS API configuration check skipped in test/docs/CI environment.")
         return
 
-    # Check if CDS API credentials are available via environment variables (for CI/CD)
     env_credentials = _get_env_credentials()
     if env_credentials:
         api_url, api_key = env_credentials
@@ -113,12 +139,19 @@ def ensure_cdsapi_config() -> None:
 
     logger.info("CDS API configuration not found or invalid.")
 
-    # Avoid prompting when running in non-interactive environments (e.g., CI, nbconvert)
-    if not sys.stdin or not hasattr(sys.stdin, "isatty") or not sys.stdin.isatty():
+    if not sys.stdin:
         raise RuntimeError(
             "CDS API configuration is missing and interactive setup is unavailable. "
             "Set the CDS_API_KEY/CDSAPI_KEY environment variable or create ~/.cdsapirc manually."
         )
+
+    try:
+        if hasattr(sys.stdin, "isatty") and not sys.stdin.isatty():
+            logger.warning(
+                "Input stream is not a TTY; attempting to prompt for CDS API key anyway."
+            )
+    except Exception:
+        pass
 
     try:
         setup_cdsapi_config()
