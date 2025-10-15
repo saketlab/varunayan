@@ -4,6 +4,7 @@
 
 [build.environment]
   PYTHON_VERSION = "3.9"
+  SPHINX_BUILD = "true"
 
 # Redirect rules for clean URLs
 [[redirects]]
