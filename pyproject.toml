@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "varunayan"
-version = "0.1.0"
+version = "0.1.1"
 description = "Analysis-ready climate data downloader and processor for custom regions"
 readme = "README.md"
 requires-python = ">=3.8"
