@@ -18,8 +18,8 @@ except Exception:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "varunayan"
-copyright = "2025, Mahesh Prajapat and Saket Choudhary"
-author = "Mahesh Prajapat and Saket Choudhary"
+copyright = "2025, Atharva Jagtap and Saket Choudhary"
+author = "Atharva Jagtap and Saket Choudhary"
 release = package_version
 version = os.environ.get("SMV_CURRENT_VERSION") or os.environ.get(
     "READTHEDOCS_VERSION_NAME",
@@ -71,7 +71,7 @@ for _module in _OPTIONAL_LIBS:
     try:
         importlib.import_module(_module)
     except Exception:
-        autodoc_mock_imports.append(_module)
+        autodoc_mock_imports.append(_module)    #type:ignore
 
 # -- Napoleon settings -------------------------------------------------------
 napoleon_google_docstring = True
