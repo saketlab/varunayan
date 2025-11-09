@@ -1,6 +1,12 @@
 Release History
 ===============
 
+v0.2.0 (2025-11-09)
+-------------------
+
+* Aggregation bug fixes
+* Updated variable list
+
 v0.1.1 (2025-10-15)
 -------------------
 
