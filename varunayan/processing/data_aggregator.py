@@ -1,7 +1,6 @@
 import logging
 from typing import Any, List, Optional
 
-import numpy as np
 import pandas as pd
 
 from ..util.logging_utils import get_logger
@@ -53,7 +52,7 @@ def aggregate_by_frequency(
     frequency = frequency.lower()
 
     # Check if feature column exists
-    has_features = "feature" in df.columns
+    has_features = True if dist_features is not None else False
     if has_features:
         logger.info(
             "Feature column detected - performing separate aggregation for each feature"
@@ -343,7 +342,7 @@ def aggregate_pressure_levels(
     logger.info(f"Aggregating pressure level data to {frequency} frequency...")
 
     # Check if feature column exists
-    has_features = "feature" in df.columns
+    has_features = True if dist_features is not None else False
     if has_features:
         logger.info(
             "Feature column detected - performing separate aggregation for each feature"

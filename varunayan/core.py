@@ -309,6 +309,12 @@ def process_era5_data(
             f"  {Colors.YELLOW}✓ Removed {initial_rows - len(df)} duplicate rows{Colors.RESET}"
         )
 
+    #Remove rows with dates outside the requested range
+    df = df[
+        (df["valid_time"] >= pd.Timestamp(params.start_date))
+        & (df["valid_time"] <= pd.Timestamp(params.end_date + dt.timedelta(days=1)))
+    ]
+
     return df
 
 
