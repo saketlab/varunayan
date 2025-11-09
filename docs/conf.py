@@ -71,7 +71,7 @@ for _module in _OPTIONAL_LIBS:
     try:
         importlib.import_module(_module)
     except Exception:
-        autodoc_mock_imports.append(_module)    #type:ignore
+        autodoc_mock_imports.append(_module)  # type:ignore
 
 # -- Napoleon settings -------------------------------------------------------
 napoleon_google_docstring = True
