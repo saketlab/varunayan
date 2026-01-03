@@ -154,3 +154,5 @@ The package is particularly valuable for researchers who need to:
 - Compare climate variables across multiple regions simultaneously
 - Generate reproducible climate analyses with minimal code
 - Integrate climate data access into automated workflows
+
+# References
