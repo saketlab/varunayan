@@ -1,7 +1,7 @@
 varunayan: Download and Process ERA5 Climate Data
 ==================================================
 
-A Python package for downloading and processing ERA5 climate data with support for custom geographical regions:
+A Python package for end-to-end acquisition of processed ERA5 climate data with custom region support.
 
 .. image:: https://img.shields.io/pypi/v/varunayan.svg
    :target: https://pypi.org/project/varunayan/
@@ -22,9 +22,9 @@ varunayan provides a simple and powerful interface to download and process ERA5 
 
 - **Custom geographical regions**: Use GeoJSON files, bounding boxes, or point coordinates
 - **Multiple variables**: Download any ERA5 variable (temperature, precipitation, wind, etc.)
-- **Flexible time periods**: From hourly to yearly data aggregation
+- **Flexible time periods**: From hourly to yearly data aggregations
 - **Automatic processing**: Spatial filtering, temporal aggregation, and CSV output
-- **Chunking support**: Handle large requests efficiently with automatic time-based chunking
+- **Chunking support**: Efficient handling of large timeframes through automatic time-based chunking
 
 Quick Start
 -----------
@@ -45,7 +45,7 @@ Basic Usage
 
    # Download data for a GeoJSON region
    era5ify_geojson(
-       request_id="my_request",
+       request_id="geojson_request",
        variables=["2m_temperature", "total_precipitation"],
        start_date="2020-01-01",
        end_date="2020-01-31",
@@ -54,11 +54,20 @@ Basic Usage
 
    # Download data for a bounding box
    era5ify_bbox(
-       request_id="bbox_request", 
-       variables=["2m_temperature"],
+       request_id="bbox_request",
+       variables=["2m_temperature", "total_precipitation"],
        start_date="2020-01-01",
        end_date="2020-01-02",
-       north=40.0, south=35.0, east=-120.0, west=-125.0
+       north=20.0, south=15.0, east=70.0, west=85.0
+   )
+
+   # Download data for a single point
+   era5ify_point(
+       request_id="point_request",
+       variables=["2m_temperature", "total_precipitation"],
+       start_date="2020-01-01",
+       end_date="2020-01-02",
+       latitude=18.8995, longitude=72.8093
    )
 
 Command Line Interface
@@ -67,17 +76,17 @@ Command Line Interface
 .. code-block:: bash
 
    # Process with GeoJSON file
-   varunayan geojson --request-id "my_request" --variables "2m_temperature,total_precipitation" \
+   varunayan geojson --request-id "geojson_request" --variables "2m_temperature,total_precipitation" \
      --start "2020-01-01" --end "2020-01-31" --geojson "region.geojson"
 
    # Process with bounding box
-   varunayan bbox --request-id "bbox_request" --variables "2m_temperature" \
+   varunayan bbox --request-id "bbox_request" --variables "2m_temperature,total_precipitation" \
      --start "2020-01-01" --end "2020-01-02" \
-     --north 40.0 --south 35.0 --east -120.0 --west -125.0
+     --north 20.0 --south 15.0 --east 70.0 --west 85.0
 
    # Process for a single point
-   varunayan point --request-id "point_request" --variables "2m_temperature" \
-     --start "2020-01-01" --end "2020-01-02" --lat 37.7749 --lon -122.4194
+   varunayan point --request-id "point_request" --variables "2m_temperature,total_precipitation" \
+     --start "2020-01-01" --end "2020-01-02" --lat 18.8995 --lon 72.8093
 
 .. toctree::
    :maxdepth: 2
