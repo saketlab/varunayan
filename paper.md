@@ -21,7 +21,7 @@ affiliations:
     - name: Indian Institute of Technology Bombay
       index: 2
 date:
-bibliography:
+bibliography: paper.bib
 ---
 
 # Summary
@@ -154,14 +154,3 @@ The package is particularly valuable for researchers who need to:
 - Compare climate variables across multiple regions simultaneously
 - Generate reproducible climate analyses with minimal code
 - Integrate climate data access into automated workflows
-
-# References
-
-- Copernicus Climate Change Service, Climate Data Store, (2023): ERA5 hourly data on pressure levels from 1940 to present.
-  DOI: 10.24381/cds.bd0915c6
-- Copernicus Climate Change Service, Climate Data Store, (2023): ERA5 hourly data on single levels from 1940 to present.
-  DOI: 10.24381/cds.adbb2d47
-- Copernicus Climate Change Service (2023): ERA5 monthly averaged data on pressure levels from 1940 to present.
-  DOI: 10.24381/cds.6860a573
-- Copernicus Climate Change Service (2023): ERA5 monthly averaged data on single levels from 1940 to present.
-  DOI: 10.24381/cds.f17050d7
