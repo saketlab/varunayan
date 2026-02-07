@@ -244,14 +244,12 @@ def process_era5_data(
     """Core processing function for both single and pressure level data"""
     chunk_number, total_chunks = chunk_info or (1, 1)
 
-    # Determine download function
     download_func = (
         download_era5_pressure_lvl
         if params.pressure_levels
         else download_era5_single_lvl
     )
 
-    # Download data
     chunk_id = (
         f"{params.request_id}_chunk{chunk_number}"
         if total_chunks > 1
@@ -259,7 +257,6 @@ def process_era5_data(
     )
     download_file = download_with_retry(download_func, params, chunk_id)
 
-    # Process downloaded files
     nc_files: List[str] = []
     if download_file is not None:
         nc_files = extract_download(download_file)
@@ -286,10 +283,8 @@ def process_era5_data(
     if not datasets:
         raise ValueError("No valid datasets were processed")
 
-    # Merge and convert to DataFrame
     merged_ds: xr.Dataset = xr.merge(datasets) if len(datasets) > 1 else datasets[0]
 
-    # Apply filtering if GeoJSON provided
     if params.geojson_data:
         df = filter_netcdf_by_shapefile(
             merged_ds, params.geojson_data, params.dist_features
@@ -297,7 +292,6 @@ def process_era5_data(
     else:
         df = merged_ds.to_dataframe().reset_index()
 
-    # Remove duplicates
     dup_cols = ["valid_time", "latitude", "longitude"]
     if params.pressure_levels:
         dup_cols.append("pressure_level")
@@ -309,14 +303,13 @@ def process_era5_data(
             f"  {Colors.YELLOW}✓ Removed {initial_rows - len(df)} duplicate rows{Colors.RESET}"
         )
 
-    return df
+    return pd.DataFrame(df)
 
 
 def aggregate_and_save(
     params: ProcessingParams, df: pd.DataFrame, save_raw: bool
 ) -> pd.DataFrame:
     """Handle aggregation and saving of results"""
-    # Temporal aggregation
     logger.info(
         f"{Colors.BLUE}AGGREGATING DATA ({params.frequency.upper()}){Colors.RESET}"
     )
@@ -334,11 +327,9 @@ def aggregate_and_save(
     elapsed = time.time() - start_time
     logger.info(f"Aggregation completed in:   {elapsed:.2f} seconds")
 
-    # Adjust sum variables if needed
     if params.frequency in ["monthly", "yearly"]:
         adjust_sum_variables(aggregated_df, params.frequency)
 
-    # Save results
     save_results(params, aggregated_df, unique_latlongs, df, save_raw)
 
     return aggregated_df
@@ -384,22 +375,18 @@ def save_results(
     always_logger.info(f"\nSaving files to output directory: {output_dir}")
     os.makedirs(output_dir, exist_ok=True)
 
-    # Save aggregated data
     csv_output = os.path.join(
         output_dir, f"{params.request_id}_{params.frequency}_data.csv"
     )
     aggregated_df.to_csv(csv_output, index=False)
     always_logger.info(f"  Saved final data to: {csv_output}")
 
-    # Save unique coordinates
     csv_output = os.path.join(output_dir, f"{params.request_id}_unique_latlongs.csv")
     unique_latlongs.to_csv(csv_output, index=False)
     always_logger.info(f"  Saved unique coordinates to: {csv_output}")
 
     if save_raw:
-        # Drop unwanted columns
         raw_df = raw_df.drop(columns=["number", "expver"], errors="ignore")
-        # Save raw data
         csv_output = os.path.join(output_dir, f"{params.request_id}_raw_data.csv")
         raw_df.to_csv(csv_output, index=False)
         always_logger.info(f"  Saved raw data to: {csv_output}")
@@ -412,10 +399,8 @@ def process_era5(params: ProcessingParams, save_raw: bool) -> pd.DataFrame:
 
     print_processing_header(params)
 
-    # Validate inputs
     validate_inputs(params)
 
-    # Get bounding box if GeoJSON provided
     if params.geojson_file and not params.geojson_data:
         params.geojson_data = load_and_validate_geojson(params.geojson_file)
 
@@ -434,7 +419,6 @@ def process_era5(params: ProcessingParams, save_raw: bool) -> pd.DataFrame:
 
     print_processing_strategy(params)
 
-    # Process data (with chunking if needed)
     processed_df = process_time_chunks(
         params,
         (
@@ -455,7 +439,6 @@ def process_era5(params: ProcessingParams, save_raw: bool) -> pd.DataFrame:
     return final_result
 
 
-# Helper functions for printing/logging
 def print_processing_header(params: ProcessingParams) -> None:
     """Print processing header information"""
     dataset_type = "PRESSURE LEVEL" if params.pressure_levels else "SINGLE LEVEL"
@@ -566,7 +549,6 @@ def draw_geojson_ascii(geojson_data: Dict[str, Any]) -> None:
     :param geojson_data: Loaded GeoJSON data (must be FeatureCollection)
     """
     try:
-        # Combine all geometries in the GeoJSON into a single geometry
         geometries = [
             shape(feature["geometry"]) for feature in geojson_data.get("features", [])
         ]
@@ -580,23 +562,18 @@ def draw_geojson_ascii(geojson_data: Dict[str, Any]) -> None:
         combined_geom = unary_union(geometries)
         combined_geom = combined_geom.simplify(0.05, preserve_topology=True)
 
-        # Get bounding box
         west, south, east, north = get_bounding_box(geojson_data)
 
-        # Calculate dimensions of the ASCII grid
         width, height = calculate_map_dimensions(west, east, south, north)
 
-        # Generate grid coordinates
         x = np.linspace(west, east, width)
         y = np.linspace(south, north, height)
 
-        # Print header
         print(
             f"\n{Colors.BLUE}MINI MAP (Longitude: {west:.2f}° to {east:.2f}°, Latitude: {south:.2f}° to {north:.2f}°):{Colors.RESET}"
         )
         print("┌" + "─" * width + "┐")
 
-        # Render the ASCII map
         for j in range(height - 1, -1, -1):
             row = ["│"]
             for i in range(width):
@@ -686,14 +663,12 @@ def era5ify_geojson(
 
     set_verbosity(verbosity)
 
-    # Validate dataset type
     dataset_type = dataset_type.lower()
     if dataset_type not in ["single", "pressure"]:
         raise ValueError(
             f"Invalid dataset_type: {dataset_type}. Must be 'single' or 'pressure'"
         )
 
-    # Load and validate GeoJSON
     json_data = load_json_with_encoding(json_file)
     geojson_data = (
         json_data if is_valid_geojson(json_data) else convert_to_geojson(json_data)
@@ -763,18 +738,15 @@ def era5ify_bbox(
 
     set_verbosity(verbosity)
 
-    # Validate dataset type
     dataset_type = dataset_type.lower()
     if dataset_type not in ["single", "pressure"]:
         raise ValueError(
             f"Invalid dataset_type: {dataset_type}. Must be 'single' or 'pressure'"
         )
 
-    # Validate bounding box
     if north <= south or east <= west:
         raise ValueError("Invalid bounding box coordinates")
 
-    # Create temporary GeoJSON
     geojson_data = create_geojson_from_bbox(west, south, east, north)
     temp_geojson_file = create_temp_geojson(geojson_data, request_id)
 
@@ -843,53 +815,39 @@ def era5ify_point(
 
     set_verbosity(verbosity)
 
-    # Create a small circular GeoJSON around the point
-    # Using 0.06 degree radius (0.12 degree diameter) to capture nearest ERA5 grid point
     radius_degrees = 0.06
-
-    # Generate circle points (simple approximation)
-    num_points = 16  # Number of points to approximate the circle
+    num_points = 16
     circle_coords: List[List[float]] = []
 
-    # Handle antimeridian crossing by shifting longitude away from ±180°
     working_longitude = longitude
-    if abs(longitude) > 179.9:  # Very close to antimeridian
-        # Shift slightly away from the antimeridian for circle calculation
+    if abs(longitude) > 179.9:
         if longitude > 0:
-            working_longitude = 179.9  # Use 179.9° instead of 180°
+            working_longitude = 179.9
         else:
-            working_longitude = -179.9  # Use -179.9° instead of -180°
+            working_longitude = -179.9
 
-    # Handle polar regions (within 1 degree of poles)
     if abs(latitude) > 89.0:
-        # Near poles: create a small square instead of circle to avoid singularity
-        # This ensures we capture nearby grid points without mathematical issues
         lat_offset = radius_degrees
-        lon_offset = radius_degrees * 2  # Wider longitude range near poles
+        lon_offset = radius_degrees * 2
 
-        # Create a square around the pole
         square_coords = [
             [longitude - lon_offset, latitude - lat_offset],
             [longitude + lon_offset, latitude - lat_offset],
             [longitude + lon_offset, min(latitude + lat_offset, 90.0)],
             [longitude - lon_offset, min(latitude + lat_offset, 90.0)],
-            [longitude - lon_offset, latitude - lat_offset],  # Close the polygon
+            [longitude - lon_offset, latitude - lat_offset],
         ]
 
-        # Ensure longitudes are within valid range
         circle_coords = []
         for lon, lat in square_coords:
-            # Normalize longitude to [-180, 180]
             while lon > 180:
                 lon -= 360
             while lon < -180:
                 lon += 360
-            # Clamp latitude to valid range
             lat = max(-90, min(90, lat))
             circle_coords.append([lon, lat])
     else:
-        # Normal case: create circular polygon
-        for i in range(num_points + 1):  # +1 to close the polygon
+        for i in range(num_points + 1):
             angle = 2 * math.pi * i / num_points
             lat_offset = radius_degrees * math.cos(angle)
             lon_offset = (
@@ -899,7 +857,6 @@ def era5ify_point(
             circle_lat = max(-90, min(90, latitude + lat_offset))
             circle_lon = working_longitude + lon_offset
 
-            # Normalize longitude to [-180, 180]
             while circle_lon > 180:
                 circle_lon -= 360
             while circle_lon < -180:
@@ -907,7 +864,6 @@ def era5ify_point(
 
             circle_coords.append([circle_lon, circle_lat])
 
-    # Create GeoJSON structure
     geojson_data: Dict[str, Any] = {
         "type": "FeatureCollection",
         "features": [
@@ -923,11 +879,9 @@ def era5ify_point(
         ],
     }
 
-    # Create temporary GeoJSON file
     temp_geojson_file = create_temp_geojson(geojson_data, f"{request_id}_point")
 
     try:
-        # Call the existing geojson function with high resolution to get nearest point
         return era5ify_geojson(
             request_id=f"{request_id}",
             variables=variables,

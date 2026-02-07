@@ -36,7 +36,6 @@ def extract_download(
     Returns:
         List of extracted file paths
     """
-    # If no extract directory specified, create one based on filename
     if extract_dir is None:
         filename = os.path.basename(zip_or_file_path)
         filename_base = os.path.splitext(filename)[0]
@@ -45,19 +44,15 @@ def extract_download(
             parent_dir = "."
         extract_dir = os.path.join(parent_dir, filename_base)
 
-    # Create extraction directory if it doesn't exist
     os.makedirs(extract_dir, exist_ok=True)
 
-    # Determine file type
     if zip_or_file_path.lower().endswith(".zip"):
-        # Zip file extraction
         logger.info(f"Extracting zip file: {zip_or_file_path}")
         with zipfile.ZipFile(zip_or_file_path, "r") as zip_ref:
             zip_ref.extractall(extract_dir)
             extracted_files = zip_ref.namelist()
             extracted_files = [os.path.join(extract_dir, f) for f in extracted_files]
     elif zip_or_file_path.lower().endswith(".nc"):
-        # Single NetCDF file - just copy to extraction directory
         logger.info(f"Copying NetCDF file: {zip_or_file_path}")
         import shutil
 
@@ -67,7 +62,6 @@ def extract_download(
     else:
         raise ValueError(f"Unsupported file type: {zip_or_file_path}")
 
-    # Find all NetCDF files in the extracted directory
     nc_files = find_netcdf_files(extract_dir)
 
     if not nc_files:
