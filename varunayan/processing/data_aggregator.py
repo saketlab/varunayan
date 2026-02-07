@@ -66,7 +66,7 @@ def aggregate_by_frequency(
         )
         logger.info(f"Found {len(features)} unique features: {features}")
 
-    unique_latlongs: pd.DataFrame = (
+    unique_latlongs: pd.DataFrame = pd.DataFrame(
         df[["latitude", "longitude"]].drop_duplicates().reset_index(drop=True)
     )
 
@@ -298,7 +298,7 @@ def aggregate_pressure_levels(
         )
         logger.info(f"Found {len(features)} unique features: {features}")
 
-    unique_latlongs: pd.DataFrame = (
+    unique_latlongs: pd.DataFrame = pd.DataFrame(
         df[["latitude", "longitude"]].drop_duplicates().reset_index(drop=True)
     )
 
