@@ -20,6 +20,10 @@ Overview
 
 varunayan provides a simple and powerful interface to download and process ERA5 climate data from the Copernicus Climate Data Store. It supports:
 
+.. note::
+
+   **R users**: Check out `varunayanR <https://saketlab.github.io/varunayanR>`_, the R companion package for varunayan.
+
 - **Custom geographical regions**: Use GeoJSON files, bounding boxes, or point coordinates
 - **Multiple variables**: Download any ERA5 variable (temperature, precipitation, wind, etc.)
 - **Flexible time periods**: From hourly to yearly data aggregation
