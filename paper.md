@@ -8,7 +8,7 @@ tags:
     - geospatial analysis
 authors:
     - name: Atharva Jagtap
-      orcid: 
+      orcid: 0009-0007-1750-7341
       equal-contrib: true
       affiliation: 1
     - name: Saket Choudhary
