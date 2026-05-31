@@ -49,4 +49,5 @@ docs/_build/
 docs/tutorials/*_files/
 
 # Notebook outputs
-notebooks/*_output/ 
+notebooks/*_output/
+

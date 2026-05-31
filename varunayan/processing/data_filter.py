@@ -55,7 +55,6 @@ def filter_netcdf_by_shapefile(
     logger.info("Starting filtering process...")
     start_time = dt.datetime.now()
 
-    # Step 0: Convert GeoJSON to GeoDataFrame
     if isinstance(geojson_data, dict):
         features = geojson_data.get("features", [geojson_data])
         gdf: gpd.GeoDataFrame = gpd.GeoDataFrame.from_features(features)
@@ -68,7 +67,6 @@ def filter_netcdf_by_shapefile(
     num_features = len(gdf)
     logger.info(f"✓ GeoJSON contains {num_features} feature(s)")
 
-    # Check if all dist_features exist in the GeoDataFrame
     if dist_features:
         missing_features = [feat for feat in dist_features if feat not in gdf.columns]
         if missing_features:
@@ -83,7 +81,6 @@ def filter_netcdf_by_shapefile(
                 )
                 dist_features = None
 
-    # Step 1: Extract all lat/lon combinations
     logger.info("→ Extracting unique lat/lon coordinates from dataset...")
 
     lat_coord = "latitude" if "latitude" in ds.coords else "lat"
@@ -99,17 +96,14 @@ def filter_netcdf_by_shapefile(
     total_points = len(unique_coords)
     logger.info(f"✓ Found {total_points} unique lat/lon combinations")
 
-    # Add geometry column
     unique_coords["geometry"] = [
         Point(lon, lat)
         for lon, lat in zip(unique_coords["longitude"], unique_coords["latitude"])
     ]
     gdf_points = gpd.GeoDataFrame(unique_coords, geometry="geometry", crs="EPSG:4326")
 
-    # Step 1.5: Comprehensive geometry validation and repair
     logger.info("→ Validating and repairing geometries...")
 
-    # First check for invalid geometries
     invalid_mask = ~gdf.is_valid
     invalid_count = invalid_mask.sum()
 
@@ -118,11 +112,9 @@ def filter_netcdf_by_shapefile(
             f"Found {invalid_count} invalid geometries. Attempting repair..."
         )
 
-        # Try multiple repair strategies
         for idx in gdf[invalid_mask].index:
             original_geom = cast(BaseGeometry, gdf.loc[idx, "geometry"])
 
-            # Strategy 1: buffer(0) - fixes self-intersections and other topology issues
             try:
                 buffered = original_geom.buffer(0)
                 if buffered.is_valid and not buffered.is_empty:
@@ -131,7 +123,6 @@ def filter_netcdf_by_shapefile(
             except Exception as e:
                 logger.debug(f"Buffer(0) failed for feature {idx}: {e}")
 
-            # Strategy 2: make_valid() - Shapely's built-in repair function
             try:
                 repaired = make_valid(original_geom)
                 if repaired.is_valid and not repaired.is_empty:
@@ -140,7 +131,6 @@ def filter_netcdf_by_shapefile(
             except Exception as e:
                 logger.debug(f"make_valid() failed for feature {idx}: {e}")
 
-            # Strategy 3: Small buffer operation
             try:
                 small_buffer = original_geom.buffer(1e-10).buffer(-1e-10)
                 if small_buffer.is_valid and not small_buffer.is_empty:
@@ -149,12 +139,10 @@ def filter_netcdf_by_shapefile(
             except Exception as e:
                 logger.debug(f"Small buffer operation failed for feature {idx}: {e}")
 
-            # If all repair strategies fail, log and mark for removal
             logger.warning(
                 f"Could not repair geometry for feature {idx}. Will be excluded."
             )
 
-    # Remove any remaining invalid or empty geometries
     original_count = len(gdf)
     gdf = gdf[gdf.is_valid & ~gdf.is_empty]
     removed_count = original_count - len(gdf)
@@ -169,7 +157,6 @@ def filter_netcdf_by_shapefile(
             "All features in the GeoJSON were invalid and could not be fixed."
         )
 
-    # Step 2: Filtering with error handling and feature identification
     logger.info("→ Filtering coordinates by feature geometries...")
     filter_start = dt.datetime.now()
     matched_list: List[gpd.GeoDataFrame] = []
@@ -178,33 +165,26 @@ def filter_netcdf_by_shapefile(
         try:
             geom = cast(BaseGeometry, feature.geometry)
 
-            # Additional validation before intersection
             if not geom.is_valid or geom.is_empty:
                 logger.warning(f"Skipping invalid/empty geometry for feature {idx}")
                 continue
 
-            # Perform intersection with error handling
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=RuntimeWarning)
                 points_in_geom = gdf_points[gdf_points.geometry.intersects(geom)].copy()
 
             if not points_in_geom.empty:
-                # Create composite feature identifier from multiple attributes
                 if dist_features:
-                    # Create composite key by combining values with separator
                     feature_values = []
                     for feat_name in dist_features:
                         feat_value = feature[feat_name]
-                        # Handle None/NaN values
                         if pd.isna(feat_value):
                             feat_value = "None"
                         feature_values.append(str(feat_value))
 
-                    # Join with a separator (you can customize this)
                     composite_key = "_".join(feature_values)
                     points_in_geom["feature"] = composite_key
 
-                    # Optionally, also add individual feature columns for easier access
                     for feat_name in dist_features:
                         points_in_geom[feat_name] = feature[feat_name]
                 else:
@@ -227,14 +207,10 @@ def filter_netcdf_by_shapefile(
             logger.warning(f"Skipping feature {idx} due to geometry error")
             continue
 
-    # Concatenate all matched DataFrames at once
     if matched_list:
         matched = pd.concat(matched_list, ignore_index=True)
-        # For points that belong to multiple features, keep all associations
-        # (don't drop duplicates based on lat/lon since we want feature info)
         logger.info(f"✓ Found points in {len(matched_list)} features")
     else:
-        # Create empty GeoDataFrame with same structure
         base_columns = list(gdf_points.columns) + ["feature"]
         if dist_features:
             base_columns.extend(dist_features)
@@ -253,16 +229,13 @@ def filter_netcdf_by_shapefile(
     if matched.empty:
         raise ValueError("No points found inside any features in the GeoJSON.")
 
-    # Step 3: Join with original dataset
     df = ds.to_dataframe().reset_index()
     lat_col = "latitude" if "latitude" in df.columns else "lat"
     lon_col = "longitude" if "longitude" in df.columns else "lon"
 
-    # Merge using lat/lon
     logger.info("→ Merging matched points with dataset values...")
 
     if dist_features:
-        # Include feature column and individual feature columns in merge
         merge_columns = ["latitude", "longitude", "feature"] + dist_features
         final_df = pd.merge(
             matched[merge_columns],
@@ -272,7 +245,6 @@ def filter_netcdf_by_shapefile(
             how="inner",
         )
     else:
-        # Original behavior - no feature column
         final_df = pd.merge(
             matched[["latitude", "longitude", "feature"]],
             df,
@@ -284,7 +256,6 @@ def filter_netcdf_by_shapefile(
     logger.info("✓ Merge complete")
     logger.info(f"→ Final dataset shape: {final_df.shape}")
 
-    # Log some info about the composite keys if used
     if dist_features and not final_df.empty:
         unique_composites = final_df["feature"].nunique()
         logger.info(f"✓ Found {unique_composites} unique composite feature identifiers")
