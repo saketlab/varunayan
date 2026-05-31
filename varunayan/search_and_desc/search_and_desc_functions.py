@@ -65,6 +65,73 @@ def get_pressure_levels_dataset() -> List[Dict[str, Any]]:
     return pressure_level_variables
 
 
+# Available ERA5 pressure levels (hPa) for pressure-level data.
+PRESSURE_LEVELS: List[str] = [
+    "1",
+    "2",
+    "3",
+    "5",
+    "7",
+    "10",
+    "20",
+    "30",
+    "50",
+    "70",
+    "100",
+    "125",
+    "150",
+    "175",
+    "200",
+    "225",
+    "250",
+    "300",
+    "350",
+    "400",
+    "450",
+    "500",
+    "550",
+    "600",
+    "650",
+    "700",
+    "750",
+    "775",
+    "800",
+    "825",
+    "850",
+    "875",
+    "900",
+    "925",
+    "950",
+    "975",
+    "1000",
+]
+
+
+def _resolve_dataset(dataset_type: str) -> List[Dict[str, Any]]:
+    """
+    Resolve a dataset_type string to its combined list of variable dicts.
+
+    Raises ValueError for an unrecognized dataset_type.
+    """
+    dataset_processors: Dict[str, Callable[[str], List[Dict[str, Any]]]] = {
+        "single": _process_single_dataset,
+        "pressure": _process_pressure_dataset,
+    }
+
+    dataset_type = dataset_type.strip().lower()
+
+    if dataset_type == "all":
+        dataset: List[Dict[str, Any]] = []
+        for ds_type, processor in dataset_processors.items():
+            dataset.extend(processor(ds_type))
+        return dataset
+    if dataset_type in dataset_processors:
+        return dataset_processors[dataset_type](dataset_type)
+
+    available_types = list(dataset_processors.keys()) + ["all"]
+    raise ValueError(f"dataset_type must be one of: {available_types}")
+
+
 # pyright: reportUnknownMemberType=false
 def describe_variables(variable_names: List[str], dataset_type: str) -> Dict[str, str]:
     """
@@ -224,14 +291,105 @@ def _process_pressure_dataset(dataset_type: str) -> List[Dict[str, Any]]:
     return processed_vars
 
 
-# Example of how to add a new dataset:
-# def _process_surface_dataset(dataset_type):
-#     """Process surface dataset"""
-#     dataset = get_surface_dataset()  # Your new dataset function
-#     processed_vars = []
-#     for var in dataset:
-#         var_with_info = var.copy()
-#         var_with_info['category'] = 'surface_variables'
-#         var_with_info['dataset'] = dataset_type
-#         processed_vars.append(var_with_info)
-#     return processed_vars
+def list_available_variables(dataset_type: str = "single") -> List[str]:
+    """
+    List all available variable names for a dataset type.
+
+    Args:
+        dataset_type: Dataset type ("single", "pressure", or "all")
+
+    Returns:
+        List of variable names
+    """
+    return [var["name"] for var in _resolve_dataset(dataset_type)]
+
+
+def get_available_pressure_levels() -> List[str]:
+    """
+    Get list of available pressure levels for ERA5 pressure level data.
+
+    Returns:
+        List of pressure level strings (in hPa)
+    """
+    return list(PRESSURE_LEVELS)
+
+
+def get_variable_info(
+    variable_name: str, dataset_type: str = "all"
+) -> Optional[Dict[str, Any]]:
+    """
+    Get detailed information about a specific variable.
+
+    Args:
+        variable_name: Name of the variable
+        dataset_type: Dataset type to search
+
+    Returns:
+        Dictionary with variable info or None if not found
+    """
+    try:
+        dataset = _resolve_dataset(dataset_type)
+    except ValueError:
+        return None
+
+    for var in dataset:
+        if var["name"] == variable_name:
+            return var
+
+    return None
+
+
+def get_variable_units(variable_name: str, dataset_type: str = "all") -> Optional[str]:
+    """
+    Get the units for a specific variable.
+
+    Args:
+        variable_name: Name of the variable
+        dataset_type: Dataset type to search
+
+    Returns:
+        Unit string or None if not found
+    """
+    info = get_variable_info(variable_name, dataset_type)
+    if info:
+        return str(info.get("units", "Unknown"))
+    return None
+
+
+def get_variable_long_name(
+    variable_name: str, dataset_type: str = "all"
+) -> Optional[str]:
+    """
+    Get the long/descriptive name for a variable.
+
+    Args:
+        variable_name: Name of the variable
+        dataset_type: Dataset type to search
+
+    Returns:
+        Description string or None if not found
+    """
+    info = get_variable_info(variable_name, dataset_type)
+    if info:
+        desc = info.get("description")
+        return str(desc) if desc is not None else None
+    return None
+
+
+def list_variable_categories(dataset_type: str = "single") -> List[str]:
+    """
+    List all variable categories for a dataset type.
+
+    Args:
+        dataset_type: Dataset type ("single" or "pressure")
+
+    Returns:
+        List of category names
+    """
+    if dataset_type == "single":
+        dataset = get_single_levels_dataset()
+        return list(dataset.keys())
+    elif dataset_type == "pressure":
+        return ["pressure_levels"]
+    else:
+        raise ValueError(f"dataset_type must be 'single' or 'pressure'")

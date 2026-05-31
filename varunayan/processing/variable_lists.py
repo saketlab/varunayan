@@ -199,3 +199,83 @@ exclude_cols = {
     "number",
     "valid_time",
 }
+
+
+_sum_vars_lower = {v.lower() for v in sum_vars}
+_max_vars_lower = {v.lower() for v in max_vars}
+_min_vars_lower = {v.lower() for v in min_vars}
+_rate_vars_lower = {v.lower() for v in rate_vars}
+
+
+def is_sum_var(var_name: str) -> bool:
+    """Check if a variable should be summed during aggregation."""
+    return var_name.lower() in _sum_vars_lower
+
+
+def is_max_var(var_name: str) -> bool:
+    """Check if a variable should use max during aggregation."""
+    return var_name.lower() in _max_vars_lower
+
+
+def is_min_var(var_name: str) -> bool:
+    """Check if a variable should use min during aggregation."""
+    return var_name.lower() in _min_vars_lower
+
+
+def is_rate_var(var_name: str) -> bool:
+    """Check if a variable is a rate (should be averaged)."""
+    return var_name.lower() in _rate_vars_lower
+
+
+def _classify_var(var_name: str) -> str:
+    """Return the category key for a variable: sum/max/min/rate/mean."""
+    if is_sum_var(var_name):
+        return "sum"
+    elif is_max_var(var_name):
+        return "max"
+    elif is_min_var(var_name):
+        return "min"
+    elif is_rate_var(var_name):
+        return "rate"
+    else:
+        return "mean"
+
+
+def categorize_variables(var_names: list) -> dict:
+    """
+    Categorize variables by their aggregation method.
+
+    Args:
+        var_names: List of variable names
+
+    Returns:
+        Dictionary with keys 'sum', 'max', 'min', 'rate', 'mean'
+        containing lists of variable names
+    """
+    result: dict[str, list[str]] = {
+        "sum": [],
+        "max": [],
+        "min": [],
+        "rate": [],
+        "mean": [],
+    }
+
+    for var in var_names:
+        result[_classify_var(var)].append(var)
+
+    return result
+
+
+def get_aggregation_method(var_name: str) -> str:
+    """
+    Get the recommended aggregation method for a variable.
+
+    Args:
+        var_name: Variable name
+
+    Returns:
+        Aggregation method: 'sum', 'max', 'min', or 'mean'
+    """
+    method = _classify_var(var_name)
+    # Rate variables are averaged (mean) during aggregation.
+    return "mean" if method == "rate" else method
