@@ -115,6 +115,9 @@ def _read_nc(nc_path: str, variable: str) -> pd.DataFrame:
         dates = _parse_time(time_var, time_units)
 
         n_lon, n_lat, n_time = len(lon), len(lat), len(dates)
+        lon_idx: np.ndarray
+        lat_idx: np.ndarray
+        time_idx: np.ndarray
         lon_idx, lat_idx, time_idx = np.meshgrid(
             np.arange(n_lon), np.arange(n_lat), np.arange(n_time), indexing="ij"
         )

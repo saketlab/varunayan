@@ -88,6 +88,8 @@ def filter_netcdf_by_shapefile(
     lats = np.asarray(ds.coords[lat_coord].values)
     lons = np.asarray(ds.coords[lon_coord].values)
 
+    lon_grid: np.ndarray
+    lat_grid: np.ndarray
     lon_grid, lat_grid = np.meshgrid(lons, lats)
     unique_coords = pd.DataFrame(
         {"latitude": lat_grid.flatten(), "longitude": lon_grid.flatten()}
@@ -301,6 +303,8 @@ def get_unique_coordinates_in_polygon(
     lons = np.asarray(ds.coords[lon_coord].values)
 
     # Create grid and unique combinations
+    lon_grid: np.ndarray
+    lat_grid: np.ndarray
     lon_grid, lat_grid = np.meshgrid(lons, lats)
     unique_coords = pd.DataFrame(
         {"latitude": lat_grid.flatten(), "longitude": lon_grid.flatten()}

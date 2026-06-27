@@ -104,7 +104,9 @@ def _build_url(index: str, frequency: str, baseline: str) -> str:
     return f"{_BASE_URL}/HadEX3_{index}_1901-2018_ADW_{baseline}_1.25x1.875deg.nc.gz"
 
 
-def _parse_time(time_var: np.ndarray, time_units: str, frequency: str):
+def _parse_time(
+    time_var: np.ndarray, time_units: str, frequency: str
+) -> tuple:
     """Parse time coordinate to (years,) or (years, months)."""
     u = time_units.strip().lower()
     if frequency == "annual":
@@ -112,13 +114,13 @@ def _parse_time(time_var: np.ndarray, time_units: str, frequency: str):
             return (np.round(time_var).astype(int),)
         if "years since" in u:
             m = re.search(r"(\d{4})", time_units)
-            base = int(m.group(1)) if m else 0
-            return ((base + np.round(time_var)).astype(int),)
+            base_year = int(m.group(1)) if m else 0
+            return ((base_year + np.round(time_var)).astype(int),)
         if "days since" in u:
             base_str = time_units.split("days since")[-1].strip()[:10]
-            base = datetime.strptime(base_str, "%Y-%m-%d")
+            base_dt = datetime.strptime(base_str, "%Y-%m-%d")
             return (
-                np.array([(base + timedelta(days=float(d))).year for d in time_var]),
+                np.array([(base_dt + timedelta(days=float(d))).year for d in time_var]),
             )
         return (np.round(time_var).astype(int),)
 
@@ -131,8 +133,8 @@ def _parse_time(time_var: np.ndarray, time_units: str, frequency: str):
         return total // 12, total % 12 + 1
     if "days since" in u:
         base_str = time_units.split("days since")[-1].strip()[:10]
-        base = datetime.strptime(base_str, "%Y-%m-%d")
-        dates = [base + timedelta(days=float(d)) for d in time_var]
+        base_dt = datetime.strptime(base_str, "%Y-%m-%d")
+        dates = [base_dt + timedelta(days=float(d)) for d in time_var]
         return np.array([d.year for d in dates]), np.array([d.month for d in dates])
     raise ValueError(f"Unrecognised time units in monthly HadEX3 file: {time_units}")
 
@@ -163,6 +165,9 @@ def _read_nc(nc_path: str, index: str, frequency: str) -> pd.DataFrame:
         ds.close()
 
     years = parsed[0]
+    li: np.ndarray
+    ai: np.ndarray
+    ti: np.ndarray
     li, ai, ti = np.meshgrid(
         np.arange(len(lon)), np.arange(len(lat)), np.arange(len(years)), indexing="ij"
     )

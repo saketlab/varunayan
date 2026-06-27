@@ -61,7 +61,7 @@ def _load_cache_metadata() -> Dict[str, Any]:
     metadata_path = _get_cache_metadata_path()
     if metadata_path.exists():
         with open(metadata_path, "r") as f:
-            return json.load(f)
+            return json.load(f)  # type: ignore[no-any-return]
     return {}
 
 
@@ -135,7 +135,7 @@ def cache_exists(
     _, _, cache_file = _resolve_cache_entry(
         variables, start_date, end_date, frequency, source, **kwargs
     )
-    return cache_file.exists()
+    return cache_file.exists()  # type: ignore[no-any-return]
 
 
 def get_cached_data(

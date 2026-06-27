@@ -49,7 +49,7 @@ def get_single_levels_dataset() -> Dict[str, List[Dict[str, Any]]]:
         "vertical_integral_variables": vertical_integral_variables,
         "vegetation_variables": vegetation_variables,
         "ocean_wave_variables": ocean_wave_variables,
-        "other_variables": other_variables,
+        "other_variables": other_variables,  # type: ignore[dict-item]
     }
 
 

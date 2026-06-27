@@ -1,7 +1,7 @@
 """Heat stress index calculations."""
 
 import math
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -31,7 +31,7 @@ def relative_humidity_from_dewpoint(
     result = np.clip(rh, 0, 100)
     if isinstance(temp_c, pd.Series):
         return pd.Series(result)
-    return result  # type: ignore[return-value]
+    return result  # type: ignore[no-any-return]
 
 
 def vapor_pressure_from_dewpoint(
@@ -49,7 +49,7 @@ def vapor_pressure_from_dewpoint(
     Reference: Bolton (1980), Mon. Wea. Rev. 108, 1046-1053.
     """
     # Shared by humidex and WBGT so both languages agree on e.
-    return 6.112 * np.exp(17.67 * dewpoint_c / (dewpoint_c + 243.5))
+    return 6.112 * np.exp(17.67 * dewpoint_c / (dewpoint_c + 243.5))  # type: ignore[no-any-return]
 
 
 def wet_bulb_temperature(
@@ -78,7 +78,7 @@ def wet_bulb_temperature(
         + 0.00391838 * (rh**1.5) * np.arctan(0.023101 * rh)
         - 4.686035
     )
-    return tw
+    return tw  # type: ignore[no-any-return]
 
 
 def wet_bulb_from_dewpoint(
@@ -141,7 +141,7 @@ def heat_index(
     # Preserve scalar-in / scalar-out behaviour.
     if np.isscalar(temp_c) and np.ndim(hi_c) == 0:
         return float(hi_c)
-    return hi_c
+    return hi_c  # type: ignore[no-any-return]
 
 
 def heat_index_from_dewpoint(
@@ -241,7 +241,7 @@ def humidex(
     # so humidex matches its original definition exactly.
     e = 6.11 * np.exp(5417.7530 * (1.0 / 273.16 - 1.0 / (273.15 + dewpoint_c)))
     h = temp_c + 0.5555 * (e - 10)
-    return h
+    return h  # type: ignore[no-any-return]
 
 
 # Stefan-Boltzmann constant (W m^-2 K^-4, CODATA 2018) and standard-person
@@ -307,7 +307,7 @@ def _utci_saturation_kpa(
     for i, g in enumerate(_UTCI_ES_G):
         es = es + g * tk ** (i - 2)
     # exp(es) is in Pa; the UTCI polynomial expects vapor pressure in kPa.
-    return np.exp(es) * 0.001
+    return np.exp(es) * 0.001  # type: ignore[no-any-return]
 
 
 def utci(
@@ -559,7 +559,7 @@ def utci(
         + (0.00148348065) * pa * pa * pa * pa * pa * pa
     )
 
-    return utci_val
+    return utci_val  # type: ignore[no-any-return]
 
 
 def utci_sparse(
@@ -586,7 +586,7 @@ def utci_sparse(
 
     from numpy.polynomial.legendre import legval
 
-    def _lbasis(x, n):
+    def _lbasis(x: Any, n: int) -> List[Any]:
         return [legval(x, [0] * i + [1]) for i in range(1, n + 1)]
 
     Ta1, Ta2, Ta3, Ta4, Ta5, Ta6, Ta7, Ta8, Ta9, Ta10 = _lbasis(nTa, 10)
@@ -810,7 +810,7 @@ def utci_sparse(
 
     if np.isscalar(temp_c) and np.ndim(result) == 0:
         return float(result)
-    return result
+    return result  # type: ignore[no-any-return]
 
 
 # Ordered (upper_bound, label) thresholds for each risk scale. A value is
@@ -856,11 +856,11 @@ def _categorize_by_bands(
         conditions = [value < upper for upper, _ in bands[:-1]]
         conditions.append(np.ones_like(value, dtype=bool))
         choices = [label for _, label in bands]
-        return np.select(conditions, choices, default="Unknown")
+        return np.select(conditions, choices, default="Unknown")  # type: ignore[no-any-return]
 
     for upper, label in bands:
         if upper is None or value < upper:
-            return label
+            return label  # type: ignore[no-any-return]
     return "Unknown"
 
 
@@ -940,7 +940,7 @@ def calc_heat_indices(
     dewpoint_c: Union[float, np.ndarray, pd.Series],
     wind_ms: Optional[Union[float, np.ndarray, pd.Series]] = None,
     solar_rad_wm2: Optional[Union[float, np.ndarray, pd.Series]] = None,
-) -> Dict[str, Union[float, np.ndarray, pd.Series]]:
+) -> Dict[str, Union[float, str, np.ndarray, pd.Series]]:
     """
     Calculate all heat stress indices at once.
 
@@ -968,7 +968,7 @@ def calc_heat_indices(
     wbgt = wbgt_simple(temp_c, dewpoint_c)
     hx = humidex(temp_c, dewpoint_c)
 
-    result: Dict[str, Union[float, np.ndarray, pd.Series]] = {
+    result: Dict[str, Union[float, str, np.ndarray, pd.Series]] = {
         "rh": rh,
         "wet_bulb": wet_bulb,
         "heat_index": hi,

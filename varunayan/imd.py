@@ -184,7 +184,7 @@ def read_imd_temperature(file_path: str, var_type: str, year: int) -> pd.DataFra
     specs = IMD_GRID_SPECS[f"{var_type}_1.0"]
 
     with open(file_path, "rb") as f:
-        raw = np.frombuffer(f.read(), dtype="<f4")
+        raw: np.ndarray = np.frombuffer(f.read(), dtype="<f4")
 
     n_values = n_days * specs["nlat"] * specs["nlon"]
     data_array = raw[:n_values].reshape(
@@ -203,6 +203,9 @@ def read_imd_temperature(file_path: str, var_type: str, year: int) -> pd.DataFra
     )[: specs["nlon"]]
     dates = pd.date_range(f"{year}-01-01", periods=n_days)
 
+    lon_idx: np.ndarray
+    lat_idx: np.ndarray
+    day_idx: np.ndarray
     lon_idx, lat_idx, day_idx = np.meshgrid(
         np.arange(len(lons)),
         np.arange(len(lats)),
