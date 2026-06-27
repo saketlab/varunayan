@@ -1,7 +1,4 @@
 # Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import importlib
 import os
@@ -14,20 +11,14 @@ try:
 except Exception:
     package_version = "0.2.0"
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-
 project = "varunayan"
-copyright = "2025, Atharva Jagtap and Saket Choudhary"
+copyright = "2026, Atharva Jagtap and Saket Choudhary"
 author = "Atharva Jagtap and Saket Choudhary"
 release = package_version
 version = os.environ.get("SMV_CURRENT_VERSION") or os.environ.get(
     "READTHEDOCS_VERSION_NAME",
     release,
 )
-
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -38,6 +29,8 @@ extensions = [
     "myst_nb",
     "sphinx_multiversion",
     "sphinx_copybutton",
+    "sphinxext.opengraph",
+    "sphinx_sitemap",
 ]
 
 templates_path = ["_templates"]
@@ -45,7 +38,6 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "tutorials/*.ipynb"]
 
 language = "en"
 
-# -- Autodoc configuration --------------------------------------------------
 autodoc_default_options = {
     "members": True,
     "member-order": "bysource",
@@ -54,8 +46,6 @@ autodoc_default_options = {
     "exclude-members": "__weakref__",
 }
 
-# Mock heavy optional dependencies if they are unavailable so autodoc can
-# import varunayan modules without requiring compiled geospatial stacks.
 _OPTIONAL_LIBS = [
     "geopandas",
     "geopy",
@@ -73,7 +63,6 @@ for _module in _OPTIONAL_LIBS:
     except Exception:
         autodoc_mock_imports.append(_module)  # type:ignore
 
-# -- Napoleon settings -------------------------------------------------------
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
@@ -86,24 +75,19 @@ napoleon_use_ivar = False
 napoleon_use_param = True
 napoleon_use_rtype = True
 
-# -- Intersphinx mapping ----------------------------------------------------
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "pandas": ("https://pandas.pydata.org/docs/", None),
     "requests": ("https://requests.readthedocs.io/en/latest/", None),
 }
 
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
 html_theme = "furo"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
-# Documentation title without version
-html_title = f"{project} Documentation"
+html_title = "varunayan — Climate Data Toolkit"
+html_baseurl = "https://varunayan.saketlab.org/"
 
-# Logo configuration
 html_logo = "assets/varunayan.png"
 
 html_sidebars = {
@@ -117,10 +101,9 @@ html_sidebars = {
     ]
 }
 
-# -- Theme options -----------------------------------------------------------
 html_theme_options = {
     "navigation_with_keys": True,
-    "sidebar_hide_name": False,  # Show name alongside logo
+    "sidebar_hide_name": False, 
     "light_css_variables": {
         "color-brand-primary": "#1b1b1f",
         "color-brand-content": "#1b1b1f",
@@ -135,26 +118,21 @@ html_theme_options = {
     },
 }
 
-# Set default color scheme to dark
 html_css_files = ["css/custom.css"]
 
-# MyST-NB configuration
 nb_execution_mode = "off"
 nb_render_plugin = "default"
 nb_merge_streams = True
 
-# Enable copy button for code cells
 nb_code_prompt_show = "Show code cell {type}"
 nb_code_prompt_hide = "Hide code cell {type}"
 
-# Sphinx copybutton configuration
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
 copybutton_prompt_is_regexp = True
 copybutton_only_copy_prompt_lines = True
 copybutton_remove_prompts = True
 copybutton_copy_empty_lines = False
 
-# Sphinx multiversion settings
 smv_branch_whitelist = os.environ.get(
     "SMV_BRANCH_WHITELIST",
     r"^(master|main|develop)$",
@@ -165,5 +143,12 @@ smv_outputdir_format = "{ref.refname}"
 smv_latest_version = os.environ.get("SMV_LATEST_VERSION", "main")
 smv_rename_latest_version = "latest"
 
-# Prefer tags over branches for version selection
 smv_prefer_remote_refs = True
+
+html_extra_path = ["robots.txt", "llms.txt"]
+
+ogp_site_url = "https://varunayan.saketlab.org/"
+ogp_site_name = "varunayan"
+ogp_image = "https://varunayan.saketlab.org/_static/varunayan_og.png"
+ogp_description_length = 200
+ogp_type = "website"
