@@ -48,7 +48,7 @@ def get_cache_dir() -> Path:
 def _generate_cache_key(params: Dict[str, Any]) -> str:
     """Generate MD5 hash from request parameters."""
     params_str = json.dumps(params, sort_keys=True, default=str)
-    return hashlib.md5(params_str.encode()).hexdigest()
+    return hashlib.md5(params_str.encode(), usedforsecurity=False).hexdigest()
 
 
 def _get_cache_metadata_path() -> Path:
@@ -61,7 +61,7 @@ def _load_cache_metadata() -> Dict[str, Any]:
     metadata_path = _get_cache_metadata_path()
     if metadata_path.exists():
         with open(metadata_path, "r") as f:
-            return json.load(f)
+            return json.load(f)  # type: ignore[no-any-return]
     return {}
 
 
@@ -135,7 +135,7 @@ def cache_exists(
     _, _, cache_file = _resolve_cache_entry(
         variables, start_date, end_date, frequency, source, **kwargs
     )
-    return cache_file.exists()
+    return cache_file.exists()  # type: ignore[no-any-return]
 
 
 def get_cached_data(

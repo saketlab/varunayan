@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "varunayan"
-version = "0.1.1.9001"
+version = "0.3.0"
 description = "Analysis-ready climate data downloader and processor for custom regions"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = "MIT"
 authors = [
     { name = "Atharva Jagtap", email = "atharvajagtap1108@gmail.com" },
@@ -23,12 +23,11 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Atmospheric Science",
     "Topic :: Scientific/Engineering :: GIS",
     "Operating System :: OS Independent",
@@ -82,7 +81,9 @@ docs = [
     
     # Enhanced search and navigation
     "sphinx-tabs>=3.0.0",
-    
+    "sphinxext-opengraph>=0.9.0",
+    "sphinx-sitemap>=2.5.0",
+
     # Documentation testing and validation
     "linkify-it-py>=2.0",
     "markdown-it-py>=2.0",
@@ -110,6 +111,8 @@ docs-build = [
     "sphinx-design>=0.3.0",
     "sphinx-togglebutton>=0.3.0",
     "sphinx-tabs>=3.0.0",
+    "sphinxext-opengraph>=0.9.0",
+    "sphinx-sitemap>=2.5.0",
     "linkify-it-py>=2.0",
     "markdown-it-py>=2.0",
     "mdit-py-plugins>=0.3.0",
@@ -198,7 +201,7 @@ exclude_lines = [
 
 [tool.black]
 line-length = 88
-target-version = ["py38"]
+target-version = ["py310"]
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -221,7 +224,7 @@ line_length = 88
 known_first_party = ["varunayan"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -238,6 +241,10 @@ module = [
     "shapely.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+follow_imports = "skip"
 
 [tool.flake8]
 max-line-length = 120

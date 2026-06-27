@@ -170,12 +170,15 @@ def test_describe_variables_all(
     single_level_processed: List[Dict[str, str]],
     pressure_level_processed: List[Dict[str, str]],
 ):
-    with patch(
-        "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
-        return_value=single_level_processed,
-    ), patch(
-        "varunayan.search_and_desc.search_and_desc_functions._process_pressure_dataset",
-        return_value=pressure_level_processed,
+    with (
+        patch(
+            "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
+            return_value=single_level_processed,
+        ),
+        patch(
+            "varunayan.search_and_desc.search_and_desc_functions._process_pressure_dataset",
+            return_value=pressure_level_processed,
+        ),
     ):
         describe_variables(["temp", "pressure_lev1"], "all")
         captured = capsys.readouterr()
@@ -213,12 +216,15 @@ def test_search_variable_all(
     single_level_processed: List[Dict[str, str]],
     pressure_level_processed: List[Dict[str, str]],
 ):
-    with patch(
-        "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
-        return_value=single_level_processed,
-    ), patch(
-        "varunayan.search_and_desc.search_and_desc_functions._process_pressure_dataset",
-        return_value=pressure_level_processed,
+    with (
+        patch(
+            "varunayan.search_and_desc.search_and_desc_functions._process_single_dataset",
+            return_value=single_level_processed,
+        ),
+        patch(
+            "varunayan.search_and_desc.search_and_desc_functions._process_pressure_dataset",
+            return_value=pressure_level_processed,
+        ),
     ):
         search_variable("pressure", "all")
         captured = capsys.readouterr()

@@ -49,6 +49,7 @@ temperature_and_pressure = [
             "Maximum 2-meter air temperature recorded since the last "
             "post-processing cycle. Often used to estimate daily high "
             "temperature. Unit: Kelvin (K)."
+            "\x1b[31mOnly available for hourly/daily/weekly queries.\x1b[0m"
         ),
     },
     {
@@ -65,6 +66,7 @@ temperature_and_pressure = [
             "Minimum 2-meter air temperature recorded since the last "
             "post-processing cycle. Often used to estimate daily low "
             "temperature. Unit: Kelvin (K)."
+            "\x1b[31mOnly available for hourly/daily/weekly queries.\x1b[0m"
         ),
     },
     {
@@ -148,6 +150,15 @@ wind_variables = [
             "Maximum wind gust at 10 meters since the previous "
             "post-processing step, representing extreme short-term "
             "wind speed. Unit: m/s."
+            "\x1b[31mOnly available for hourly/daily/weekly queries.\x1b[0m"
+        ),
+    },
+    {
+        "name": "10m_wind_speed",
+        "description": (
+            "Wind speed at 10 meters above the surface, calculated "
+            "from the u and v wind components. Unit: m/s."
+            "\x1b[31mOnly available for monthly/yearly queries.\x1b[0m"
         ),
     },
     {
@@ -846,6 +857,7 @@ precipitation_variables = [
         "description": (
             "Maximum observed total precipitation rate since last "
             "processing step. Unit: meters per second (m/s)."
+            "\x1b[31mOnly available for hourly/daily/weekly queries.\x1b[0m"
         ),
     },
     {
@@ -853,6 +865,7 @@ precipitation_variables = [
         "description": (
             "Minimum observed total precipitation rate since last "
             "processing step. Unit: meters per second (m/s)."
+            "\x1b[31mOnly available for hourly/daily/weekly queries.\x1b[0m"
         ),
     },
     {
@@ -1576,6 +1589,20 @@ other_variables = [
     {
         "name": "land_sea_mask",
         "description": ("Binary mask for land (1) " "or sea (0). Unit: dimensionless"),
+    },
+    {
+        "name": "magnitude_of_turbulent_surface_stress",
+        "description": (
+            "Magnitude of total turbulent surface stress. Unit: N/m²",
+            "\x1b[31mOnly available for monthly/yearly queries.\x1b[0m",
+        ),
+    },
+    {
+        "name": "mean_magnitude_of_turbulent_surface_stress",
+        "description": (
+            "Average magnitude of turbulent surface stress. Unit: N/m²",
+            "\x1b[31mOnly available for monthly/yearly queries.\x1b[0m",
+        ),
     },
     {
         "name": "mean_vertical_gradient_of_refractivity_inside_trapping_layer",

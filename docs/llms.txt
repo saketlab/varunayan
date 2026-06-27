@@ -1,0 +1,274 @@
+# varunayan
+
+> Python toolkit for downloading and processing climate reanalysis and observational data. Built with a focus on India, but supports global datasets.
+
+varunayan provides access to ERA5 reanalysis, IMD gridded observations, HadEX3 climate extremes indices, and CRU TS monthly climate grids. It includes heat stress index calculations (UTCI, WBGT, Heat Index, Humidex), country-level temperature aggregation, ERA5 variable discovery, spatial analysis utilities, and a download cache.
+
+## Data Sources
+
+- ERA5: Global reanalysis from ECMWF/Copernicus CDS. 0.25 degree grid, hourly, 1940-present. Single-level and pressure-level datasets. Access via bounding box, point coordinates, or GeoJSON polygon.
+- IMD: India Meteorological Department gridded data. Rainfall at 0.25 degree (NetCDF), temperature (tmax/tmin/tmean) at 1 degree (binary .grd), 1901-present.
+- HadEX3: Hadley Centre global ETCCDI climate extremes indices. 1.875 degree grid. Annual and monthly frequencies.
+- CRU TS: Climatic Research Unit (v4.07) monthly climate grids. 0.5 degree, 1901-present. Variables: tmp, pre, vap, pet, tmn, tmx, dtr, wet, frs, cld, rhm.
+
+## Installation
+
+```
+pip install varunayan
+```
+
+Requires Python 3.10+. ERA5 downloads require a CDS API key (auto-configured on first use).
+
+## Modules and API
+
+### ERA5 Core (`varunayan.core`)
+
+```python
+from varunayan import era5ify_bbox, era5ify_point, era5ify_geojson
+
+era5ify_bbox(request_id="demo", variables=["2m_temperature"], start_date="2023-06-01", end_date="2023-06-30", north=28.7, south=28.5, east=77.3, west=77.0)
+era5ify_point(request_id="point", variables=["2m_temperature"], start_date="2023-06-01", end_date="2023-06-30", latitude=28.6, longitude=77.2)
+era5ify_geojson(request_id="geo", variables=["2m_temperature"], start_date="2023-06-01", end_date="2023-06-30", json_file="region.geojson", dist_features=["state"])
+```
+
+Common parameters: `dataset_type` ("single" or "pressure"), `pressure_levels` (list of strings like ["1000","850"]), `frequency` ("hourly","daily","weekly","monthly","yearly"), `resolution` (grid spacing in degrees, default 0.25), `verbosity` (0/1/2), `save_raw` (bool).
+
+### ERA5 Variable Discovery (`varunayan.search_and_desc`)
+
+```python
+from varunayan import search_variable, list_available_variables, describe_variables, list_variable_categories, get_variable_info, get_variable_units, get_variable_long_name, get_available_pressure_levels
+
+search_variable("temperature")
+list_available_variables(dataset_type="single")
+list_variable_categories(dataset_type="single")
+describe_variables(["2m_temperature", "total_precipitation"], dataset_type="single")
+get_variable_info("2m_temperature", dataset_type="single")
+get_variable_units("2m_temperature", dataset_type="single")
+get_variable_long_name("2m_temperature", dataset_type="single")
+get_available_pressure_levels()
+```
+
+### ERA5 Convenience (`varunayan.convenience`)
+
+One-call wrappers that download ERA5 data and return processed DataFrames.
+
+```python
+from varunayan import get_era5_daily_temperature, get_era5_daily_humidity, get_era5_daily_wind, get_era5_daily_heat_index_data, get_era5_monthly_heat_index_data, get_era5_daily_heat_index_geojson, get_era5_daily_heat_index_point
+
+df = get_era5_daily_temperature(request_id="t", start_date="2023-06-01", end_date="2023-06-30", north=28.7, south=28.5, east=77.3, west=77.0)
+df = get_era5_daily_humidity(request_id="h", start_date="2023-06-01", end_date="2023-06-30", north=28.7, south=28.5, east=77.3, west=77.0)
+df = get_era5_daily_wind(request_id="w", start_date="2023-06-01", end_date="2023-06-30", north=28.7, south=28.5, east=77.3, west=77.0)
+df = get_era5_daily_heat_index_data(request_id="hi", start_date="2023-06-01", end_date="2023-06-30", north=28.7, south=28.5, east=77.3, west=77.0)
+```
+
+### IMD (`varunayan.imd`)
+
+```python
+from varunayan import (
+    download_imd_rainfall, download_imd_temperature,
+    read_imd_rainfall, read_imd_temperature,
+    imd_rainfall_bbox, imd_rainfall_geojson,
+    imd_temperature_bbox, imd_temperature_geojson,
+    process_imd_files, filter_imd_by_bbox, filter_imd_by_geojson,
+    aggregate_imd_by_frequency,
+    list_imd_datasets, get_imd_grid_specs,
+)
+
+# Download raw files
+download_imd_rainfall(start_year=2020, end_year=2023)
+download_imd_temperature(start_year=2020, end_year=2023, variable="tmax")
+
+# Read downloaded files into DataFrames
+df = read_imd_rainfall(file_path="path.nc", resolution=0.25, year=2020)
+df = read_imd_temperature(file_path="path.grd", var_type="tmax", year=2020)
+
+# One-call pipelines: download + read + crop
+df = imd_rainfall_bbox(request_id="r", start_year=2020, end_year=2020, north=28.7, south=28.5, east=77.3, west=77.0)
+df = imd_temperature_bbox(request_id="t", start_year=2020, end_year=2020, north=28.7, south=28.5, east=77.3, west=77.0, variable="tmax")
+df = imd_rainfall_geojson(request_id="rg", start_year=2020, end_year=2020, geojson_file="region.geojson")
+df = imd_temperature_geojson(request_id="tg", start_year=2020, end_year=2020, geojson_file="region.geojson", variable="tmax")
+
+# Post-processing
+df = filter_imd_by_bbox(data=df, north=28.7, south=28.5, east=77.3, west=77.0)
+df = aggregate_imd_by_frequency(data=df, frequency="monthly", variable="rainfall")
+
+# Metadata
+list_imd_datasets()
+get_imd_grid_specs("rainfall_0.25")
+```
+
+IMD temperature variable options: "tmax", "tmin", "tmean".
+
+### IMD Stations (`varunayan.imd_stations`)
+
+```python
+from varunayan import get_imd_stations
+
+stations = get_imd_stations(with_coordinates=True, max_workers=8)
+```
+
+Returns a DataFrame of IMD observation stations with optional lat/lon lookup.
+
+### HadEX3 (`varunayan.hadex3`)
+
+```python
+from varunayan import hadex3_bbox, hadex3_geojson, list_hadex3_indices
+
+indices = list_hadex3_indices(frequency="all")
+df = hadex3_bbox(index="TXx", start_year=2000, end_year=2020, north=35, south=8, east=90, west=68)
+df = hadex3_geojson(index="TXx", start_year=2000, end_year=2020, geojson_file="india.geojson")
+```
+
+Available ETCCDI indices: TXx, TNn, TX90p, TN10p, FD, SU, TR, WSDI, CSDI, DTR, ETR, GSL, Rx1day, Rx5day, SDII, R10mm, R20mm, R95p, R99p, PRCPTOT, CDD, CWD. Some indices have both annual and monthly frequency.
+
+### CRU TS (`varunayan.cru_ts`)
+
+```python
+from varunayan import cru_ts_bbox, cru_ts_geojson, list_cru_ts_variables
+
+variables = list_cru_ts_variables()
+df = cru_ts_bbox(variable="tmp", start_year=2000, end_year=2020, north=35, south=8, east=90, west=68)
+df = cru_ts_geojson(variable="tmp", start_year=2000, end_year=2020, geojson_file="india.geojson")
+```
+
+Valid variables: tmp (temperature), pre (precipitation), vap (vapor pressure), pet (potential evapotranspiration), tmn (min temperature), tmx (max temperature), dtr (diurnal temperature range), wet (wet days), frs (frost days), cld (cloud cover), rhm (relative humidity).
+
+### Country-Level Temperature (`varunayan.country`)
+
+```python
+from varunayan import get_era5_country_temperature
+
+df = get_era5_country_temperature(country="India", start_date="2023-06-01", end_date="2023-06-30", variables="mean")
+```
+
+Parameters: `country` (name string or GeoDataFrame), `variables` ("mean", "max", "min", or list). Uses Natural Earth boundaries with cosine-latitude area weighting. Works for any country, not just India.
+
+### Heat Stress Indices (`varunayan.heat_stress`)
+
+```python
+from varunayan import (
+    utci, utci_sparse, utci_category,
+    wbgt_simple, wbgt_shade, wbgt_outdoor, wbgt_risk_category,
+    heat_index, heat_index_from_dewpoint, heat_index_risk_category,
+    humidex,
+    mean_radiant_temperature,
+    wet_bulb_temperature, wet_bulb_from_dewpoint,
+    relative_humidity_from_dewpoint, vapor_pressure_from_dewpoint,
+    calc_heat_indices,
+)
+
+# UTCI: Universal Thermal Climate Index (Bröde polynomial approximation)
+utci_val = utci(temp_c=35.0, rh=60.0, wind_ms=2.0, mrt_c=50.0)
+category = utci_category(utci_val)
+
+# UTCI sparse: Legendre polynomial (Roman et al. 2025, wider wind range)
+utci_val = utci_sparse(temp_c=35.0, tmrt=50.0, wind_speed=2.0, rh=60.0)
+
+# WBGT variants
+wbgt_val = wbgt_simple(temp_c=35.0, dewpoint_c=25.0)
+wbgt_val = wbgt_shade(temp_c=35.0, wet_bulb_c=28.0)
+wbgt_val = wbgt_outdoor(temp_c=35.0, wet_bulb_c=28.0, globe_temp_c=45.0)
+category = wbgt_risk_category(wbgt_val)
+
+# Heat Index (Rothfusz NWS regression, Celsius input)
+hi_val = heat_index(temp_c=35.0, rh=60.0)
+hi_val = heat_index_from_dewpoint(temp_c=35.0, dewpoint_c=25.0)
+category = heat_index_risk_category(hi_val)
+
+# Humidex (Canadian standard)
+hx_val = humidex(temp_c=35.0, dewpoint_c=25.0)
+
+# Mean radiant temperature from solar radiation
+tr = mean_radiant_temperature(temp_c=30.0, solar_rad_wm2=800.0, wind_ms=1.0)
+
+# Wet bulb temperature
+tw = wet_bulb_temperature(temp_c=35.0, rh=60.0)
+tw = wet_bulb_from_dewpoint(temp_c=35.0, dewpoint_c=25.0)
+
+# Helpers
+rh = relative_humidity_from_dewpoint(temp_c=35.0, dewpoint_c=25.0)
+vp = vapor_pressure_from_dewpoint(dewpoint_c=25.0)
+
+# Batch: compute all indices at once
+results = calc_heat_indices(temp_c=35.0, dewpoint_c=25.0, wind_ms=2.0)
+```
+
+All functions accept scalar floats or numpy arrays. Temperature in Celsius, wind in m/s, humidity in %, radiation in W/m².
+
+- UTCI (Bröde polynomial): params temp_c, rh, wind_ms, mrt_c.
+- UTCI sparse (Roman et al. 2025, wider wind range 0.5-30.3 m/s): params temp_c, tmrt, wind_speed, rh.
+- WBGT simple (Australian BoM approximation): params temp_c, dewpoint_c.
+- WBGT shade (ISO 7243 indoor): params temp_c, wet_bulb_c.
+- WBGT outdoor (ISO 7243): params temp_c, wet_bulb_c, globe_temp_c.
+- Heat Index (Rothfusz NWS): params temp_c, rh.
+- Humidex (Canadian standard): params temp_c, dewpoint_c.
+- calc_heat_indices (all at once): params temp_c, dewpoint_c, wind_ms (optional), solar_rad_wm2 (optional).
+
+### Spatial Analysis (`varunayan.spatial`)
+
+```python
+from varunayan import aggregate_to_polygons, check_grid_coverage, visualize_grid_overlap, compare_grids, get_polygon_timeseries
+
+# Aggregate gridded data to polygon regions
+result = aggregate_to_polygons(data=df, polygons=gdf, value_cols=["temperature"])
+
+# Check how well a grid covers polygon boundaries
+coverage = check_grid_coverage(grid_data=df, polygons=gdf)
+
+# Time series for each polygon
+ts = get_polygon_timeseries(data=df, polygons=gdf, value_col="temperature", time_col="time")
+
+# Compare multiple grids (e.g., ERA5 vs IMD)
+comparison = compare_grids(grids={"era5": df1, "imd": df2}, polygons=gdf)
+
+# Visualize grid point overlap with polygons
+visualize_grid_overlap(grid_data=df, polygons=gdf)
+```
+
+### Processing Utilities (`varunayan.processing`)
+
+```python
+from varunayan import categorize_variables, get_aggregation_method, is_sum_var, is_max_var, is_min_var, is_rate_var
+
+method = get_aggregation_method("total_precipitation")  # returns "sum"
+categorize_variables(["2m_temperature", "total_precipitation"])
+```
+
+Classifies ERA5 variables by their correct temporal aggregation method (sum, max, min, or mean).
+
+### Cache Management (`varunayan.cache`)
+
+```python
+from varunayan import get_cache_dir, show_cache_info, list_cache, cache_stats, clear_cache, cache_exists, get_cached_data, save_to_cache, invalidate_cache
+
+get_cache_dir()
+show_cache_info()
+df = list_cache(source="all")
+stats = cache_stats()
+clear_cache(source="all")
+exists = cache_exists(source="era5", params={"variable": "2m_temperature"})
+data = get_cached_data(source="era5", params={"variable": "2m_temperature"})
+save_to_cache(data=df, source="era5", params={"variable": "2m_temperature"})
+invalidate_cache(cache_key="abc123")
+```
+
+### CLI
+
+The CLI provides ERA5 access via three subcommands: `geojson`, `bbox`, and `point`.
+
+```
+varunayan bbox --request-id demo --variables 2m_temperature --start 2023-06-01 --end 2023-06-30 --north 28.7 --south 28.5 --east 77.3 --west 77.0
+varunayan point --request-id pt --variables 2m_temperature --start 2023-06-01 --end 2023-06-01 --lat 28.6 --lon 77.2
+varunayan geojson --request-id geo --variables 2m_temperature --start 2023-06-01 --end 2023-06-30 --geojson region.geojson --dist-features state
+```
+
+Common flags: `--dataset-type` (single|pressure), `--pressure-levels` (comma-separated), `--freq` (hourly|daily|weekly|monthly|yearly), `--res` (grid resolution in degrees), `--verbosity` (0|1|2), `--save-raw` (true|false).
+
+IMD, HadEX3, and CRU TS do not have CLI subcommands; use them via the Python API.
+
+## Links
+
+- Docs: https://varunayan.saketlab.org/
+- GitHub: https://github.com/saketlab/varunayan
+- PyPI: https://pypi.org/project/varunayan/
+- R companion: https://varunayanr.saketlab.org/

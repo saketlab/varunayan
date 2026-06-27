@@ -1,0 +1,25 @@
+{% extends "furo/base.html" %}
+
+{% block extrahead %}
+{{ super() }}
+<meta name="description" content="varunayan: Python toolkit for downloading and processing ERA5, IMD, HadEX3, and CRU TS climate data. Heat stress indices, country-level aggregation, and CLI support. Built with a focus on India.">
+<meta name="keywords" content="climate data, ERA5, IMD, HadEX3, CRU TS, India, Python, heat stress, UTCI, WBGT, temperature, precipitation, reanalysis">
+<meta name="author" content="Atharva Jagtap, Saket Choudhary">
+<link rel="canonical" href="https://varunayan.saketlab.org{{ pagename }}.html">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "varunayan",
+  "description": "Python toolkit for downloading and processing ERA5, IMD, HadEX3, and CRU TS climate data. Built with a focus on India.",
+  "url": "https://varunayan.saketlab.org/",
+  "codeRepository": "https://github.com/saketlab/varunayan",
+  "programmingLanguage": "Python",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": [
+    {"@type": "Person", "name": "Atharva Jagtap"},
+    {"@type": "Person", "name": "Saket Choudhary"}
+  ]
+}
+</script>
+{% endblock %}

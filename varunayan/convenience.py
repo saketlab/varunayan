@@ -71,7 +71,7 @@ def _calculate_wind_speed(df: pd.DataFrame) -> pd.Series:
             v_col = col
 
     if u_col and v_col:
-        return np.sqrt(df[u_col] ** 2 + df[v_col] ** 2)
+        return np.sqrt(df[u_col] ** 2 + df[v_col] ** 2)  # type: ignore[no-any-return]
     return pd.Series([np.nan] * len(df))
 
 
