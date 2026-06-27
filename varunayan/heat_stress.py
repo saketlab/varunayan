@@ -1,9 +1,4 @@
-"""
-Heat stress index calculations.
-
-This module provides functions for calculating various heat stress indices
-commonly used in climate and health research.
-"""
+"""Heat stress index calculations."""
 
 import math
 from typing import Dict, List, Optional, Union
@@ -53,7 +48,6 @@ def vapor_pressure_from_dewpoint(
 
     Reference: Bolton (1980), Mon. Wea. Rev. 108, 1046-1053.
     """
-    # Bolton (1980) saturation vapor pressure evaluated at the dewpoint.
     # Shared by humidex and WBGT so both languages agree on e.
     return 6.112 * np.exp(17.67 * dewpoint_c / (dewpoint_c + 243.5))
 
@@ -87,15 +81,20 @@ def wet_bulb_temperature(
     return tw
 
 
+def wet_bulb_from_dewpoint(
+    temp_c: Union[float, np.ndarray, pd.Series],
+    dewpoint_c: Union[float, np.ndarray, pd.Series],
+) -> Union[float, np.ndarray, pd.Series]:
+    """Calculate wet bulb temperature from temperature and dewpoint."""
+    rh = relative_humidity_from_dewpoint(temp_c, dewpoint_c)
+    return wet_bulb_temperature(temp_c, rh)
+
+
 def heat_index(
     temp_c: Union[float, np.ndarray, pd.Series],
     rh: Union[float, np.ndarray, pd.Series],
 ) -> Union[float, np.ndarray, pd.Series]:
-    """
-    Calculate Heat Index using the Rothfusz NWS equation.
-
-    The heat index is a measure of how hot it feels when relative humidity
-    is factored in with the actual air temperature.
+    """Calculate Heat Index using the Rothfusz NWS equation.
 
     Args:
         temp_c: Air temperature in Celsius
@@ -145,6 +144,15 @@ def heat_index(
     return hi_c
 
 
+def heat_index_from_dewpoint(
+    temp_c: Union[float, np.ndarray, pd.Series],
+    dewpoint_c: Union[float, np.ndarray, pd.Series],
+) -> Union[float, np.ndarray, pd.Series]:
+    """Calculate heat index from temperature and dewpoint."""
+    rh = relative_humidity_from_dewpoint(temp_c, dewpoint_c)
+    return heat_index(temp_c, rh)
+
+
 def wbgt_simple(
     temp_c: Union[float, np.ndarray, pd.Series],
     dewpoint_c: Union[float, np.ndarray, pd.Series],
@@ -152,9 +160,8 @@ def wbgt_simple(
     """
     Estimate Wet Bulb Globe Temperature using the Australian BoM approximation.
 
-    This is a closed-form WBGT estimate that requires only air temperature and
-    humidity (via dewpoint), making it fully reproducible. It is the standard
-    estimator used in climate-epidemiology when wind/radiation are unavailable.
+    Closed-form WBGT from air temperature and humidity alone.
+    Standard estimator in climate-epidemiology when wind/radiation are unavailable.
 
     Reference: Australian Bureau of Meteorology approximation of WBGT
     (Steadman-based); see ACSM heat guidelines.
@@ -218,11 +225,7 @@ def humidex(
     temp_c: Union[float, np.ndarray, pd.Series],
     dewpoint_c: Union[float, np.ndarray, pd.Series],
 ) -> Union[float, np.ndarray, pd.Series]:
-    """
-    Calculate the Humidex (Canadian heat discomfort index).
-
-    The humidex combines temperature and humidity into one number to
-    reflect the perceived temperature.
+    """Calculate Humidex (Canadian heat discomfort index).
 
     Args:
         temp_c: Air temperature in Celsius
@@ -257,9 +260,9 @@ def mean_radiant_temperature(
     """
     Estimate mean radiant temperature from global horizontal solar radiation.
 
-    Uses the closed-form radiation-balance estimator for a standard person from
+    Closed-form radiation-balance estimator for a standard person from
     Thorsson et al. (2007), absorbing global horizontal shortwave onto the
-    longwave radiant balance. Deterministic and non-iterative.
+    longwave radiant balance.
 
     Reference: Thorsson, S., et al. (2007). Different methods for estimating the
     mean radiant temperature in an outdoor urban setting. Int. J. Climatol.,
@@ -313,11 +316,7 @@ def utci(
     wind_ms: Union[float, np.ndarray, pd.Series],
     mrt_c: Optional[Union[float, np.ndarray, pd.Series]] = None,
 ) -> Union[float, np.ndarray, pd.Series]:
-    """
-    Calculate Universal Thermal Climate Index (UTCI) using polynomial approximation.
-
-    UTCI is a thermal comfort index that takes into account temperature,
-    humidity, wind, and radiation.
+    """Calculate Universal Thermal Climate Index (UTCI) using polynomial approximation.
 
     Reference: Bröde et al. (2012). Deriving the operational procedure for the
     Universal Thermal Climate Index (UTCI).
@@ -561,6 +560,257 @@ def utci(
     )
 
     return utci_val
+
+
+def utci_sparse(
+    temp_c: Union[float, np.ndarray, pd.Series],
+    tmrt: Union[float, np.ndarray, pd.Series],
+    wind_speed: Union[float, np.ndarray, pd.Series],
+    rh: Union[float, np.ndarray, pd.Series],
+) -> Union[float, np.ndarray, pd.Series]:
+    """UTCI via sparse Legendre polynomial (Roman et al. 2025, doi:10.5281/zenodo.17465548).
+
+    Wider wind range than Bröde polynomial (0.5-30.3 m/s vs 0.5-17 m/s).
+    """
+    Ta = np.asarray(temp_c, dtype=float)
+    Tr = np.asarray(tmrt, dtype=float)
+    va = np.clip(np.asarray(wind_speed, dtype=float), 0.5, 30.3)
+    rh = np.clip(np.asarray(rh, dtype=float), 5, 100)
+
+    dTrTa = Tr - Ta
+
+    nTa = Ta / 50.0
+    ndTrTa = (dTrTa - 20.0) / 50.0
+    nva = (va - 15.4) / 14.9
+    nrH = (rh - 52.5) / 47.5
+
+    from numpy.polynomial.legendre import legval
+
+    def _lbasis(x, n):
+        return [legval(x, [0] * i + [1]) for i in range(1, n + 1)]
+
+    Ta1, Ta2, Ta3, Ta4, Ta5, Ta6, Ta7, Ta8, Ta9, Ta10 = _lbasis(nTa, 10)
+    dTrTa1, dTrTa2, dTrTa3 = _lbasis(ndTrTa, 3)
+    va1, va2, va3, va4, va5, va6, va7, va8, va9, va10 = _lbasis(nva, 10)
+    rH1, rH2, rH3, rH4, rH5, rH6, rH7, rH8, rH9 = _lbasis(nrH, 9)
+
+    offset = (
+        -0.0137842169737312
+        + 0.605451658287147 * Ta1
+        + 0.228978616673604 * dTrTa1
+        + -0.411887517706717 * va1
+        + 0.0516822161148559 * rH1
+        + 0.280580929387293 * Ta2
+        + 0.0494441100625763 * Ta1 * dTrTa1
+        + 0.407606222800615 * Ta1 * va1
+        + 0.0989531628394581 * Ta1 * rH1
+        + 0.0246471408147623 * dTrTa2
+        + -0.0571289630222624 * dTrTa1 * va1
+        + -0.00981948141197167 * dTrTa1 * rH1
+        + 0.115659720373134 * va2
+        + -0.00534228470468843 * va1 * rH1
+        + 0.016606193686503 * rH2
+        + -0.151030966047951 * Ta2 * dTrTa1
+        + 0.188807982337807 * Ta2 * va1
+        + 0.0881449234650015 * Ta2 * rH1
+        + -0.00930063989106069 * Ta1 * dTrTa2
+        + 0.0215873308746893 * Ta1 * dTrTa1 * va1
+        + -0.0227872935667395 * Ta1 * dTrTa1 * rH1
+        + -0.11306527433562 * Ta1 * va2
+        + -0.0109236071122277 * Ta1 * va1 * rH1
+        + 0.0255963885144559 * Ta1 * rH2
+        + -0.000676664345791177 * dTrTa3
+        + 0.0244340319236622 * dTrTa1 * va2
+        + 0.0020488990800455 * dTrTa1 * va1 * rH1
+        + -0.00198787369921777 * dTrTa1 * rH2
+        + -0.0262531747919802 * va3
+        + 0.00241202999394371 * va2 * rH1
+        + -0.0899003481633464 * Ta4
+        + -0.0518348124459142 * Ta3 * dTrTa1
+        + -0.019305242850497 * Ta3 * va1
+        + 0.0288567768313003 * Ta3 * rH1
+        + -0.00532373584837672 * Ta2 * dTrTa2
+        + 0.00865046786070809 * Ta2 * dTrTa1 * va1
+        + -0.0200025901337491 * Ta2 * dTrTa1 * rH1
+        + -0.0560921250768577 * Ta2 * va2
+        + -0.0120111532564824 * Ta2 * va1 * rH1
+        + 0.0193526595005879 * Ta2 * rH2
+        + -0.00147617610703898 * Ta1 * dTrTa3
+        + 0.0147709386142124 * Ta1 * dTrTa2 * va1
+        + 0.000223025361668181 * Ta1 * dTrTa2 * rH1
+        + -0.0267126314476705 * Ta1 * dTrTa1 * va2
+        + 0.00293284619228001 * Ta1 * dTrTa1 * va1 * rH1
+        + -0.00274343594032762 * Ta1 * dTrTa1 * rH2
+        + 0.0255375758890182 * Ta1 * va3
+        + 0.00617742875276631 * Ta1 * va2 * rH1
+        + 0.00131758038812698 * dTrTa3 * va1
+        + -1.19588186117375e-05 * dTrTa2 * va2
+        + -0.0195473208292468 * dTrTa1 * va3
+        + 0.0308499978887788 * va4
+        + -0.00168292560551294 * va3 * rH1
+        + -0.000721243580359172 * rH4
+        + 0.0241135789170187 * Ta5
+        + 0.0667693514821362 * Ta4 * dTrTa1
+        + -0.105442958374474 * Ta4 * va1
+        + 0.0169733342570069 * Ta3 * dTrTa2
+        + -0.0588730143622148 * Ta3 * dTrTa1 * va1
+        + -0.00478455509424903 * Ta3 * dTrTa1 * rH1
+        + 0.0322224934071458 * Ta3 * va2
+        + -0.0109309219781879 * Ta3 * va1 * rH1
+        + 0.00298613871955914 * Ta2 * dTrTa3
+        + -0.00970592755419437 * Ta2 * dTrTa2 * va1
+        + 0.0143009046314569 * Ta2 * va3
+        + 0.0073472142860989 * Ta2 * va2 * rH1
+        + -0.0118859833533268 * Ta2 * rH3
+        + -0.00811197236365886 * Ta1 * dTrTa2 * va2
+        + 0.0202049930797466 * Ta1 * dTrTa1 * va3
+        + -0.00948544475972315 * Ta1 * va4
+        + -0.00407327808659386 * Ta1 * va3 * rH1
+        + 0.0013485215681372 * dTrTa2 * va3
+        + 0.00386595947690624 * dTrTa1 * va4
+        + 2.17696778130301e-05 * dTrTa1 * va3 * rH1
+        + -0.00261892113164038 * dTrTa1 * rH4
+        + -0.00489648267639115 * va5
+        + 0.000681848728845763 * va4 * rH1
+        + 0.0082368236806339 * Ta6
+        + 0.0421952883373002 * Ta5 * dTrTa1
+        + -0.0188866947129327 * Ta5 * va1
+        + -0.0230895202091769 * Ta5 * rH1
+        + 0.00050946740381826 * Ta4 * dTrTa2
+        + 0.0387368190996963 * Ta4 * va2
+        + -0.00365652796668801 * Ta4 * va1 * rH1
+        + -0.0165226812597451 * Ta4 * rH2
+        + -0.02106808547032 * Ta3 * dTrTa2 * va1
+        + 0.0455127356554093 * Ta3 * dTrTa1 * va2
+        + -0.0327523492050705 * Ta3 * va3
+        + 0.00411199080502651 * Ta3 * va2 * rH1
+        + -0.00529398688982106 * Ta3 * rH3
+        + -0.00299659797672848 * Ta2 * dTrTa3 * va1
+        + 0.0127070225168592 * Ta2 * dTrTa2 * va2
+        + -0.0039536575347961 * Ta2 * va3 * rH1
+        + 0.00176928876312725 * Ta1 * dTrTa2 * va3
+        + 0.0249223383434746 * Ta1 * va5
+        + 0.0010279948173077 * Ta1 * va4 * rH1
+        + -0.000456624197665442 * dTrTa2 * va4
+        + 0.000227993624070799 * dTrTa2 * rH4
+        + -0.000497222888028054 * dTrTa1 * va1 * rH4
+        + 0.00189906855480326 * va2 * rH4
+        + -0.00516323105647903 * rH6
+        + -0.0388335821720079 * Ta7
+        + -0.0142074242411286 * Ta6 * dTrTa1
+        + 0.0488685513521004 * Ta6 * va1
+        + -0.0269122930593438 * Ta6 * rH1
+        + -0.00845228865914141 * Ta5 * dTrTa2
+        + 0.0386364103297441 * Ta5 * dTrTa1 * va1
+        + 0.00333840546426587 * Ta5 * dTrTa1 * rH1
+        + -0.0274986339482448 * Ta5 * va2
+        + -0.0233728308709061 * Ta5 * rH2
+        + -0.0010233136301785 * Ta4 * dTrTa3
+        + 0.0109665440679091 * Ta4 * dTrTa2 * va1
+        + -0.0141154511737893 * Ta4 * dTrTa1 * va2
+        + 0.00797571345288548 * Ta4 * dTrTa1 * rH2
+        + -0.00626818826879268 * Ta4 * rH3
+        + 0.000541492731933859 * Ta3 * dTrTa2 * va2
+        + -0.0194848041587283 * Ta3 * dTrTa1 * va3
+        + -0.00242146589114414 * Ta3 * dTrTa1 * va1 * rH2
+        + 0.00862214501674155 * Ta3 * va4
+        + -0.000813086246676268 * Ta3 * va3 * rH1
+        + -0.0109313281200866 * Ta2 * dTrTa2 * va3
+        + 0.0107908356351421 * Ta2 * dTrTa1 * va4
+        + -0.00154886246960825 * Ta2 * dTrTa1 * rH4
+        + 0.000285510363654986 * Ta2 * va3 * rH2
+        + 0.00600871455392313 * Ta1 * dTrTa1 * va5
+        + 0.0133563698637056 * Ta1 * va6
+        + 0.00200056613397992 * dTrTa2 * va5
+        + -0.000487892088628483 * dTrTa2 * va1 * rH4
+        + 0.00239926457161527 * dTrTa1 * va2 * rH4
+        + -0.00147299336560724 * va3 * rH4
+        + -0.0034747543766636 * rH7
+        + -0.042138668585659 * Ta7 * dTrTa1
+        + 0.0226809825649836 * Ta7 * va1
+        + -0.0317422118129167 * Ta7 * rH1
+        + -0.0165868569214051 * Ta6 * dTrTa2
+        + 0.00866283641928592 * Ta6 * dTrTa1 * va1
+        + -0.0158286817515286 * Ta6 * va2
+        + -0.0123918623262792 * Ta6 * rH2
+        + 0.00865497207378352 * Ta5 * dTrTa2 * va1
+        + -0.0313622056127219 * Ta5 * dTrTa1 * va2
+        + 0.0059883355097739 * Ta5 * dTrTa1 * rH2
+        + 0.0282517594922186 * Ta5 * va3
+        + -0.00055801074931404 * Ta5 * rH3
+        + 0.00216134547091048 * Ta4 * dTrTa3 * va1
+        + -0.00390324341081546 * Ta4 * dTrTa2 * va2
+        + 0.0163223310714439 * Ta4 * dTrTa1 * va3
+        + -0.00150025871011703 * Ta4 * dTrTa1 * va1 * rH2
+        + 0.00276956624980006 * Ta4 * dTrTa1 * rH3
+        + -0.0229190983632922 * Ta4 * va4
+        + 0.00314130091223181 * Ta3 * dTrTa1 * va2 * rH2
+        + -0.0112810754291653 * Ta3 * va5
+        + 0.00416439851600464 * Ta3 * rH5
+        + -0.000700256201721478 * Ta2 * dTrTa3 * va3
+        + -0.000514959299985243 * Ta2 * dTrTa1 * va3 * rH2
+        + 0.00233921794871584 * Ta2 * dTrTa1 * va1 * rH4
+        + 0.00619041956132346 * Ta2 * va6
+        + -0.00342955079343321 * Ta1 * dTrTa1 * va2 * rH4
+        + 0.000527414639632667 * dTrTa1 * va7
+        + -0.000183752476546752 * dTrTa1 * va1 * rH6
+        + -0.0118888391328967 * va8
+        + 0.000238712903990469 * va4 * rH4
+        + -0.00274527466548323 * rH8
+        + -0.00346736606571359 * Ta9
+        + -0.015821140907443 * Ta8 * dTrTa1
+        + -0.0159703972679985 * Ta8 * va1
+        + -0.00220146749570155 * Ta8 * rH1
+        + -0.0196462686116071 * Ta7 * dTrTa1 * va1
+        + 0.0160930622139814 * Ta7 * va2
+        + 0.0271083926542394 * Ta6 * dTrTa1 * va2
+        + -0.0169727859361079 * Ta6 * va3
+        + -0.00262019654796821 * Ta5 * va2 * rH2
+        + 0.0117666226277279 * Ta5 * rH4
+        + 0.00865116634722382 * Ta4 * dTrTa2 * va3
+        + -0.0318664489619453 * Ta4 * dTrTa1 * va4
+        + 0.00136762123420908 * Ta4 * va3 * rH2
+        + -0.00648813541319593 * Ta2 * dTrTa2 * va5
+        + 0.00283418925119063 * Ta2 * dTrTa1 * va6
+        + 0.000627683891249201 * dTrTa2 * rH7
+        + 0.000464486061684286 * va7 * rH2
+        + -0.012558774419946 * Ta10
+        + 0.0142246701070405 * Ta9 * dTrTa1
+        + -0.0219945853668843 * Ta9 * va1
+        + 0.00147989498898127 * Ta9 * rH1
+        + 0.020694589513114 * Ta8 * dTrTa2
+        + -0.0159821465878725 * Ta8 * dTrTa1 * va1
+        + 0.00122990587236154 * Ta8 * va2
+        + 0.00774643224013198 * Ta8 * rH2
+        + 0.00348972484418949 * Ta7 * dTrTa3
+        + -0.00449889353160404 * Ta7 * dTrTa2 * va1
+        + 0.00150065745949661 * Ta7 * dTrTa2 * rH1
+        + -0.000617652342920564 * Ta7 * va3
+        + 0.0150749840950315 * Ta7 * rH3
+        + -0.00456928274166078 * Ta6 * dTrTa1 * va3
+        + 0.0132771238868905 * Ta6 * va4
+        + -0.00313385473186283 * Ta6 * va2 * rH2
+        + 0.0187605036147175 * Ta5 * dTrTa1 * va4
+        + 0.000600921760262751 * Ta5 * va3 * rH2
+        + -0.00662490990387182 * Ta4 * va6
+        + 0.00527904629696365 * Ta4 * va2 * rH4
+        + -0.000464141239154267 * Ta3 * dTrTa1 * va6
+        + -0.00506780416680173 * Ta3 * va3 * rH4
+        + 0.0040868742073381 * Ta2 * va8
+        + 0.000288339820559906 * Ta1 * dTrTa2 * rH7
+        + -0.0158274027071249 * Ta1 * va9
+        + 0.00170167068625823 * dTrTa2 * rH8
+        + 0.00283124879915756 * dTrTa1 * va9
+        + -0.000290365909059354 * dTrTa1 * va1 * rH8
+        + -0.0131987351201934 * va10
+        + 0.000543804208687463 * va1 * rH9
+    )
+
+    result = Ta + offset * 45.135 - 17.085
+
+    if np.isscalar(temp_c) and np.ndim(result) == 0:
+        return float(result)
+    return result
 
 
 # Ordered (upper_bound, label) thresholds for each risk scale. A value is

@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional, Union, cast
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import shapely
 import xarray as xr
-from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
 
 from ..util.logging_utils import get_logger
@@ -96,11 +96,13 @@ def filter_netcdf_by_shapefile(
     total_points = len(unique_coords)
     logger.info(f"✓ Found {total_points} unique lat/lon combinations")
 
-    unique_coords["geometry"] = [
-        Point(lon, lat)
-        for lon, lat in zip(unique_coords["longitude"], unique_coords["latitude"])
-    ]
-    gdf_points = gpd.GeoDataFrame(unique_coords, geometry="geometry", crs="EPSG:4326")
+    gdf_points = gpd.GeoDataFrame(
+        unique_coords,
+        geometry=shapely.points(
+            unique_coords["longitude"].values, unique_coords["latitude"].values
+        ),
+        crs="EPSG:4326",
+    )
 
     logger.info("→ Validating and repairing geometries...")
 
@@ -304,12 +306,14 @@ def get_unique_coordinates_in_polygon(
         {"latitude": lat_grid.flatten(), "longitude": lon_grid.flatten()}
     ).drop_duplicates()
 
-    # Filter coordinates
-    unique_coords["geometry"] = [
-        Point(lon, lat)
-        for lon, lat in zip(unique_coords["longitude"], unique_coords["latitude"])
-    ]
-    gdf_points = gpd.GeoDataFrame(unique_coords, geometry="geometry", crs="EPSG:4326")
+    # Filter coordinates (vectorized point creation)
+    gdf_points = gpd.GeoDataFrame(
+        unique_coords,
+        geometry=shapely.points(
+            unique_coords["longitude"].values, unique_coords["latitude"].values
+        ),
+        crs="EPSG:4326",
+    )
     inside_coords = gdf_points[gdf_points.geometry.intersects(unified_polygon)]
 
     subset = inside_coords[["latitude", "longitude"]].copy()

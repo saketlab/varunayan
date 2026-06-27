@@ -228,8 +228,8 @@ def process_time_chunks(
         chunk_number += 1
         current_date = chunk_end + dt.timedelta(days=1)
 
-        if chunk_number <= total_chunks:
-            time.sleep(10)  # Rate limiting
+        if chunk_number <= total_chunks and elapsed > 1:
+            time.sleep(2)  # Brief rate limiting between substantial chunks
 
     if not all_data:
         raise ValueError("No data was successfully processed from any chunk")
