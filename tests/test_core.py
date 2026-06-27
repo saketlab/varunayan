@@ -476,11 +476,11 @@ def test_load_and_validate_geojson():
         ],
     }
 
-    with patch(
-        "varunayan.core.load_json_with_encoding", return_value=mock_geojson
-    ), patch("varunayan.core.is_valid_geojson", return_value=True), patch(
-        "varunayan.core.logger"
-    ) as mock_logger:
+    with (
+        patch("varunayan.core.load_json_with_encoding", return_value=mock_geojson),
+        patch("varunayan.core.is_valid_geojson", return_value=True),
+        patch("varunayan.core.logger") as mock_logger,
+    ):
 
         # We don't need a real file path since we're mocking everything
         result = load_and_validate_geojson("dummy_path.json")

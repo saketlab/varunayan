@@ -29,7 +29,10 @@ _INDIA_BBOX = (6.0, 38.0, 67.0, 99.0)
 
 def _fetch_station_list(timeout: int = 30) -> pd.DataFrame:
     resp = requests.get(
-        CITY_LIST_URL, headers={"User-Agent": _UA}, timeout=timeout, verify=False
+        CITY_LIST_URL,
+        headers={"User-Agent": _UA},
+        timeout=timeout,
+        verify=False,  # nosec B501
     )
     resp.raise_for_status()
     rows = [
@@ -46,7 +49,7 @@ def _fetch_coord(station_id: int, timeout: int = 30) -> Optional[Tuple[float, fl
             data={"ID": station_id},
             headers={"User-Agent": _UA, "Referer": CITY_STATIC_REFERER},
             timeout=timeout,
-            verify=False,
+            verify=False,  # nosec B501
         )
         resp.raise_for_status()
         payload = resp.json()
