@@ -284,6 +284,17 @@ help-docs:
 	@echo "3. make ci-docs       # Test documentation deployment"
 	@echo "4. make github-pages  # Prepare for GitHub Pages"
 
+# Release target
+VERSION := $(shell grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+
+.PHONY: tag-release
+tag-release:
+	@echo "Releasing v$(VERSION)..."
+	git tag v$(VERSION)
+	git push origin main --tags
+	gh release create v$(VERSION) --title "v$(VERSION)" --generate-notes
+	@echo "Done - PyPI publish will run automatically via GitHub Actions."
+
 # Ensure directories exist
 $(DOCS_BUILD_DIR):
 	mkdir -p $(DOCS_BUILD_DIR)
