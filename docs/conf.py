@@ -103,7 +103,7 @@ html_sidebars = {
 
 html_theme_options = {
     "navigation_with_keys": True,
-    "sidebar_hide_name": False, 
+    "sidebar_hide_name": False,
     "light_css_variables": {
         "color-brand-primary": "#1b1b1f",
         "color-brand-content": "#1b1b1f",

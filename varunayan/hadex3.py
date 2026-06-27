@@ -104,9 +104,7 @@ def _build_url(index: str, frequency: str, baseline: str) -> str:
     return f"{_BASE_URL}/HadEX3_{index}_1901-2018_ADW_{baseline}_1.25x1.875deg.nc.gz"
 
 
-def _parse_time(
-    time_var: np.ndarray, time_units: str, frequency: str
-) -> tuple:
+def _parse_time(time_var: np.ndarray, time_units: str, frequency: str) -> tuple:
     """Parse time coordinate to (years,) or (years, months)."""
     u = time_units.strip().lower()
     if frequency == "annual":

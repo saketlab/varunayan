@@ -1,6 +1,23 @@
 Release History
 ===============
 
+v0.3.0 (2026-06-27)
+-------------------
+
+* HadEX3 climate extremes (1901-2018) via ``hadex3_bbox``, ``hadex3_geojson``
+* CRU TS v4.07 monthly grids (1901-2022) via ``cru_ts_bbox``, ``cru_ts_geojson``
+* IMD gridded rainfall and temperature via ``imd_rainfall_bbox``, ``imd_temperature_bbox``, ``imd_rainfall_geojson``, ``imd_temperature_geojson``
+* IMD station registry via ``get_imd_stations``
+* Country-level ERA5 temperature via ``get_era5_country_temperature``
+* Heat stress indices: UTCI, WBGT, Heat Index, Humidex, wet-bulb temperature, mean radiant temperature
+* Risk category classifiers and ``calc_heat_indices`` convenience wrapper
+* Spatial aggregation to administrative boundaries or custom polygons
+* Download caching to skip redundant API calls
+* Convenience helpers: ``daily_summary``, ``compute_wind_speed``, ``compute_heat_index``, ``compute_utci``
+* Requires Python 3.10+ (dropped 3.9)
+* Tests for heat stress, HadEX3, CRU TS, IMD, country aggregation
+* Notebooks for heat stress, HadEX3, CRU TS, spatial aggregation, country temperature
+
 v0.2.0 (2025-11-09)
 -------------------
 
