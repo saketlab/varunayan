@@ -1,4 +1,4 @@
-url: https://varunayanr.saketlab.org/
+url: https://varunayan.saketlab.org/R/
 
 development:
   mode: release
@@ -49,7 +49,7 @@ template:
           "name": "Saket Choudhary",
           "url": "https://saketlab.org"
         },
-        "url": "https://varunayanr.saketlab.org/",
+        "url": "https://varunayan.saketlab.org/R/",
         "downloadUrl": "https://github.com/saketlab/varunayanR",
         "softwareVersion": "0.1.1",
         "programmingLanguage": "R"

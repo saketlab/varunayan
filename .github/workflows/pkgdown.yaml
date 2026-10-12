@@ -11,13 +11,11 @@ on:
 name: pkgdown
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pkgdown-${{ github.event_name == 'pull_request' && github.run_id || 'main' }}
+  cancel-in-progress: false
 
 jobs:
   pkgdown:
@@ -25,6 +23,7 @@ jobs:
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      SITE_ROOT: /var/www/r-pkgdown/varunayan/docs/R
 
     steps:
       - uses: actions/checkout@v4
@@ -49,27 +48,28 @@ jobs:
           CDS_API_KEY: ${{ secrets.CDS_API_KEY }}
 
       - name: Build site
-        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+        run: pkgdown::build_site(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
         env:
           CDS_API_KEY: ${{ secrets.CDS_API_KEY }}
 
-      - name: Upload artifact
+      # same docs@host login as bharatvitals' DEPLOY_* secrets; the *.saketlab.org
+      # vhost serves varunayan.saketlab.org from /var/www/r-pkgdown/varunayan/docs
+      - name: Upload the site
         if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
+        uses: burnett01/rsync-deployments@7.0.1
         with:
-          path: docs
+          switches: -avzr --delete --rsync-path="mkdir -p ${{ env.SITE_ROOT }} && rsync"
+          path: docs/
+          remote_path: ${{ env.SITE_ROOT }}/
+          remote_host: ${{ secrets.DEPLOY_HOST }}
+          remote_port: ${{ secrets.DEPLOY_PORT || 22 }}
+          remote_user: ${{ secrets.DEPLOY_USER }}
+          remote_key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-  deploy:
-    if: github.event_name != 'pull_request'
-    needs: pkgdown
-    runs-on: ubuntu-latest
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Check the site
+        if: github.event_name != 'pull_request'
+        run: |
+          sleep 5
+          code=$(curl -s -o /dev/null -w '%{http_code}' https://varunayan.saketlab.org/R/)
+          test "$code" = "200" || { echo "/R/ answered $code" >&2; exit 1; }

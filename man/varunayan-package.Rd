@@ -13,7 +13,7 @@ Download and process climate data for custom geographical regions defined by bou
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://varunayanr.saketlab.org}
+  \item \url{https://varunayan.saketlab.org/R/}
   \item \url{https://github.com/saketlab/varunayanR}
   \item Report bugs at \url{https://github.com/saketlab/varunayanR/issues}
 }

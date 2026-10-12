@@ -28,7 +28,7 @@ Description: Download and process climate data for custom geographical
     Heat Factor (Nairn and Fawcett (2015) <doi:10.3390/ijerph120100227>)
     and diurnal temperature range. 
 License: MIT + file LICENSE
-URL: https://varunayanr.saketlab.org,
+URL: https://varunayan.saketlab.org/R/,
     https://github.com/saketlab/varunayanR
 BugReports: https://github.com/saketlab/varunayanR/issues
 Depends:

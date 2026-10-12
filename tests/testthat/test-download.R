@@ -438,7 +438,7 @@ test_that("find_and_extract_download finds output, zip or target files", {
   expect_error(find_and_extract_download(out, "target.nc"), "Downloaded file not found")
 
   era5_make_nc(file.path(d, "target.nc"))
-  expect_equal(find_and_extract_download(out, "target.nc"), file.path(d, "target.nc"))
+  expect_same_path(find_and_extract_download(out, "target.nc"), file.path(d, "target.nc"))
 
   era5_make_nc(out)
   expect_equal(find_and_extract_download(out, "target.nc"), out)
@@ -449,7 +449,7 @@ test_that("find_and_extract_download finds output, zip or target files", {
   era5_make_nc(file.path(src, "inner.nc"))
   era5_make_zip(file.path(d, "req.zip"), file.path(src, "inner.nc"))
   res <- suppressMessages(find_and_extract_download(out, "zzz.nc"))
-  expect_equal(res, file.path(d, "inner.nc"))
+  expect_same_path(res, file.path(d, "inner.nc"))
   expect_false(file.exists(file.path(d, "req.zip")))
 })
 
@@ -480,7 +480,7 @@ test_that("download_era5_pressure handles zipped and path-less downloads", {
     }
   )
   res <- suppressMessages(do.call(download_era5_pressure, args))
-  expect_equal(res, file.path(d, "pl.nc"))
+  expect_same_path(res, file.path(d, "pl.nc"))
   expect_equal(nrow(suppressMessages(process_netcdf_to_dataframe(res))), 12)
 
   local_mocked_bindings(wf_request = function(request, transfer, path, ...) {

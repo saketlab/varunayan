@@ -110,10 +110,10 @@ atmos_data <- era5ify_bbox(
 
 ## Documentation
 
-- [Quickstart Guide](https://varunayanr.saketlab.org/articles/quickstart.html)
-- [Visualising data grids](https://varunayanr.saketlab.org/articles/spatial-aggregation.html)
-- [ERA5 vs IMD Comparison](https://varunayanr.saketlab.org/articles/era5-vs-imd-comparison.html)
-- [Function Reference](https://varunayanr.saketlab.org/reference/index.html)
+- [Quickstart Guide](https://varunayan.saketlab.org/R/articles/quickstart.html)
+- [Visualising data grids](https://varunayan.saketlab.org/R/articles/spatial-aggregation.html)
+- [ERA5 vs IMD Comparison](https://varunayan.saketlab.org/R/articles/era5-vs-imd-comparison.html)
+- [Function Reference](https://varunayan.saketlab.org/R/reference/index.html)
 
 
 ## Contributing

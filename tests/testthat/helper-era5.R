@@ -118,3 +118,8 @@ era5_make_geojson <- function(xmin, xmax, ymin, ymax) {
   writeLines(txt, path)
   path
 }
+
+# Windows tempdir() mixes separators; compare resolved paths
+expect_same_path <- function(object, expected) {
+  expect_equal(normalizePath(object, "/", mustWork = FALSE), normalizePath(expected, "/", mustWork = FALSE))
+}
