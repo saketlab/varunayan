@@ -67,9 +67,26 @@ jobs:
           remote_user: ${{ secrets.DEPLOY_USER }}
           remote_key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Check the site
+      # on the host; Cloudflare answers 403 to runner IPs
+      - name: Mirror and check the site
         if: github.event_name != 'pull_request'
-        run: |
-          sleep 5
-          code=$(curl -s -o /dev/null -w '%{http_code}' https://varunayan.saketlab.org/R/)
-          test "$code" = "200" || { echo "/R/ answered $code" >&2; exit 1; }
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          envs: SITE_ROOT
+          script: |
+            set -eu
+            # varunayanr.saketlab.org mirrors the same files
+            mirror=/var/www/r-pkgdown/varunayanr/docs
+            if [ ! -L "$mirror" ]; then
+              mkdir -p "$(dirname "$mirror")"
+              if [ -e "$mirror" ]; then mv "$mirror" "$mirror.old"; fi
+              ln -s "$SITE_ROOT" "$mirror"
+            fi
+            for url in varunayan.saketlab.org/R/ varunayanr.saketlab.org/; do
+              code=$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: ${url%%/*}" "https://127.0.0.1/${url#*/}")
+              test "$code" = "200" || { echo "$url answered $code" >&2; exit 1; }
+            done
