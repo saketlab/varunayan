@@ -130,3 +130,96 @@ test_that("cosine latitude weighting is correct", {
   expected <- (20 * 1 + 30 * 0.5) / (1 + 0.5)
   expect_equal(result, expected)
 })
+
+country_fx_triangle <- function() {
+  coords <- matrix(c(70, 5, 80, 5, 70, 25, 70, 5), ncol = 2, byrow = TRUE)
+  sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(coords)), crs = 4326))
+}
+
+country_fx_mock_era5 <- function(env = parent.frame()) {
+  seen <- new.env()
+  seen$calls <- list()
+  testthat::local_mocked_bindings(
+    era5ify_bbox = function(request_id, variables, start_date, end_date,
+                            north, south, east, west, frequency, resolution, verbose, ...) {
+      seen$calls[[length(seen$calls) + 1]] <- list(
+        request_id = request_id, variables = variables, frequency = frequency,
+        bbox = c(north, south, east, west), resolution = resolution
+      )
+      short <- c(
+        "2m_temperature" = "t2m",
+        "maximum_2m_temperature_since_previous_post_processing" = "mx2t"
+      )[[variables]]
+      offset <- if (short == "mx2t") 5 else 0
+      pts <- data.frame(latitude = c(10, 20, 24), longitude = c(72, 72, 79))
+      months <- as.POSIXct(c("2023-01-01", "2023-02-01"), tz = "UTC")
+      out <- merge(pts, data.frame(datetime = months))
+      out$variable <- short
+      out$value <- offset + ifelse(out$latitude == 10, 20, 30) +
+        as.integer(format(out$datetime, "%m")) +
+        ifelse(out$longitude == 79, 1000, 0) # outside-polygon point must be dropped
+      out
+    },
+    .env = env
+  )
+  seen
+}
+
+test_that("get_era5_country_temperature aggregates with cosine-latitude weights", {
+  seen <- country_fx_mock_era5()
+  res <- suppressMessages(get_era5_country_temperature(
+    country_fx_triangle(), "2023-01-01", "2023-02-28",
+    variables = c("mean", "max", "mean")
+  ))
+  expect_s3_class(res, "data.frame")
+  expect_equal(names(res), c("year", "month", "temperature_max", "temperature_mean"))
+  expect_equal(nrow(res), 2L)
+  expect_equal(res$year, c(2023L, 2023L))
+  expect_equal(res$month, c(1L, 2L))
+
+  w <- cos(c(10, 20) * pi / 180)
+  expected_mean <- sapply(1:2, function(m) stats::weighted.mean(c(20, 30) + m, w))
+  expect_equal(res$temperature_mean, expected_mean)
+  expect_equal(res$temperature_max, expected_mean + 5)
+
+  # duplicate "mean" collapsed: two ERA5 requests, monthly, custom request id
+  expect_length(seen$calls, 2L)
+  expect_equal(seen$calls[[1]]$request_id, "country_custom_2m_temperature")
+  expect_equal(seen$calls[[1]]$frequency, "monthly")
+  expect_equal(seen$calls[[1]]$bbox, c(25, 5, 80, 70))
+})
+
+test_that("get_era5_country_temperature accepts a GeoJSON path and passes through raw ERA5 names", {
+  seen <- country_fx_mock_era5()
+  gj <- tempfile(fileext = ".geojson")
+  sf::st_write(country_fx_triangle(), gj, driver = "GeoJSON", quiet = TRUE)
+  res <- suppressMessages(get_era5_country_temperature(
+    gj, "2023-01-01", "2023-02-28",
+    variables = "maximum_2m_temperature_since_previous_post_processing",
+    request_id = "myreq", resolution = 0.5
+  ))
+  expect_equal(names(res), c("year", "month", "temperature_max"))
+  expect_equal(seen$calls[[1]]$request_id, "myreq_maximum_2m_temperature_since_previous_post_processing")
+  expect_equal(seen$calls[[1]]$resolution, 0.5)
+})
+
+test_that("get_era5_country_temperature resolves country names via maps", {
+  skip_if_not_installed("maps")
+  seen <- new.env()
+  local_mocked_bindings(
+    era5ify_bbox = function(request_id, north, south, east, west, ...) {
+      seen$rid <- request_id
+      seen$bbox <- c(north, south, east, west)
+      data.frame(
+        latitude = 22, longitude = 78,
+        datetime = as.POSIXct("2023-06-01", tz = "UTC"),
+        variable = "t2m", value = 31.5
+      )
+    }
+  )
+  res <- suppressMessages(get_era5_country_temperature("India", "2023-06-01", "2023-06-30"))
+  expect_equal(seen$rid, "country_india_2m_temperature")
+  expect_true(seen$bbox[1] > 30 && seen$bbox[2] < 10)
+  expect_equal(res$temperature_mean, 31.5)
+  expect_equal(res$month, 6L)
+})

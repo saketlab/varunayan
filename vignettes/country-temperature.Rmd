@@ -10,10 +10,14 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
+has_suggests <- all(vapply(c("ggplot2", "tidyr", "patchwork"),
+  requireNamespace, logical(1),
+  quietly = TRUE
+))
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#",
-  eval = TRUE,
+  eval = has_suggests,
   fig.width = 10,
   fig.height = 7,
   fig.dpi = 300,
@@ -33,8 +37,8 @@ library(patchwork)
 
 `get_era5_country_temperature()` resolves a country boundary, downloads
 monthly ERA5 data, and returns cosine-latitude area-weighted national
-averages. We get all of that from one call, instead of finding boundaries,
-writing GeoJSON, calling `era5ify_geojson()`, and aggregating grid cells by hand.
+averages. One call replaces finding boundaries, writing GeoJSON, calling
+`era5ify_geojson()`, and aggregating grid cells by hand.
 
 Here we pull monthly mean, max, and min temperatures for four European and four South Asian
 countries in 2024.

@@ -76,7 +76,7 @@ data.frame with processed climate data. When \code{convert_units = TRUE}:
 Download and process ERA5 data for a point location
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 setup_cds_credentials(key = "your-cds-api-key")
 
 data <- era5ify_point(
@@ -88,5 +88,5 @@ data <- era5ify_point(
   lon = -74.0060
 )
 # Temperature is in Celsius, precipitation is in mm
-}
+\dontshow{\}) # examplesIf}
 }

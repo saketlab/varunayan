@@ -24,9 +24,9 @@ imd_temperature_geojson(
 
 \item{request_id}{Unique identifier.}
 
-\item{start_year}{Start year (1951-2024).}
+\item{start_year}{Start year (1951-2025).}
 
-\item{end_year}{End year (1951-2024).}
+\item{end_year}{End year (1951-2025).}
 
 \item{geojson_file}{Path to GeoJSON file.}
 
@@ -41,8 +41,17 @@ imd_temperature_geojson(
 \item{use_cache}{Whether to use cached data if available (default: TRUE).}
 }
 \value{
-data.frame with processed temperature data
+A data.frame with columns \code{date}, \code{latitude}, \code{longitude} and \code{temperature} (degrees Celsius), restricted to the requested region and aggregated to \code{frequency}.
 }
 \description{
 Download and process IMD temperature data for a GeoJSON region
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
+data <- imd_temperature_geojson(
+  request_id = "mh_tmax", start_year = 2023, end_year = 2023,
+  geojson_file = region, var_type = "tmax", frequency = "monthly"
+)
+\dontshow{\}) # examplesIf}
 }

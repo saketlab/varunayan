@@ -7,8 +7,11 @@
 cache_stats()
 }
 \value{
-List with cache statistics
+A list with elements \code{exists} (logical), \code{n_files} and \code{total_size_mb}.
 }
 \description{
 Get cache statistics
+}
+\examples{
+cache_stats()
 }

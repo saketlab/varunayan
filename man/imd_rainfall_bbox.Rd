@@ -3,8 +3,7 @@
 \name{IMDRainfallBbox}
 \alias{IMDRainfallBbox}
 \alias{imd_rainfall_bbox}
-\title{IMD data download and processing for custom regions
-Download and process IMD rainfall data for a bounding box}
+\title{Download and process IMD rainfall data for a bounding box}
 \usage{
 IMDRainfallBbox(...)
 
@@ -51,13 +50,13 @@ imd_rainfall_bbox(
 \item{use_cache}{Whether to use cached data if available (default: TRUE).}
 }
 \value{
-data.frame with processed rainfall data
+A data.frame with columns \code{date}, \code{latitude}, \code{longitude} and \code{rainfall} (mm), restricted to the requested region and aggregated to \code{frequency}.
 }
 \description{
 Downloads IMD gridded rainfall data and filters it to a specified bounding box.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 data <- imd_rainfall_bbox(
   request_id = "maharashtra_rain",
   start_year = 2023,
@@ -67,5 +66,5 @@ data <- imd_rainfall_bbox(
   resolution = 0.25,
   frequency = "monthly"
 )
-}
+\dontshow{\}) # examplesIf}
 }

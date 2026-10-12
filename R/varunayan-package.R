@@ -4,19 +4,19 @@
 ## usethis namespace: start
 #' @import sf
 #' @import stars
-#' @importFrom data.table .SD .N .I .GRP .BY .EACHI := data.table as.data.table setDT setorder setnames year month
-#' @importFrom dplyr arrange group_by summarise select semi_join inner_join n across all_of any_of bind_rows distinct mutate filter
+#' @importFrom data.table .SD .BY := data.table as.data.table setorder setnames year month mday yday fifelse fcase
+#' @importFrom dplyr group_by summarise select inner_join across any_of mutate filter
 #' @importFrom digest digest
 #' @importFrom ecmwfr wf_set_key wf_request wf_get_key
 #' @importFrom terra rast extract
-#' @importFrom httr GET POST content headers status_code timeout config
-#' @importFrom jsonlite fromJSON toJSON write_json
+#' @importFrom httr GET HEAD POST content headers status_code timeout config
+#' @importFrom jsonlite write_json
 #' @importFrom lubridate ymd
 #' @importFrom magrittr "%>%"
 #' @importFrom ncdf4 nc_open nc_close ncvar_get
 #' @importFrom rlang .data
 #' @importFrom tools R_user_dir file_ext file_path_sans_ext
-#' @importFrom utils unzip sessionInfo packageVersion install.packages
+#' @importFrom utils unzip sessionInfo packageVersion
 ## usethis namespace: end
 
 # Required for data.table operations
@@ -24,24 +24,11 @@
 
 # Package startup message - only show CDS setup hint if credentials not found
 .onAttach <- function(libname, pkgname) {
-  # Check ~/.cdsapirc file first (most common setup)
-  cdsapirc <- path.expand("~/.cdsapirc")
-  has_creds <- file.exists(cdsapirc)
-
-  # Also check ecmwfr credentials if file not found
-  if (!has_creds) {
-    has_creds <- tryCatch(
-      {
-        key <- wf_get_key()
-        !is.null(key) && nchar(key) > 0
-      },
-      error = function(e) FALSE
-    )
-  }
+  has_creds <- nzchar(Sys.getenv("CDS_API_KEY")) || file.exists(path.expand("~/.cdsapirc"))
 
   if (!has_creds) {
     packageStartupMessage("varunayan: Configure CDS credentials with setup_cds_credentials()")
-    packageStartupMessage("Visit: https://cds.climate.copernicus.eu/api-how-to")
+    packageStartupMessage("Visit: ", .CDS_KEY_URL)
   }
 }
 

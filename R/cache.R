@@ -1,19 +1,36 @@
-#' Cache management for downloaded NetCDF files
-#'
-#' Functions to cache ERA5 and IMD NetCDF files for faster successive queries
-
 #' Get cache directory path
+#'
+#' Defaults to `tools::R_user_dir("varunayan", "cache")`. Set the option
+#' `varunayan.cache_dir` to use a different directory.
 #'
 #' @param create Create directory if it doesn't exist (default: TRUE)
 #' @param ... Arguments passed to the main function (used by aliases).
 #' @return Character string with cache directory path
 #' @export
+#' @examples
+#' get_cache_dir(create = FALSE)
 get_cache_dir <- function(create = TRUE) {
-  cache_dir <- R_user_dir(package = "varunayan", which = "cache")
+  cache_dir <- getOption("varunayan.cache_dir", R_user_dir(package = "varunayan", which = "cache"))
   if (create && !dir.exists(paths = cache_dir)) {
     dir.create(path = cache_dir, recursive = TRUE, showWarnings = FALSE)
   }
   cache_dir
+}
+
+.CACHE_FILE_PATTERN <- "\\.(nc|grd|rds)$"
+
+.CACHE_SOURCES <- c("era5", "imd", "cru_ts", "hadex3")
+
+.cache_source <- function(basenames) {
+  pattern <- paste0("^(", paste(.CACHE_SOURCES, collapse = "|"), ")_.*")
+  src <- sub(pattern, "\\1", basenames)
+  ifelse(src == basenames, "unknown", src)
+}
+
+# prefix lets .cache_source() count the file; fields must include source
+.source_cache_key <- function(fields) {
+  src <- match.arg(fields$source, .CACHE_SOURCES)
+  paste0(src, "_", digest::digest(fields, algo = "md5"))
 }
 
 #' Generate cache key for download parameters
@@ -64,7 +81,7 @@ check_cache <- function(cache_key) {
 
   cached_files <- list.files(
     path = cache_dir,
-    pattern = paste0("^", cache_key, ".*\\.(nc|grd)$"),
+    pattern = paste0("^", cache_key, ".*", .CACHE_FILE_PATTERN),
     full.names = TRUE
   )
   if (length(x = cached_files) > 0) cached_files[1] else NULL
@@ -88,9 +105,11 @@ save_to_cache <- function(file_path, cache_key) {
 
 #' List cached files
 #'
-#' @param source Filter by source: "era5", "imd", or NULL for all
-#' @return data.frame with cache information
+#' @param source Filter by source: "era5", "imd", "cru_ts", "hadex3", or NULL for all
+#' @return A data.frame with columns `file`, `source`, `size_mb` and `modified`, one row per cached file; zero rows if the cache is empty.
 #' @export
+#' @examples
+#' list_cache()
 list_cache <- function(source = NULL) {
   cache_dir <- get_cache_dir(create = FALSE)
   empty_df <- data.frame(
@@ -103,7 +122,7 @@ list_cache <- function(source = NULL) {
     return(empty_df)
   }
 
-  files <- list.files(path = cache_dir, pattern = "\\.(nc|grd)$", full.names = TRUE)
+  files <- list.files(path = cache_dir, pattern = .CACHE_FILE_PATTERN, full.names = TRUE)
   if (length(x = files) == 0) {
     message("No cached files found")
     return(empty_df)
@@ -111,10 +130,7 @@ list_cache <- function(source = NULL) {
 
   file_info <- file.info(files)
   basenames <- basename(path = files)
-  sources <- ifelse(
-    test = grepl(pattern = "^era5", x = basenames), yes = "era5",
-    no = ifelse(test = grepl(pattern = "^imd", x = basenames), yes = "imd", no = "unknown")
-  )
+  sources <- .cache_source(basenames)
 
   if (!is.null(x = source)) {
     keep <- sources == tolower(x = source)
@@ -140,12 +156,15 @@ list_cache <- function(source = NULL) {
 
 #' Clear cache
 #'
-#' @param source Clear only "era5", "imd", or NULL for all
+#' @param source Clear only "era5", "imd", "cru_ts", "hadex3", or NULL for all
 #' @param older_than Remove files older than this many days (NULL = all)
 #' @param confirm Ask for confirmation (default: TRUE)
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return Number of files deleted (invisible)
+#' @return Invisibly, the number of files deleted.
 #' @export
+#' @examplesIf interactive()
+#' # Remove cached ERA5 files older than 30 days
+#' clear_cache(source = "era5", older_than = 30)
 clear_cache <- function(source = NULL, older_than = NULL, confirm = TRUE) {
   cache_dir <- get_cache_dir(create = FALSE)
   if (!dir.exists(paths = cache_dir)) {
@@ -153,7 +172,7 @@ clear_cache <- function(source = NULL, older_than = NULL, confirm = TRUE) {
     return(invisible(x = 0))
   }
 
-  files <- list.files(path = cache_dir, pattern = "\\.(nc|grd)$", full.names = TRUE)
+  files <- list.files(path = cache_dir, pattern = .CACHE_FILE_PATTERN, full.names = TRUE)
   if (length(x = files) == 0) {
     message("No cached files to delete")
     return(invisible(x = 0))
@@ -193,28 +212,32 @@ clear_cache <- function(source = NULL, older_than = NULL, confirm = TRUE) {
 }
 
 #' Get cache statistics
-#' @return List with cache statistics
+#' @return A list with elements `exists` (logical), `n_files` and `total_size_mb`.
 #' @export
+#' @examples
+#' cache_stats()
 cache_stats <- function() {
   cache_dir <- get_cache_dir(create = FALSE)
   if (!dir.exists(paths = cache_dir)) {
     return(list(location = cache_dir, exists = FALSE, n_files = 0, total_size_mb = 0))
   }
 
-  files <- list.files(path = cache_dir, pattern = "\\.(nc|grd)$", full.names = TRUE)
+  files <- list.files(path = cache_dir, pattern = .CACHE_FILE_PATTERN, full.names = TRUE)
   if (length(x = files) == 0) {
     return(list(location = cache_dir, exists = TRUE, n_files = 0, total_size_mb = 0))
   }
 
   file_info <- file.info(files)
-  basenames <- basename(path = files)
+  counts <- table(factor(.cache_source(basename(path = files)), levels = .CACHE_SOURCES))
 
   list(
     location = cache_dir,
     exists = TRUE,
     n_files = length(x = files),
-    n_era5 = sum(grepl(pattern = "^era5", x = basenames)),
-    n_imd = sum(grepl(pattern = "^imd", x = basenames)),
+    n_era5 = counts[["era5"]],
+    n_imd = counts[["imd"]],
+    n_cru_ts = counts[["cru_ts"]],
+    n_hadex3 = counts[["hadex3"]],
     total_size_mb = round(x = sum(file_info$size) / 1024^2, digits = 2),
     oldest_file = format(x = min(file_info$mtime), format = "%Y-%m-%d %H:%M:%S"),
     newest_file = format(x = max(file_info$mtime), format = "%Y-%m-%d %H:%M:%S")
@@ -223,8 +246,10 @@ cache_stats <- function() {
 
 #' Show cache contents and statistics
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with cache information (invisible)
+#' @return Invisibly, a data.frame with columns `name`, `size_mb` and `mtime` describing cached files, or `NULL` if the cache is empty. Called mainly for its side effect of printing a summary as messages.
 #' @export
+#' @examples
+#' show_cache_info()
 show_cache_info <- function() {
   cache_dir <- get_cache_dir(create = FALSE)
 
@@ -268,8 +293,10 @@ show_cache_info <- function() {
 #'
 #' @param force Overwrite existing cached files (default: FALSE)
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return List of cached files (invisible)
+#' @return Invisibly, a named list of paths to the cached sample files, or `NULL` if no sample directory exists.
 #' @export
+#' @examplesIf interactive()
+#' populate_sample_cache()
 populate_sample_cache <- function(force = FALSE) {
   pkg_dir <- system.file(package = "varunayan")
   sample_dirs <- c(

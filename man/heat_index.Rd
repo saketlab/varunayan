@@ -7,15 +7,17 @@
 heat_index(temp_c, rh)
 }
 \arguments{
-\item{temp_c}{Air temperature in celsius}
+\item{temp_c}{Air temperature in Celsius}
 
 \item{rh}{Relative humidity as percentage (0-100)}
 }
 \value{
-Heat index in celsius
+Heat index in Celsius
 }
 \description{
-Calculate heat index (apparent temperature)
+US National Weather Service heat index: Steadman's simple formula, replaced
+by the Rothfusz (1990) regression with its low- and high-humidity
+adjustments once the simple value averaged with temperature reaches 80F.
 }
 \examples{
 heat_index(35, 70)

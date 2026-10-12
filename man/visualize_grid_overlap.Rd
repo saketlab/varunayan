@@ -38,3 +38,15 @@ ggplot object
 \description{
 Visualize grid-polygon overlap
 }
+\examples{
+\dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+grid <- expand.grid(longitude = seq(72.5, 77.5, by = 1), latitude = seq(18.5, 21.5, by = 1))
+grid$temperature <- seq_len(nrow(grid))
+cells <- sf::st_make_grid(sf::st_as_sfc(sf::st_bbox(
+  c(xmin = 72, ymin = 18, xmax = 78, ymax = 22),
+  crs = 4326
+)), n = c(2, 1))
+polys <- sf::st_sf(region = c("west", "east"), geometry = cells)
+visualize_grid_overlap(grid, polys)
+\dontshow{\}) # examplesIf}
+}

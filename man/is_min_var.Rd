@@ -15,3 +15,6 @@ Logical indicating if variable should use min
 \description{
 Check if a variable should use minimum
 }
+\examples{
+is_min_var("2m_temperature")
+}

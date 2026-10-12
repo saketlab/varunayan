@@ -2,8 +2,7 @@
 % Please edit documentation in R/imd_download.R
 \name{download_imd_rainfall}
 \alias{download_imd_rainfall}
-\title{IMD data download functions
-Download IMD gridded rainfall data}
+\title{Download IMD gridded rainfall data}
 \usage{
 download_imd_rainfall(
   start_year,
@@ -31,12 +30,12 @@ Character vector of downloaded file paths
 Downloads daily gridded rainfall data from IMD at specified resolution.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 # Download 0.25 degree rainfall for 2023-2025
 files <- download_imd_rainfall(
   start_year = 2023,
   end_year = 2025,
   resolution = 0.25
 )
-}
+\dontshow{\}) # examplesIf}
 }

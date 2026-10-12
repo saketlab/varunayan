@@ -14,8 +14,18 @@ check_grid_coverage(grid_data, polygons, polygon_id_cols = NULL)
 \item{polygon_id_cols}{Column names to identify polygons}
 }
 \value{
-List with coverage statistics
+A list with elements \code{total_polygons}, \code{total_grid_points}, \code{polygons_with_points}, \code{polygons_without_points}, \code{coverage_percent}, \code{points_per_polygon} (a data.frame of polygon identifiers and \code{n_points}) and \code{summary} (a one-line character description).
 }
 \description{
 Check grid coverage statistics for polygons
+}
+\examples{
+grid <- expand.grid(longitude = seq(72.5, 77.5, by = 1), latitude = seq(18.5, 21.5, by = 1))
+grid$temperature <- seq_len(nrow(grid))
+cells <- sf::st_make_grid(sf::st_as_sfc(sf::st_bbox(
+  c(xmin = 72, ymin = 18, xmax = 78, ymax = 22),
+  crs = 4326
+)), n = c(2, 1))
+polys <- sf::st_sf(region = c("west", "east"), geometry = cells)
+check_grid_coverage(grid, polys)
 }

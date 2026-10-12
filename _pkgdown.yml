@@ -136,6 +136,19 @@ reference:
   - starts_with("imd_")
   - starts_with("IMD")
 
+- title: "Heat exposure indicators"
+  desc: "Heatwaves, warm nights, Excess Heat Factor, WBGT and land-surface indices for heat-health studies"
+  contents:
+  - exposure_indicators
+  - heatwave_days
+  - warm_nights
+  - india_elevation
+  - excess_heat_factor
+  - wbgt
+  - wbgt_liljegren
+  - ndvi
+  - ndbi
+
 - title: "Variable discovery"
   desc: "Search and explore available climate variables"
   contents:
@@ -156,6 +169,8 @@ reference:
 authors:
   Saket Choudhary:
     href: https://github.com/saketkc
+  Darakhshan Nehal:
+    href: https://github.com/darakhshannehal
 
 footer:
   structure:

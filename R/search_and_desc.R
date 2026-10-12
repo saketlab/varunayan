@@ -1,21 +1,17 @@
-#' Search and description functions for ERA5 variables
-
 #' Search for ERA5 variables by keyword
 #'
 #' @param keyword Character string to search for in variable names and descriptions
 #' @param dataset_type Character string indicating dataset type ("single", "pressure", or "all")
 #' @param exact_match Logical indicating whether to use exact matching
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with matching variables and their descriptions
+#' @return A data.frame with columns `variable_name`, `description`, `units`, `dataset_type` and `category`, one row per matching variable.
 #' @export
 #' @examples
-#' \dontrun{
 #' # Search for temperature variables
 #' temp_vars <- search_variable("temperature")
 #'
 #' # Search in pressure level data only
 #' pressure_temp <- search_variable("temperature", dataset_type = "pressure")
-#' }
 search_variable <- function(keyword, dataset_type = "all", exact_match = FALSE) {
   dataset_type <- tolower(x = dataset_type)
   if (!dataset_type %in% c("single", "pressure", "all")) {
@@ -92,16 +88,14 @@ search_variable <- function(keyword, dataset_type = "all", exact_match = FALSE) 
 #' @param variables Character vector of variable names to describe
 #' @param dataset_type Character string indicating dataset type ("single", "pressure", or "all")
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with detailed variable descriptions
+#' @return A data.frame with columns `variable_name`, `description`, `units`, `dataset_type` and `category`, one row per matched variable.
 #' @export
 #' @examples
-#' \dontrun{
 #' # Describe specific variables
 #' descriptions <- describe_variables(c("2m_temperature", "total_precipitation"))
 #'
 #' # Get descriptions for pressure level variables
 #' pressure_desc <- describe_variables("temperature", dataset_type = "pressure")
-#' }
 describe_variables <- function(variables, dataset_type = "all") {
   dataset_type <- tolower(x = dataset_type)
   if (!dataset_type %in% c("single", "pressure", "all")) {
@@ -181,6 +175,8 @@ describe_variables <- function(variables, dataset_type = "all") {
 #'
 #' @return Character vector of available dataset types
 #' @export
+#' @examples
+#' get_available_datasets()
 get_available_datasets <- function() {
   return(c("single", "pressure"))
 }
@@ -191,6 +187,8 @@ get_available_datasets <- function() {
 #' @param ... Arguments passed to the main function (used by aliases).
 #' @return Character vector of variable names
 #' @export
+#' @examples
+#' head(list_available_variables("single"))
 list_available_variables <- function(dataset_type = "all") {
   dataset_type <- tolower(x = dataset_type)
   if (!dataset_type %in% c("single", "pressure", "all")) {
@@ -411,6 +409,8 @@ get_pressure_level_variables <- function() {
 #' @param ... Arguments passed to the main function (used by aliases).
 #' @return Character vector of pressure levels in hPa
 #' @export
+#' @examples
+#' get_available_pressure_levels()
 get_available_pressure_levels <- function() {
   c(
     "1000", "975", "950", "925", "900", "875", "850", "825", "800", "775",

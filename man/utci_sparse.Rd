@@ -29,7 +29,11 @@ utci_sparse(30, tmrt = 40, wind_speed = 2, rh = 60)
 utci_sparse(35, tmrt = 35, wind_speed = 1, rh = 80)
 }
 \references{
-Roman, S., Skok, G., Todorovski, L., & Dzeroski, S. (2025).
-UTCI approximation using sparse regression with orthogonal polynomials.
-Zenodo. https://doi.org/10.5281/zenodo.17465548 https://arxiv.org/abs/2508.11307
+Roman, S., Todorovski, L., Dzeroski, S., & Skok, G. (2025).
+Approximating the universal thermal climate index using sparse regression
+with orthogonal polynomials. \doi{10.48550/arXiv.2508.11307}
+
+Roman, S. (2025). Code for Approximating the universal thermal climate
+index (UTCI) using sparse regression with orthogonal polynomials. Zenodo.
+\doi{10.5281/zenodo.17465548}
 }

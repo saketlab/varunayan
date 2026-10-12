@@ -6,7 +6,13 @@
 \usage{
 sum_vars
 }
+\value{
+A character vector of variable names.
+}
 \description{
 Accumulation variables (precipitation, radiation) that use sum for temporal
 aggregation.
+}
+\examples{
+head(sum_vars)
 }

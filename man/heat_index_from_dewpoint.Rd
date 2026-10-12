@@ -7,12 +7,12 @@
 heat_index_from_dewpoint(temp_c, dewpoint_c)
 }
 \arguments{
-\item{temp_c}{Air temperature in celsius}
+\item{temp_c}{Air temperature in Celsius}
 
-\item{dewpoint_c}{Dewpoint temperature in celsius}
+\item{dewpoint_c}{Dewpoint temperature in Celsius}
 }
 \value{
-Heat index in celsius
+Heat index in Celsius
 }
 \description{
 Calculate heat index from dewpoint

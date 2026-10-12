@@ -7,7 +7,7 @@
 wet_bulb_temperature(temp_c, rh)
 }
 \arguments{
-\item{temp_c}{Air temperature in celsius}
+\item{temp_c}{Air temperature in Celsius}
 
 \item{rh}{Relative humidity as percentage (0-100)}
 }
@@ -24,5 +24,5 @@ wet_bulb_temperature(30, 60)
 \references{
 Stull, R. (2011). Wet-Bulb Temperature from Relative Humidity
 and Air Temperature. Journal of Applied Meteorology and Climatology,
-50(11), 2267-2269. https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
+50(11), 2267-2269. \doi{10.1175/JAMC-D-11-0143.1}
 }

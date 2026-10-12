@@ -6,7 +6,7 @@
 #' @references
 #' Dunn et al. (2020) Development of an updated global land in-situ-based dataset
 #' of temperature and precipitation extremes: HadEX3. J. Geophys. Res. Atmos.
-#' https://doi.org/10.1029/2019JD032263
+#' \doi{10.1029/2019JD032263}
 #' @name hadex3
 
 # Annual indices (baseline period determines availability of some)
@@ -35,7 +35,7 @@
   "CSDI", "WSDI", "R95p", "R99p", "R95pTOT", "R99pTOT"
 )
 
-.HADEX3_BASE_URL <- "http://www.metoffice.gov.uk/hadobs/hadex3/data"
+.HADEX3_BASE_URL <- "https://www.metoffice.gov.uk/hadobs/hadex3/data"
 .HADEX3_YEAR_START <- 1901L
 .HADEX3_YEAR_END <- 2018L
 
@@ -296,10 +296,7 @@
 #' Fetch HadEX3 index data (with caching)
 #' @keywords internal
 .fetch_hadex3 <- function(index, frequency, baseline, use_cache, output_dir) {
-  cache_key <- digest::digest(
-    list(source = "hadex3", index = index, frequency = frequency, baseline = baseline),
-    algo = "md5"
-  )
+  cache_key <- .source_cache_key(list(source = "hadex3", index = index, frequency = frequency, baseline = baseline))
 
   if (use_cache) {
     cached <- check_cache(cache_key)
@@ -350,8 +347,7 @@
 #' @return data.frame with columns: year (+ month for monthly), latitude,
 #'   longitude, value, index.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' # Annual maximum daily maximum temperature for Europe 1981-2010
 #' data <- hadex3_bbox(
 #'   index = "TXx",
@@ -366,7 +362,6 @@
 #'   north = 35, south = 8, east = 97, west = 68,
 #'   frequency = "monthly"
 #' )
-#' }
 hadex3_bbox <- function(index, start_year, end_year,
                         north, south, east, west,
                         frequency = "annual", baseline = "61-90",
@@ -412,14 +407,13 @@ hadex3_bbox <- function(index, start_year, end_year,
 #' @return data.frame with columns: year (+ month for monthly), latitude,
 #'   longitude, value, index.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
 #' data <- hadex3_geojson(
 #'   index = "TXx",
 #'   start_year = 1981, end_year = 2010,
-#'   geojson_file = "india.geojson"
+#'   geojson_file = region
 #' )
-#' }
 hadex3_geojson <- function(index, start_year, end_year, geojson_file,
                            frequency = "annual", baseline = "61-90",
                            output_dir = tempdir(), use_cache = TRUE) {

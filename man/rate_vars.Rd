@@ -6,6 +6,12 @@
 \usage{
 rate_vars
 }
+\value{
+A character vector of variable names.
+}
 \description{
 Rate variables that should be averaged
+}
+\examples{
+head(rate_vars)
 }

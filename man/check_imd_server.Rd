@@ -4,12 +4,18 @@
 \alias{check_imd_server}
 \title{Check IMD server connectivity}
 \usage{
-check_imd_server(base_url = "https://www.imdpune.gov.in/", timeout = 30)
+check_imd_server(
+  base_url = .IMD_BASE_URL,
+  timeout = 60,
+  retries = .IMD_RETRIES
+)
 }
 \arguments{
 \item{base_url}{Base URL to test.}
 
-\item{timeout}{Connection timeout in seconds.}
+\item{timeout}{Request timeout in seconds.}
+
+\item{retries}{Attempts before giving up.}
 }
 \value{
 Logical indicating if server is reachable

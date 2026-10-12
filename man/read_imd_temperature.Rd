@@ -2,8 +2,7 @@
 % Please edit documentation in R/imd_processing.R
 \name{read_imd_temperature}
 \alias{read_imd_temperature}
-\title{IMD data processing functions
-Read IMD binary temperature file}
+\title{Read IMD binary temperature file}
 \usage{
 read_imd_temperature(file_path, var_type, year)
 }
@@ -21,7 +20,8 @@ data.frame with columns: date, latitude, longitude, temperature
 Reads IMD binary temperature data (max or min) and converts to data.frame.
 }
 \examples{
-\dontrun{
-tmax_data <- read_imd_temperature("imd_tmax_1.0_2023.grd", "tmax", 2023)
-}
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+f <- download_imd_temperature(2023, 2023, var_type = "tmax")
+tmax_data <- read_imd_temperature(f, "tmax", 2023)
+\dontshow{\}) # examplesIf}
 }

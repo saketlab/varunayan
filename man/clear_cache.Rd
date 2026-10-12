@@ -12,15 +12,21 @@ clear_cache(source = NULL, older_than = NULL, confirm = TRUE)
 \arguments{
 \item{...}{Arguments passed to the main function (used by aliases).}
 
-\item{source}{Clear only "era5", "imd", or NULL for all}
+\item{source}{Clear only "era5", "imd", "cru_ts", "hadex3", or NULL for all}
 
 \item{older_than}{Remove files older than this many days (NULL = all)}
 
 \item{confirm}{Ask for confirmation (default: TRUE)}
 }
 \value{
-Number of files deleted (invisible)
+Invisibly, the number of files deleted.
 }
 \description{
 Clear cache
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+# Remove cached ERA5 files older than 30 days
+clear_cache(source = "era5", older_than = 30)
+\dontshow{\}) # examplesIf}
 }

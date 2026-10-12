@@ -23,7 +23,8 @@ data.frame with columns: date, latitude, longitude, rainfall
 Reads IMD NetCDF rainfall data and converts to data.frame.
 }
 \examples{
-\dontrun{
-rain_data <- read_imd_rainfall("imd_rainfall_0.25_2023.nc", 0.25, 2023)
-}
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+f <- download_imd_rainfall(2023, 2023, resolution = 0.25)
+rain_data <- read_imd_rainfall(f, 0.25, 2023)
+\dontshow{\}) # examplesIf}
 }

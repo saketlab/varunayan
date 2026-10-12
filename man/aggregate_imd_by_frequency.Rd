@@ -12,8 +12,15 @@ aggregate_imd_by_frequency(data, frequency = "daily")
 \item{frequency}{Character string: "daily", "monthly", "yearly"}
 }
 \value{
-Aggregated data.frame
+A data.frame with columns \code{date} (first day of each month or year), \code{latitude}, \code{longitude} and the value column, summed for rainfall and averaged for temperature. Returned unchanged when \code{frequency = "daily"}.
 }
 \description{
 Aggregate IMD data by temporal frequency
+}
+\examples{
+imd <- data.frame(
+  date = rep(as.Date("2023-01-01") + 0:59, each = 2),
+  latitude = 20.5, longitude = c(73.5, 79.5), rainfall = 1
+)
+aggregate_imd_by_frequency(imd, "monthly")
 }

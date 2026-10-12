@@ -53,7 +53,7 @@ geographic bounding box. Data covers global land areas at 0.5 degree
 resolution, 1901-2022.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 # Monthly mean temperature for India 2010-2020
 data <- cru_ts_bbox(
   variable = "tmp",
@@ -67,5 +67,5 @@ data <- cru_ts_bbox(
   start_year = 1981, end_year = 2010,
   north = 71, south = 36, east = 40, west = -10
 )
-}
+\dontshow{\}) # examplesIf}
 }

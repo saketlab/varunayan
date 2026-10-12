@@ -6,6 +6,12 @@
 \usage{
 max_vars
 }
+\value{
+A character vector of variable names.
+}
 \description{
 Variables that should use maximum aggregation
+}
+\examples{
+head(max_vars)
 }

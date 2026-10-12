@@ -1,4 +1,35 @@
-#' IMD data download functions
+.IMD_BASE_URL <- "https://imdpune.gov.in/"
+.IMD_RAIN_YEARS <- c(1901L, 2025L)
+.IMD_TEMP_YEARS <- c(1951L, 2025L)
+.IMD_GRID_URL <- paste0(.IMD_BASE_URL, "cmpg/Griddata/")
+# Download form for each dataset: the endpoint it posts to and its field
+.IMD_ENDPOINTS <- data.frame(
+  dataset = c("rainfall_0.25", "rainfall_1.0", "tmax_1.0", "tmin_1.0"),
+  php = c("RF25.php", "rainfallone.php", "maxtemp.php", "mintemp.php"),
+  param = c("RF25", "rainone", "maxtemp", "mintemp")
+)
+.imd_endpoint <- function(dataset) as.list(.IMD_ENDPOINTS[.IMD_ENDPOINTS$dataset == dataset, ])
+
+# imdpune.gov.in drops TLS handshakes in bursts and connects slowly
+.IMD_CONNECT_TIMEOUT <- 60
+.IMD_RETRIES <- 8L
+
+# retry connection failures and 5xx; any other response goes back to the caller
+.imd_request <- function(verb, url, ..., retries = .IMD_RETRIES, timeout_s = 600) {
+  for (attempt in seq_len(retries)) {
+    if (attempt > 1) Sys.sleep(min(2^(attempt - 1), 30))
+    r <- tryCatch(
+      verb(url, ..., timeout(timeout_s), config(connecttimeout = .IMD_CONNECT_TIMEOUT)),
+      error = function(e) e
+    )
+    if (!inherits(r, "error") && status_code(r) < 500) {
+      return(r)
+    }
+    msg <- if (inherits(r, "error")) conditionMessage(r) else paste("Server returned status", status_code(r))
+    warning(sprintf(fmt = "Attempt %s/%s failed: %s", attempt, retries, msg), call. = FALSE)
+  }
+  stop("Failed after ", retries, " attempts. Last error: ", msg, call. = FALSE)
+}
 
 #' Download IMD gridded rainfall data
 #'
@@ -11,22 +42,22 @@
 #' @param use_cache Whether to use cached data if available (default: TRUE).
 #' @return Character vector of downloaded file paths
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' # Download 0.25 degree rainfall for 2023-2025
 #' files <- download_imd_rainfall(
 #'   start_year = 2023,
 #'   end_year = 2025,
 #'   resolution = 0.25
 #' )
-#' }
 download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, output_dir = tempdir(), use_cache = TRUE) {
-  if (start_year < 1901 || end_year > 2024) stop("Rainfall data available for years 1901-2024")
+  if (start_year < .IMD_RAIN_YEARS[1] || end_year > .IMD_RAIN_YEARS[2]) {
+    stop(sprintf("Rainfall data available for years %d-%d", .IMD_RAIN_YEARS[1], .IMD_RAIN_YEARS[2]))
+  }
   if (start_year > end_year) stop("Start year must be <= end year")
   if (!resolution %in% c(0.25, 1.0)) stop("Resolution must be 0.25 or 1.0 degrees")
 
 
-  endpoint <- if (resolution == 0.25) list(php = "RF25.php", param = "RF25") else list(php = "rain.php", param = "rain")
+  endpoint <- .imd_endpoint(paste0("rainfall_", format(resolution, nsmall = 1)))
 
   message(sprintf(fmt = "Downloading IMD rainfall data (resolution: %s\u00B0)", resolution))
   message(sprintf(fmt = "Years: %s to %s", start_year, end_year))
@@ -71,7 +102,7 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
   if (length(x = missing_years) > 0) {
     message("Checking IMD server connectivity...")
     if (!check_imd_server()) {
-      warning("IMD server (www.imdpune.gov.in) is not responding", call. = FALSE)
+      warning("IMD server (", .IMD_BASE_URL, ") is not responding", call. = FALSE)
 
       if (length(x = cached_years) == length(x = years)) {
         message("All requested data is cached. Proceeding with cached data only.")
@@ -125,8 +156,7 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
       {
         message(sprintf(fmt = "Downloading year %s...", year))
         result <- download_imd_year(
-          year, endpoint$php, endpoint$param,
-          "https://www.imdpune.gov.in/cmpg/Griddata/", output_file
+          year, endpoint$php, endpoint$param, .IMD_GRID_URL, output_file
         )
         message(sprintf(fmt = "Downloaded %s: %s", year, basename(path = result)))
 
@@ -168,22 +198,22 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
 #' @param use_cache Whether to use cached data if available (default: TRUE).
 #' @return Character vector of downloaded file paths
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' # Download max temperature for 2023-2025
 #' files <- download_imd_temperature(
 #'   start_year = 2023,
 #'   end_year = 2025,
 #'   var_type = "tmax"
 #' )
-#' }
 download_imd_temperature <- function(start_year, end_year, var_type = "tmax", output_dir = tempdir(), use_cache = TRUE) {
-  if (start_year < 1951 || end_year > 2024) stop("Temperature data available for years 1951-2024")
+  if (start_year < .IMD_TEMP_YEARS[1] || end_year > .IMD_TEMP_YEARS[2]) {
+    stop(sprintf("Temperature data available for years %d-%d", .IMD_TEMP_YEARS[1], .IMD_TEMP_YEARS[2]))
+  }
   if (start_year > end_year) stop("Start year must be <= end year")
   if (!var_type %in% c("tmax", "tmin")) stop("var_type must be 'tmax' or 'tmin'")
 
 
-  endpoint <- if (var_type == "tmax") list(php = "maxtemp.php", param = "maxtemp") else list(php = "mintemp.php", param = "mintemp")
+  endpoint <- .imd_endpoint(paste0(var_type, "_1.0"))
 
   message(sprintf(fmt = "Downloading IMD %s data (resolution: 1.0\u00B0)", var_type))
   message(sprintf(fmt = "Years: %s to %s", start_year, end_year))
@@ -228,7 +258,7 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
   if (length(x = missing_years) > 0) {
     message("Checking IMD server connectivity...")
     if (!check_imd_server()) {
-      warning("IMD server (www.imdpune.gov.in) is not responding", call. = FALSE)
+      warning("IMD server (", .IMD_BASE_URL, ") is not responding", call. = FALSE)
 
       if (length(x = cached_years) == length(x = years)) {
         message("All requested data is cached. Proceeding with cached data only.")
@@ -282,8 +312,7 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
       {
         message(sprintf(fmt = "Downloading year %s...", year))
         result <- download_imd_year(
-          year, endpoint$php, endpoint$param,
-          "https://www.imdpune.gov.in/cmpg/Griddata/", output_file
+          year, endpoint$php, endpoint$param, .IMD_GRID_URL, output_file
         )
         message(sprintf(fmt = "Downloaded %s: %s", year, basename(path = result)))
 
@@ -316,100 +345,45 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
 #' Check IMD server connectivity
 #'
 #' @param base_url Base URL to test.
-#' @param timeout Connection timeout in seconds.
+#' @param timeout Request timeout in seconds.
+#' @param retries Attempts before giving up.
 #' @return Logical indicating if server is reachable
 #' @keywords internal
-check_imd_server <- function(base_url = "https://www.imdpune.gov.in/", timeout = 30) {
+check_imd_server <- function(base_url = .IMD_BASE_URL, timeout = 60, retries = .IMD_RETRIES) {
   tryCatch(
     {
-      response <- GET(
-        base_url,
-        timeout(timeout),
-        config(connecttimeout = timeout)
-      )
-      status_code(response) < 500
+      suppressWarnings(.imd_request(HEAD, base_url, retries = retries, timeout_s = timeout))
+      TRUE
     },
-    error = function(e) {
-      FALSE
-    }
+    error = function(e) FALSE
   )
 }
 
 #' Internal function to download a single year of IMD data
+#'
+#' Connection failures and server errors are retried; a response without data
+#' (another status, an HTML page or an empty body) fails at once.
 #'
 #' @param year Year to download.
 #' @param php_file PHP endpoint file.
 #' @param param_name POST parameter name.
 #' @param base_url Base URL.
 #' @param output_file Path to save the downloaded file.
-#' @param max_retries Maximum number of retry attempts.
+#' @param max_retries Maximum number of attempts.
 #' @return Character string path to downloaded file
 #' @keywords internal
-download_imd_year <- function(year, php_file, param_name, base_url, output_file, max_retries = 3) {
-  post_data <- setNames(list(as.character(x = year)), param_name)
-  url <- paste0(base_url, php_file)
-
-  last_error <- NULL
-
-  for (attempt in 1:max_retries) {
-    if (attempt > 1) {
-      wait_time <- 2^(attempt - 1)
-      message(sprintf(fmt = "Retry %s/%s after %ss...", attempt, max_retries, wait_time))
-      Sys.sleep(wait_time)
-    }
-
-    response <- tryCatch(
-      {
-        POST(url,
-          body = post_data,
-          encode = "form",
-          timeout(600), # 10 minute timeout for slow server
-          config(connecttimeout = 60) # 60 second connection timeout
-        )
-      },
-      error = function(e) {
-        last_error <<- e
-        NULL
-      }
-    )
-
-
-    if (is.null(response)) {
-      warning(sprintf(fmt = "Connection failed on attempt %s: %s", attempt, last_error$message), call. = FALSE)
-      next
-    }
-
-
-    if (status_code(response) != 200) {
-      last_error <- simpleError(paste("Server returned status", status_code(response)))
-      warning(sprintf(fmt = "Request failed with status %s on attempt %s", status_code(response), attempt), call. = FALSE)
-      next
-    }
-
-    if (grepl(pattern = "text/html", headers(response)$`content-type`, ignore.case = TRUE)) {
-      last_error <- simpleError("Server returned HTML instead of data")
-      warning(sprintf(fmt = "Server returned HTML on attempt %s", attempt), call. = FALSE)
-      next
-    }
-
-
-    writeBin(content(response, "raw"), output_file)
-    if (!file.exists(output_file) || file.size(output_file) == 0) {
-      last_error <- simpleError("Downloaded file is empty or was not created")
-      warning(sprintf(fmt = "Downloaded file is empty on attempt %s", attempt), call. = FALSE)
-      next
-    }
-
-
-    return(output_file)
+download_imd_year <- function(year, php_file, param_name, base_url, output_file, max_retries = .IMD_RETRIES) {
+  response <- .imd_request(POST, paste0(base_url, php_file),
+    body = setNames(list(as.character(x = year)), param_name), encode = "form",
+    retries = max_retries
+  )
+  if (status_code(response) != 200) stop("Server returned status ", status_code(response))
+  if (grepl(pattern = "text/html", headers(response)$`content-type`, ignore.case = TRUE)) {
+    stop("Server returned HTML instead of data for ", year)
   }
-
-
-  if (!is.null(last_error)) {
-    stop("Failed after ", max_retries, " attempts. Last error: ", last_error$message)
-  } else {
-    stop("Failed after ", max_retries, " attempts with unknown error")
-  }
+  writeBin(content(response, "raw"), output_file)
+  if (!file.exists(output_file) || file.size(output_file) == 0) stop("Downloaded file is empty or was not created")
+  output_file
 }
 
 #' Get IMD grid specifications
@@ -418,7 +392,7 @@ download_imd_year <- function(year, php_file, param_name, base_url, output_file,
 #'
 #' @param dataset Dataset identifier: "rainfall_0.25",
 #'   "rainfall_1.0", "tmax_1.0", "tmin_1.0".
-#' @return List with grid specifications.
+#' @return A list with elements `nlat`, `nlon`, `lat_start`, `lat_end`, `lon_start`, `lon_end`, `resolution` (degrees), `unit`, `missing_value`, `format` and `description`.
 #' @export
 #' @examples
 #' specs <- get_imd_grid_specs("rainfall_0.25")
@@ -435,21 +409,21 @@ get_imd_grid_specs <- function(dataset) {
       unit = "mm",
       missing_value = -999,
       format = "NetCDF",
-      variable_name = "rf",
+      variable_name = "RAINFALL",
       description = "Daily rainfall at 0.25 degree resolution"
     ),
     "rainfall_1.0" = list(
-      nlat = 31,
-      nlon = 31,
-      lat_start = 7.5,
-      lat_end = 37.5,
-      lon_start = 67.5,
-      lon_end = 97.5,
+      nlat = 33,
+      nlon = 35,
+      lat_start = 6.5,
+      lat_end = 38.5,
+      lon_start = 66.5,
+      lon_end = 100.5,
       resolution = 1.0,
       unit = "mm",
       missing_value = -999,
       format = "NetCDF",
-      variable_name = "rf",
+      variable_name = "RAINFALL",
       description = "Daily rainfall at 1.0 degree resolution"
     ),
     "tmax_1.0" = list(
@@ -494,16 +468,18 @@ get_imd_grid_specs <- function(dataset) {
 #'
 #' @return data.frame with available IMD datasets and their characteristics
 #' @export
+#' @examples
+#' list_imd_datasets()
 list_imd_datasets <- function() {
   datasets <- data.frame(
     dataset_id = c("rainfall_0.25", "rainfall_1.0", "tmax_1.0", "tmin_1.0"),
     variable = c("Rainfall", "Rainfall", "Max Temperature", "Min Temperature"),
     resolution = c(0.25, 1.0, 1.0, 1.0),
-    year_start = c(1901, 1901, 1951, 1951),
-    year_end = c(2025, 2025, 2025, 2025),
+    year_start = c(.IMD_RAIN_YEARS[1], .IMD_RAIN_YEARS[1], .IMD_TEMP_YEARS[1], .IMD_TEMP_YEARS[1]),
+    year_end = c(.IMD_RAIN_YEARS[2], .IMD_RAIN_YEARS[2], .IMD_TEMP_YEARS[2], .IMD_TEMP_YEARS[2]),
     unit = c("mm", "mm", "\u00b0C", "\u00b0C"),
     format = c("NetCDF", "NetCDF", "Binary", "Binary"),
-    grid_size = c("135x129", "31x31", "31x31", "31x31"),
+    grid_size = c("135x129", "35x33", "31x31", "31x31"),
     missing_value = c(-999, -999, 99.9, 99.9),
     stringsAsFactors = FALSE
   )

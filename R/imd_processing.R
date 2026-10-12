@@ -1,4 +1,5 @@
-#' IMD data processing functions
+# Rainfall variable names seen in IMD NetCDF files, current format first
+.IMD_RAIN_VARS <- c("RAINFALL", "rf", "rainfall", "rain", "precip")
 
 #' Read IMD binary temperature file
 #'
@@ -9,10 +10,9 @@
 #' @param year Year of the data.
 #' @return data.frame with columns: date, latitude, longitude, temperature
 #' @export
-#' @examples
-#' \dontrun{
-#' tmax_data <- read_imd_temperature("imd_tmax_1.0_2023.grd", "tmax", 2023)
-#' }
+#' @examplesIf interactive()
+#' f <- download_imd_temperature(2023, 2023, var_type = "tmax")
+#' tmax_data <- read_imd_temperature(f, "tmax", 2023)
 read_imd_temperature <- function(file_path, var_type, year) {
   if (!file.exists(file_path)) stop("File not found: ", file_path)
 
@@ -63,7 +63,7 @@ read_imd_temperature <- function(file_path, var_type, year) {
   grid$temperature <- as.vector(data_array)
 
   # Filter missing values (99.9 for temperature)
-  result_df <- grid[!is.na(grid$temperature) & grid$temperature < 99, ]
+  result_df <- grid[!is.na(grid$temperature) & grid$temperature < 99, c("date", "latitude", "longitude", "temperature")]
   rownames(result_df) <- NULL
 
   message(sprintf(fmt = "Processed %s data points", nrow(x = result_df)))
@@ -81,10 +81,9 @@ read_imd_temperature <- function(file_path, var_type, year) {
 #'   only that spatial slab is read off disk (fast path); NULL reads the full grid.
 #' @return data.frame with columns: date, latitude, longitude, rainfall
 #' @export
-#' @examples
-#' \dontrun{
-#' rain_data <- read_imd_rainfall("imd_rainfall_0.25_2023.nc", 0.25, 2023)
-#' }
+#' @examplesIf interactive()
+#' f <- download_imd_rainfall(2023, 2023, resolution = 0.25)
+#' rain_data <- read_imd_rainfall(f, 0.25, 2023)
 read_imd_rainfall <- function(file_path, resolution, year, bbox = NULL) {
   if (!file.exists(file_path)) stop("File not found: ", file_path)
 
@@ -92,7 +91,7 @@ read_imd_rainfall <- function(file_path, resolution, year, bbox = NULL) {
     return(read_imd_rainfall_cropped(file_path, year, bbox))
   }
 
-  dataset_id <- paste0("rainfall_", resolution)
+  dataset_id <- paste0("rainfall_", format(resolution, nsmall = 1))
   grid_specs <- get_imd_grid_specs(dataset_id)
 
   message(sprintf(fmt = "Reading IMD rainfall data for %s", year))
@@ -122,13 +121,10 @@ read_imd_rainfall <- function(file_path, resolution, year, bbox = NULL) {
       if (inherits(df[[col]], "units")) df[[col]] <- as.numeric(df[[col]])
     }
 
-    rain_vars <- c("rf", "rainfall", "rain", "precip")
-    rain_col <- intersect(rain_vars, names(df))
-    if (length(x = rain_col) == 0) {
-      rain_col <- setdiff(x = names(x = df), y = c("longitude", "latitude", "date"))[1]
-    } else {
-      rain_col <- rain_col[1]
-    }
+    rain_col <- c(
+      intersect(.IMD_RAIN_VARS, names(df)),
+      setdiff(x = names(x = df), y = c("longitude", "latitude", "date"))
+    )[1]
 
     if (rain_col != "rainfall") names(df)[names(df) == rain_col] <- "rainfall"
     df <- df[, c("date", "latitude", "longitude", "rainfall")]
@@ -160,10 +156,10 @@ read_imd_rainfall_ncdf4 <- function(file_path, grid_specs, year) {
     message(sprintf(fmt = "NetCDF dimensions: %s", paste(dims, collapse = ", ")))
     message(sprintf(fmt = "NetCDF variables: %s", paste(vars, collapse = ", ")))
 
-    lats <- ncvar_get(nc, "lat")
-    lons <- ncvar_get(nc, "lon")
+    lats <- as.vector(ncvar_get(nc, "lat"))
+    lons <- as.vector(ncvar_get(nc, "lon"))
 
-    rain_var <- if ("rf" %in% vars) "rf" else setdiff(vars, c("lat", "lon", "time"))[1]
+    rain_var <- c(intersect(.IMD_RAIN_VARS, vars), setdiff(vars, c("lat", "lon", "time")))[1]
     if (is.na(rain_var)) stop("No rainfall variable found in NetCDF file")
 
     rainfall <- ncvar_get(nc, rain_var)
@@ -266,13 +262,11 @@ read_imd_rainfall_cropped <- function(file_path, year, bbox) {
 #' @param years Integer vector. Years corresponding to each file.
 #' @param bbox Optional named list/vector (north, south, east, west) passed to the
 #'   rainfall reader to crop at read time; NULL reads the full grid (default).
-#' @return data.frame with combined data
+#' @return A data.frame with columns `date`, `latitude`, `longitude` and the value column (`rainfall` or `temperature`), combining all files.
 #' @export
-#' @examples
-#' \dontrun{
-#' files <- c("imd_tmax_1.0_2023.grd", "imd_tmax_1.0_2024.grd")
+#' @examplesIf interactive()
+#' files <- download_imd_temperature(2023, 2024, var_type = "tmax")
 #' data <- process_imd_files(files, "tmax", years = c(2023, 2024))
-#' }
 process_imd_files <- function(file_paths, var_type, resolution = NULL, years = NULL, bbox = NULL) {
   if (length(x = file_paths) == 0) stop("No files provided")
 
@@ -318,8 +312,14 @@ process_imd_files <- function(file_paths, var_type, resolution = NULL, years = N
 #' @param south Southern latitude boundary
 #' @param east Eastern longitude boundary
 #' @param west Western longitude boundary
-#' @return Filtered data.frame
+#' @return The input data.frame restricted to rows whose `latitude`/`longitude` fall inside the region; columns are unchanged.
 #' @export
+#' @examples
+#' imd <- data.frame(
+#'   date = rep(as.Date("2023-01-01") + 0:59, each = 2),
+#'   latitude = 20.5, longitude = c(73.5, 79.5), rainfall = 1
+#' )
+#' filter_imd_by_bbox(imd, north = 22, south = 18, east = 76, west = 72)
 filter_imd_by_bbox <- function(data, north, south, east, west) {
   if (!all(c("latitude", "longitude") %in% names(data))) {
     stop("Data must contain 'latitude' and 'longitude' columns")
@@ -337,107 +337,58 @@ filter_imd_by_bbox <- function(data, north, south, east, west) {
 #'
 #' @param data data.frame with IMD data
 #' @param geojson_file Path to GeoJSON file
-#' @return Filtered data.frame
+#' @return The input data.frame restricted to rows whose `latitude`/`longitude` fall inside the region; columns are unchanged.
 #' @export
+#' @examples
+#' imd <- data.frame(
+#'   date = rep(as.Date("2023-01-01") + 0:59, each = 2),
+#'   latitude = 20.5, longitude = c(73.5, 79.5), rainfall = 1
+#' )
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
+#' filter_imd_by_geojson(imd, region)
 filter_imd_by_geojson <- function(data, geojson_file) {
   if (!all(c("latitude", "longitude") %in% names(data))) {
     stop("Data must contain 'latitude' and 'longitude' columns")
   }
 
-  geojson_sf <- st_read(geojson_file, quiet = TRUE)
-  if (is.na(st_crs(geojson_sf))) geojson_sf <- st_set_crs(geojson_sf, 4326)
-  geojson_sf <- st_transform(geojson_sf, 4326)
-
-  points_sf <- st_as_sf(data, coords = c("longitude", "latitude"), crs = 4326)
-  inside <- apply(st_within(points_sf, geojson_sf, sparse = FALSE), 1, any)
-  filtered <- data[inside, ]
-
-  message(sprintf(fmt = "Filtered %s points to %s within GeoJSON boundary", nrow(x = data), nrow(x = filtered)))
-  filtered
+  # shared filter reorders rows; subset by row id to keep input order
+  hit <- filter_dataframe_by_geojson(
+    data.frame(latitude = data$latitude, longitude = data$longitude, row = seq_len(nrow(data))),
+    geojson_file
+  )
+  data[sort(hit$row), , drop = FALSE]
 }
 
 #' Aggregate IMD data by temporal frequency
 #'
 #' @param data data.frame with IMD data
 #' @param frequency Character string: "daily", "monthly", "yearly"
-#' @return Aggregated data.frame
+#' @return A data.frame with columns `date` (first day of each month or year), `latitude`, `longitude` and the value column, summed for rainfall and averaged for temperature. Returned unchanged when `frequency = "daily"`.
 #' @export
+#' @examples
+#' imd <- data.frame(
+#'   date = rep(as.Date("2023-01-01") + 0:59, each = 2),
+#'   latitude = 20.5, longitude = c(73.5, 79.5), rainfall = 1
+#' )
+#' aggregate_imd_by_frequency(imd, "monthly")
 aggregate_imd_by_frequency <- function(data, frequency = "daily") {
   if (!"date" %in% names(data)) stop("Data must contain 'date' column")
-  if (tolower(x = frequency) == "daily") {
+  freq <- tolower(x = frequency)
+  if (freq == "daily") {
     return(data)
   }
 
   value_col <- setdiff(x = names(x = data), y = c("date", "latitude", "longitude"))[1]
   if (is.na(value_col)) stop("No value column found in data")
 
-  if (requireNamespace("data.table", quietly = TRUE)) {
-    DT <- as.data.table(data)
-
-    freq_lower <- tolower(x = frequency)
-    if (freq_lower == "monthly") {
-      DT[, time_group := year(date) * 100L + month(date)]
-    } else if (freq_lower == "yearly") {
-      DT[, time_group := year(date)]
-    } else {
-      DT[, time_group := year(date) * 100L + month(date)]
-    }
-
-    agg_fun <- if (value_col == "rainfall") sum else mean
-
-    aggregated <- DT[, .(value = agg_fun(get(..value_col), na.rm = TRUE)),
-      by = .(time_group, latitude, longitude)
-    ]
-
-    if (freq_lower == "monthly") {
-      aggregated[, date := as.Date(paste0(
-        time_group %/% 100L, "-",
-        sprintf(fmt = "%02d", time_group %% 100L), "-01"
-      ))]
-    } else if (freq_lower == "yearly") {
-      aggregated[, date := as.Date(x = paste0(time_group, "-01-01"))]
-    } else {
-      aggregated[, date := as.Date(paste0(
-        time_group %/% 100L, "-",
-        sprintf(fmt = "%02d", time_group %% 100L), "-01"
-      ))]
-    }
-
-    setorder(aggregated, date, latitude, longitude)
-
-    aggregated[, time_group := NULL]
-    setnames(aggregated, "value", value_col)
-
-    aggregated <- as.data.frame(aggregated)
-  } else {
-    freq_lower <- tolower(x = frequency)
-    data$time_group <- format(data$date, switch(freq_lower,
-      monthly = "%Y-%m",
-      yearly = "%Y",
-      "%Y-%m"
-    ))
-
-    agg_fun <- if (value_col == "rainfall") sum else mean
-    formula_str <- paste(value_col, "~ time_group + latitude + longitude")
-
-    aggregated <- aggregate(
-      as.formula(formula_str),
-      data = data,
-      FUN = agg_fun,
-      na.rm = TRUE
-    )
-
-    if (freq_lower == "yearly") {
-      aggregated$date <- as.Date(x = paste0(aggregated$time_group, "-01-01"))
-    } else {
-      aggregated$date <- as.Date(x = paste0(aggregated$time_group, "-01"))
-    }
-    aggregated$time_group <- NULL
-
-    aggregated <- aggregated[, c("date", "latitude", "longitude", value_col)]
-    aggregated <- aggregated[order(aggregated$date, aggregated$latitude, aggregated$longitude), ]
-    rownames(aggregated) <- NULL
-  }
+  agg_fun <- if (value_col == "rainfall") sum else mean
+  DT <- as.data.table(data)
+  DT[, date := as.Date(date)]
+  DT[, date := date - (if (freq == "yearly") yday(date) else mday(date)) + 1L]
+  aggregated <- DT[, .(value = agg_fun(get(..value_col), na.rm = TRUE)), by = .(date, latitude, longitude)]
+  setorder(aggregated, date, latitude, longitude)
+  setnames(aggregated, "value", value_col)
+  aggregated <- as.data.frame(aggregated)
 
   message(sprintf(fmt = "Aggregated from %s to %s points (%s)", nrow(x = data), nrow(x = aggregated), frequency))
   aggregated

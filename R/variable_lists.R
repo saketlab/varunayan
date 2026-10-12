@@ -8,7 +8,10 @@ NULL
 #' Accumulation variables (precipitation, radiation) that use sum for temporal
 #' aggregation.
 #'
+#' @return A character vector of variable names.
 #' @export
+#' @examples
+#' head(sum_vars)
 sum_vars <- c(
   "tp", "total_precipitation",
   "cp", "convective_precipitation",
@@ -53,7 +56,10 @@ sum_vars <- c(
 
 #' Variables that should use maximum aggregation
 #'
+#' @return A character vector of variable names.
 #' @export
+#' @examples
+#' head(max_vars)
 max_vars <- c(
   "mx2t", "maximum_2m_temperature",
   "mxtpr", "maximum_total_precipitation_rate",
@@ -63,7 +69,10 @@ max_vars <- c(
 
 #' Variables that should use minimum aggregation
 #'
+#' @return A character vector of variable names.
 #' @export
+#' @examples
+#' head(min_vars)
 min_vars <- c(
   "mn2t", "minimum_2m_temperature",
   "mntpr", "minimum_total_precipitation_rate"
@@ -71,7 +80,10 @@ min_vars <- c(
 
 #' Rate variables that should be averaged
 #'
+#' @return A character vector of variable names.
 #' @export
+#' @examples
+#' head(rate_vars)
 rate_vars <- c(
   "avg_tprate", "average_total_precipitation_rate",
   "avg_cpr", "average_convective_precipitation_rate",
@@ -124,7 +136,10 @@ rate_vars <- c(
 #'
 #' These are coordinate and metadata columns that should not be aggregated.
 #'
+#' @return A character vector of variable names.
 #' @export
+#' @examples
+#' head(exclude_cols)
 exclude_cols <- c(
   "latitude", "longitude", "date", "time", "hour",
   .NC_METADATA_VARS, "valid_time", "datetime", "variable"
@@ -135,6 +150,8 @@ exclude_cols <- c(
 #' @param var_name Character string variable name
 #' @return Logical indicating if variable should be summed
 #' @export
+#' @examples
+#' is_sum_var("total_precipitation")
 is_sum_var <- function(var_name) {
   var_lower <- tolower(x = var_name)
   any(vapply(sum_vars, function(sv) {
@@ -148,6 +165,8 @@ is_sum_var <- function(var_name) {
 #' @param var_name Character string variable name
 #' @return Logical indicating if variable should use max
 #' @export
+#' @examples
+#' is_max_var("2m_temperature")
 is_max_var <- function(var_name) {
   var_lower <- tolower(x = var_name)
   any(vapply(max_vars, function(mv) {
@@ -161,6 +180,8 @@ is_max_var <- function(var_name) {
 #' @param var_name Character string variable name
 #' @return Logical indicating if variable should use min
 #' @export
+#' @examples
+#' is_min_var("2m_temperature")
 is_min_var <- function(var_name) {
   var_lower <- tolower(x = var_name)
   any(vapply(min_vars, function(mv) {
@@ -174,6 +195,8 @@ is_min_var <- function(var_name) {
 #' @param var_name Character string variable name
 #' @return Logical indicating if variable is a rate
 #' @export
+#' @examples
+#' is_rate_var("2m_temperature")
 is_rate_var <- function(var_name) {
   var_lower <- tolower(x = var_name)
   any(vapply(rate_vars, function(rv) {
@@ -187,6 +210,8 @@ is_rate_var <- function(var_name) {
 #' @param var_names Character vector of variable names
 #' @return Named list with variables categorized by aggregation method
 #' @export
+#' @examples
+#' categorize_variables(c("2m_temperature", "total_precipitation"))
 categorize_variables <- function(var_names) {
   # Remove excluded columns
   var_names <- setdiff(var_names, exclude_cols)
@@ -207,4 +232,8 @@ categorize_variables <- function(var_names) {
     rate = rate_cols,
     avg = avg_cols
   )
+}
+
+.aggregation_method <- function(var_name) {
+  if (is_sum_var(var_name)) "sum" else if (is_max_var(var_name)) "max" else if (is_min_var(var_name)) "min" else "mean"
 }

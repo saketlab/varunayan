@@ -63,14 +63,15 @@ Download ERA5 climate variables (temperature, humidity, wet bulb, wind,
 solar radiation) for a region.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
 # Get temperature and humidity
 climate <- GetERA5DailyClimate(
   request_id = "india_climate",
   start_date = "2023-05-01",
   end_date = "2023-05-31",
   variables = c("temperature", "humidity"),
-  json_file = "india.geojson"
+  json_file = region
 )
-}
+\dontshow{\}) # examplesIf}
 }

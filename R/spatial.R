@@ -1,5 +1,3 @@
-#' Spatial utilities for aggregating gridded data to polygons
-
 #' Aggregate gridded data to polygon regions
 #'
 #' @param data Data frame with longitude, latitude, and value columns
@@ -8,8 +6,17 @@
 #' @param method Aggregation method: "point_in_polygon" or "nearest_centroid"
 #' @param polygon_id_cols Character vector of column names to use as polygon identifiers
 #' @param agg_fun Aggregation function (default: mean)
-#' @return Data frame with aggregated values per polygon
+#' @return A tibble with one row per polygon: the `polygon_id_cols` columns and `value`, the mean of `value_col` over the grid points assigned to that polygon.
 #' @export
+#' @examples
+#' grid <- expand.grid(longitude = seq(72.5, 77.5, by = 1), latitude = seq(18.5, 21.5, by = 1))
+#' grid$temperature <- seq_len(nrow(grid))
+#' cells <- sf::st_make_grid(sf::st_as_sfc(sf::st_bbox(
+#'   c(xmin = 72, ymin = 18, xmax = 78, ymax = 22),
+#'   crs = 4326
+#' )), n = c(2, 1))
+#' polys <- sf::st_sf(region = c("west", "east"), geometry = cells)
+#' aggregate_to_polygons(grid, polys, value_col = "temperature")
 aggregate_to_polygons <- function(data, polygons, value_col,
                                   method = c("nearest_centroid", "point_in_polygon"),
                                   polygon_id_cols = NULL,
@@ -87,6 +94,15 @@ aggregate_nearest_centroid <- function(data, polygons, value_col, polygon_id_col
 #' @param title Plot title
 #' @return ggplot object
 #' @export
+#' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
+#' grid <- expand.grid(longitude = seq(72.5, 77.5, by = 1), latitude = seq(18.5, 21.5, by = 1))
+#' grid$temperature <- seq_len(nrow(grid))
+#' cells <- sf::st_make_grid(sf::st_as_sfc(sf::st_bbox(
+#'   c(xmin = 72, ymin = 18, xmax = 78, ymax = 22),
+#'   crs = 4326
+#' )), n = c(2, 1))
+#' polys <- sf::st_sf(region = c("west", "east"), geometry = cells)
+#' visualize_grid_overlap(grid, polys)
 visualize_grid_overlap <- function(grid_data, polygons,
                                    show_centroids = TRUE,
                                    grid_color = "#E74C3C",
@@ -126,8 +142,8 @@ visualize_grid_overlap <- function(grid_data, polygons,
   if (show_centroids) {
     old_s2 <- sf::sf_use_s2()
     sf::sf_use_s2(FALSE)
+    on.exit(sf::sf_use_s2(old_s2), add = TRUE)
     centroids <- sf::st_centroid(polygons)
-    sf::sf_use_s2(old_s2)
     p <- p + ggplot2::geom_sf(data = centroids, color = centroid_color, size = 0.8, shape = 4)
   }
 
@@ -156,6 +172,16 @@ visualize_grid_overlap <- function(grid_data, polygons,
 #' @param title Plot title
 #' @return ggplot object
 #' @export
+#' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
+#' grid <- expand.grid(longitude = seq(72.5, 77.5, by = 1), latitude = seq(18.5, 21.5, by = 1))
+#' grid$temperature <- seq_len(nrow(grid))
+#' cells <- sf::st_make_grid(sf::st_as_sfc(sf::st_bbox(
+#'   c(xmin = 72, ymin = 18, xmax = 78, ymax = 22),
+#'   crs = 4326
+#' )), n = c(2, 1))
+#' polys <- sf::st_sf(region = c("west", "east"), geometry = cells)
+#' coarse <- grid[grid$longitude < 75, ]
+#' compare_grids(fine = grid, coarse = coarse, polygons = polys)
 compare_grids <- function(..., polygons = NULL, colors = NULL, shapes = NULL,
                           point_size = 1, polygon_color = "#2C3E50",
                           title = "Grid Comparison") {
@@ -239,8 +265,17 @@ compare_grids <- function(..., polygons = NULL, colors = NULL, shapes = NULL,
 #' @param grid_data Data frame with longitude and latitude columns
 #' @param polygons sf object with polygon geometries
 #' @param polygon_id_cols Column names to identify polygons
-#' @return List with coverage statistics
+#' @return A list with elements `total_polygons`, `total_grid_points`, `polygons_with_points`, `polygons_without_points`, `coverage_percent`, `points_per_polygon` (a data.frame of polygon identifiers and `n_points`) and `summary` (a one-line character description).
 #' @export
+#' @examples
+#' grid <- expand.grid(longitude = seq(72.5, 77.5, by = 1), latitude = seq(18.5, 21.5, by = 1))
+#' grid$temperature <- seq_len(nrow(grid))
+#' cells <- sf::st_make_grid(sf::st_as_sfc(sf::st_bbox(
+#'   c(xmin = 72, ymin = 18, xmax = 78, ymax = 22),
+#'   crs = 4326
+#' )), n = c(2, 1))
+#' polys <- sf::st_sf(region = c("west", "east"), geometry = cells)
+#' check_grid_coverage(grid, polys)
 check_grid_coverage <- function(grid_data, polygons, polygon_id_cols = NULL) {
   if (!requireNamespace("sf", quietly = TRUE)) {
     stop("Package 'sf' is required")

@@ -12,3 +12,6 @@ Character vector of available dataset types
 \description{
 Get available dataset types
 }
+\examples{
+get_available_datasets()
+}

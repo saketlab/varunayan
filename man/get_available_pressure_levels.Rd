@@ -18,3 +18,6 @@ Character vector of pressure levels in hPa
 \description{
 Get standard pressure levels available in ERA5
 }
+\examples{
+get_available_pressure_levels()
+}

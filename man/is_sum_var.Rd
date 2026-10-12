@@ -15,3 +15,6 @@ Logical indicating if variable should be summed
 \description{
 Check if a variable should be summed
 }
+\examples{
+is_sum_var("total_precipitation")
+}

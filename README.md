@@ -3,7 +3,7 @@
 [![R-CMD-check](https://github.com/saketlab/varunayanR/workflows/R-CMD-check/badge.svg)](https://github.com/saketlab/varunayanR/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**varunayanR** is an R package for downloading and processing **ERA5 reanalysis** data from [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/) and **IMD gridded climate data** from the [Indian Meteorological Department](https://www.imdpune.gov.in/). 
+`varunayan` is an R package for downloading and processing ERA5 reanalysis data from [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/) and IMD gridded climate data from the [Indian Meteorological Department](https://mausam.imd.gov.in/). 
 It provides an easy to use R interface for extracting temperature, precipitation, and other climate variables for any region using bounding boxes, GeoJSON polygons, or point coordinates.
 
 ## Installation
@@ -110,16 +110,13 @@ atmos_data <- era5ify_bbox(
 
 ## Documentation
 
-- [Quickstart Guide](https://saketlab.github.io/varunayanR/articles/quickstart.html)
-- [Visualising data grids](https://saketlab.github.io/varunayanR/articles/spatial-aggregation.html)
-- [ERA5 vs IMD Comparison](https://saketlab.github.io/varunayanR/articles/era5-vs-imd-comparison.html)
-- [Function Reference](https://saketlab.github.io/varunayanR/reference/index.html)
+- [Quickstart Guide](https://varunayanr.saketlab.org/articles/quickstart.html)
+- [Visualising data grids](https://varunayanr.saketlab.org/articles/spatial-aggregation.html)
+- [ERA5 vs IMD Comparison](https://varunayanr.saketlab.org/articles/era5-vs-imd-comparison.html)
+- [Function Reference](https://varunayanr.saketlab.org/reference/index.html)
 
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details.

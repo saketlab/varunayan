@@ -94,29 +94,29 @@ The Heat Index uses the [Rothfusz regression equation](https://www.weather.gov/m
 $$HI = -42.379 + 2.049T + 10.143RH - 0.225T \cdot RH - 0.007T^2 - 0.055RH^2 + ...$$
 
 Risk categories:
-- **Normal** (<27°C): No special precautions
-- **Caution** (27-32°C): Fatigue possible with prolonged exposure
-- **Extreme Caution** (32-41°C): Heat cramps and exhaustion possible
-- **Danger** (41-54°C): Heat exhaustion likely, heat stroke possible
-- **Extreme Danger** (>54°C): Heat stroke highly likely
+- **Normal** (<26.7°C, 80°F): No special precautions
+- **Caution** (26.7-32.2°C, 80-90°F): Fatigue possible with prolonged exposure
+- **Extreme Caution** (32.2-39.4°C, 90-103°F): Heat cramps and exhaustion possible
+- **Danger** (39.4-51.1°C, 103-124°F): Heat exhaustion likely, heat stroke possible
+- **Extreme Danger** (≥51.1°C, 124°F): Heat stroke highly likely
 
 ### WBGT (Wet Bulb Globe Temperature)
 
 WBGT is the [ISO 7243](https://www.iso.org/standard/67188.html) standard for occupational heat stress:
 
 $$WBGT_{outdoor} = 0.7 \cdot T_{nwb} + 0.2 \cdot T_g + 0.1 \cdot T_a$$
-Where $T_{nwb}$ is natural wet bulb, $T_g$ is globe temperature (accounting for radiation), and $T_a$ is air temperature.
+Where $T_{nwb}$ is natural wet bulb, $T_g$ is globe temperature (accounting for radiation), and $T_a$ is air temperature. `wbgt_liljegren()` solves $T_{nwb}$ and $T_g$ from hourly temperature, humidity, wind and solar radiation (Liljegren et al. 2008); `wbgt_simple()` uses the Australian Bureau of Meteorology approximation from temperature and humidity alone. `wbgt()` selects either with `method =`.
 
-Risk categories based on ISO 7243:
-- **Low** (<25°C): Safe for most activities
-- **Moderate** (25-28°C): Exercise caution
-- **High** (28-30°C): Reduce physical activity
-- **Very High** (30-32°C): Minimize outdoor work
-- **Extreme** (>32°C): Suspend heavy outdoor work
+Risk categories in `wbgt_risk_category()` follow the US National Weather Service WBGT flag thresholds:
+- **Low** (<25.6°C, 78°F)
+- **Moderate** (25.6-27.8°C, 78-82°F)
+- **High** (27.8-29.4°C, 82-85°F)
+- **Very High** (29.4-31.1°C, 85-88°F)
+- **Extreme** (≥31.1°C, 88°F)
 
 ### UTCI (Universal Thermal Climate Index)
 
-UTCI is based on a multi-node model of human thermoregulation ([Bröde et al., 2012](https://doi.org/10.1007/s00484-011-0454-1)). We use the sparse regression approximation from [Roman et al. (2025)](https://doi.org/10.5281/zenodo.17465548):
+UTCI is based on a multi-node model of human thermoregulation ([Bröde et al., 2012](https://doi.org/10.1007/s00484-011-0454-1)). We use the sparse regression approximation from [Roman et al. (2025)](https://doi.org/10.48550/arXiv.2508.11307):
 
 The UTCI considers:
 - Air temperature
@@ -142,7 +142,7 @@ The Canadian [Humidex](https://climate.weather.gc.ca/glossary_e.html#humidex) is
 
 $$H = T + 0.5555 \cdot (e - 10)$$
 
-Where $e = 6.11 \cdot \exp(5417.7530 \cdot (1/273.16 - 1/(273.15 + T_d)))$ is the vapor pressure.
+Where $e = 6.11 \cdot \exp(5417.7530 \cdot (1/273.15 - 1/(273.15 + T_d)))$ is the vapor pressure.
 
 # Calculating heat indices using ERA5 data
 
@@ -150,11 +150,12 @@ The helper function `GetERA5DailyHeatIndexData()` downloads temperature, dewpoin
 and calculates all heat stress indices in one call.
 
 ```{r download_geojson}
-states_url <- "https://bharatviz.saketlab.org/India_LGD_states.geojson"
+states_url <- "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson"
 states_file <- "indian_states.geojson"
 
 if (!file.exists(states_file)) {
-  download.file(states_url, states_file, mode = "wb")
+  options(timeout = max(600, getOption("timeout"))) # LGD GeoJSON is large
+  try(download.file(states_url, states_file, mode = "wb"), silent = TRUE)
 }
 
 states_sf <- sf::st_read(states_file, quiet = TRUE)
@@ -260,10 +261,11 @@ The same indices, mapped across India by district.
 
 
 ```{r download_districts}
-districts_url <- "http://bharatviz.saketlab.org/India_LGD_districts.geojson"
+districts_url <- "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-districts.geojson"
 districts_file <- "indian_districts.geojson"
 
 if (!file.exists(districts_file)) {
+  options(timeout = max(600, getOption("timeout"))) # LGD GeoJSON is large
   download.file(districts_url, districts_file, mode = "wb")
 }
 

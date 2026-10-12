@@ -10,7 +10,7 @@ download_imd_year(
   param_name,
   base_url,
   output_file,
-  max_retries = 3
+  max_retries = .IMD_RETRIES
 )
 }
 \arguments{
@@ -24,12 +24,13 @@ download_imd_year(
 
 \item{output_file}{Path to save the downloaded file.}
 
-\item{max_retries}{Maximum number of retry attempts.}
+\item{max_retries}{Maximum number of attempts.}
 }
 \value{
 Character string path to downloaded file
 }
 \description{
-Internal function to download a single year of IMD data
+Connection failures and server errors are retried; a response without data
+(another status, an HTML page or an empty body) fails at once.
 }
 \keyword{internal}

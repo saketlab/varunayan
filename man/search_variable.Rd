@@ -3,8 +3,7 @@
 \name{SearchVariable}
 \alias{SearchVariable}
 \alias{search_variable}
-\title{Search and description functions for ERA5 variables
-Search for ERA5 variables by keyword}
+\title{Search for ERA5 variables by keyword}
 \usage{
 SearchVariable(...)
 
@@ -20,18 +19,15 @@ search_variable(keyword, dataset_type = "all", exact_match = FALSE)
 \item{exact_match}{Logical indicating whether to use exact matching}
 }
 \value{
-data.frame with matching variables and their descriptions
+A data.frame with columns \code{variable_name}, \code{description}, \code{units}, \code{dataset_type} and \code{category}, one row per matching variable.
 }
 \description{
-Search and description functions for ERA5 variables
 Search for ERA5 variables by keyword
 }
 \examples{
-\dontrun{
 # Search for temperature variables
 temp_vars <- search_variable("temperature")
 
 # Search in pressure level data only
 pressure_temp <- search_variable("temperature", dataset_type = "pressure")
-}
 }

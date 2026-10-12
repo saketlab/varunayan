@@ -47,11 +47,12 @@ Downloads and filters HadEX3 ETCCDI climate extremes data to a geographic
 region defined by a GeoJSON polygon.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
 data <- hadex3_geojson(
   index = "TXx",
   start_year = 1981, end_year = 2010,
-  geojson_file = "india.geojson"
+  geojson_file = region
 )
-}
+\dontshow{\}) # examplesIf}
 }

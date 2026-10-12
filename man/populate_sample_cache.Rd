@@ -15,8 +15,13 @@ populate_sample_cache(force = FALSE)
 \item{force}{Overwrite existing cached files (default: FALSE)}
 }
 \value{
-List of cached files (invisible)
+Invisibly, a named list of paths to the cached sample files, or \code{NULL} if no sample directory exists.
 }
 \description{
 Copies sample IMD data files to cache for offline testing.
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+populate_sample_cache()
+\dontshow{\}) # examplesIf}
 }

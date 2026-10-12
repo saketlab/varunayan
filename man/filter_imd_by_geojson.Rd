@@ -12,8 +12,16 @@ filter_imd_by_geojson(data, geojson_file)
 \item{geojson_file}{Path to GeoJSON file}
 }
 \value{
-Filtered data.frame
+The input data.frame restricted to rows whose \code{latitude}/\code{longitude} fall inside the region; columns are unchanged.
 }
 \description{
 Filter IMD data by GeoJSON polygon
+}
+\examples{
+imd <- data.frame(
+  date = rep(as.Date("2023-01-01") + 0:59, each = 2),
+  latitude = 20.5, longitude = c(73.5, 79.5), rainfall = 1
+)
+region <- system.file("extdata", "region.geojson", package = "varunayan")
+filter_imd_by_geojson(imd, region)
 }

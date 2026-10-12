@@ -41,11 +41,12 @@ Downloads and filters CRU TS v4.07 monthly gridded climate data to a
 geographic region defined by a GeoJSON polygon.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
 data <- cru_ts_geojson(
   variable = "tmp",
   start_year = 1981, end_year = 2010,
-  geojson_file = "india.geojson"
+  geojson_file = region
 )
-}
+\dontshow{\}) # examplesIf}
 }

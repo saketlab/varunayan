@@ -57,12 +57,13 @@ data.frame with date, latitude, longitude, wind_speed
 Downloads 10m wind components and calculates wind speed.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
 wind <- GetERA5DailyWind(
   request_id = "india_wind",
   start_date = "2023-05-01",
   end_date = "2023-05-31",
-  json_file = "india.geojson"
+  json_file = region
 )
-}
+\dontshow{\}) # examplesIf}
 }

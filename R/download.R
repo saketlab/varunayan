@@ -1,3 +1,26 @@
+.CDS_KEY_URL <- "https://cds.climate.copernicus.eu/how-to-api"
+
+.require_cds_credentials <- function() {
+  if (!get_cds_credentials(silent = TRUE)) {
+    stop(
+      "CDS credentials not found. Please either:\n",
+      "  1. Create ~/.cdsapirc file with your API key, or\n",
+      "  2. Run setup_cds_credentials(key = 'your-api-key')\n\n",
+      "Get your API key from: ", .CDS_KEY_URL,
+      call. = FALSE
+    )
+  }
+}
+
+.stop_cds_auth_failed <- function() {
+  stop(
+    "Authentication failed. Please check your CDS API credentials.\n",
+    "Run setup_cds_credentials(key = 'your-api-key') with a valid key.\n",
+    "Get your API key from: ", .CDS_KEY_URL,
+    call. = FALSE
+  )
+}
+
 # ERA5 data download functions using ecmwfr
 
 # Signal cds_request_too_large condition if the error looks size-related.
@@ -33,7 +56,7 @@ signal_if_too_large <- function(err_msg, start_date, end_date) {
 #' @param key Your CDS API key (UUID format). If NULL, attempts to read from
 #'   environment variable `CDS_API_KEY` or ~/.cdsapirc file.
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return Invisible TRUE if successful
+#' @return Invisibly, `TRUE` once the key has been registered with 'ecmwfr'. Errors if no key can be found.
 #' @export
 #' @examples
 #' \dontrun{
@@ -60,7 +83,7 @@ setup_cds_credentials <- function(key = NULL) {
           "  3. Create ~/.cdsapirc file with format:\n",
           "     url: https://cds.climate.copernicus.eu/api\n",
           "     key: your-api-key-here\n\n",
-          "Get your API key from: https://cds.climate.copernicus.eu/how-to-api"
+          "Get your API key from: ", .CDS_KEY_URL
         )
       }
 
@@ -170,14 +193,7 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
   }
   request$target <- basename(path = output_file)
 
-  if (!get_cds_credentials(silent = TRUE)) {
-    stop(
-      "CDS credentials not found. Please either:\n",
-      "  1. Create ~/.cdsapirc file with your API key, or\n",
-      "  2. Run setup_cds_credentials(key = 'your-api-key')\n\n",
-      "Get your API key from: https://cds.climate.copernicus.eu/api-how-to"
-    )
-  }
+  .require_cds_credentials()
 
   message("Submitting request to Copernicus CDS...")
   message(sprintf(fmt = "Variables: %s", paste(variables, collapse = ", ")))
@@ -222,21 +238,18 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
           )
         }
       },
-      error = function(e) {
-        last_error <<- e
-        NULL
-      }
+      error = function(e) e
     )
+    if (inherits(downloaded_file, "error")) {
+      last_error <- downloaded_file
+      downloaded_file <- NULL
+    }
 
     if (!is.null(downloaded_file)) break
 
     if (!is.null(last_error)) {
       if (grepl(pattern = "401|unauthorized|authentication", last_error$message, ignore.case = TRUE)) {
-        stop(
-          "Authentication failed. Please check your CDS API credentials.\n",
-          "Run setup_cds_credentials(key = 'your-api-key') with a valid key.\n",
-          "Get your API key from: https://cds.climate.copernicus.eu/api-how-to"
-        )
+        .stop_cds_auth_failed()
       } else if (grepl(pattern = "rate.limit|429", last_error$message, ignore.case = TRUE)) {
         rate_limit_hits <- rate_limit_hits + 1
         if (rate_limit_hits > max_rate_limit_hits) {
@@ -382,14 +395,7 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
   request$dataset_short_name <- "reanalysis-era5-pressure-levels"
   request$target <- basename(path = output_file)
 
-  if (!get_cds_credentials(silent = TRUE)) {
-    stop(
-      "CDS credentials not found. Please either:\n",
-      "  1. Create ~/.cdsapirc file with your API key, or\n",
-      "  2. Run setup_cds_credentials(key = 'your-api-key')\n\n",
-      "Get your API key from: https://cds.climate.copernicus.eu/api-how-to"
-    )
-  }
+  .require_cds_credentials()
 
   message("Submitting pressure-level request to Copernicus CDS...")
   message(sprintf(fmt = "Variables: %s", paste(variables, collapse = ", ")))
@@ -411,11 +417,7 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
     },
     error = function(e) {
       if (grepl(pattern = "401|unauthorized|authentication", e$message, ignore.case = TRUE)) {
-        stop(
-          "Authentication failed. Please check your CDS API credentials.\n",
-          "Run setup_cds_credentials(key = 'your-api-key') with a valid key.\n",
-          "Get your API key from: https://cds.climate.copernicus.eu/api-how-to"
-        )
+        .stop_cds_auth_failed()
       }
 
       signal_if_too_large(e$message, start_date, end_date)

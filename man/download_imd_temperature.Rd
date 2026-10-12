@@ -31,12 +31,12 @@ Downloads daily gridded temperature data (max or min) from IMD.
 Temperature data is at 1.0 degree resolution only.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 # Download max temperature for 2023-2025
 files <- download_imd_temperature(
   start_year = 2023,
   end_year = 2025,
   var_type = "tmax"
 )
-}
+\dontshow{\}) # examplesIf}
 }

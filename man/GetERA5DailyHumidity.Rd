@@ -57,12 +57,13 @@ data.frame with date, latitude, longitude, temp_c, dewpoint_c, rh
 Downloads temperature, dewpoint, and calculates relative humidity.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
 humidity <- GetERA5DailyHumidity(
   request_id = "india_humidity",
   start_date = "2023-05-01",
   end_date = "2023-05-31",
-  json_file = "india.geojson"
+  json_file = region
 )
-}
+\dontshow{\}) # examplesIf}
 }

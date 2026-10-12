@@ -78,7 +78,7 @@ data.frame with processed climate data. When \code{convert_units = TRUE}:
 Download and process ERA5 data for a bounding box
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 setup_cds_credentials(key = "your-cds-api-key")
 
 data <- era5ify_bbox(
@@ -89,5 +89,5 @@ data <- era5ify_bbox(
   north = 40, south = 35, east = -70, west = -75
 )
 # Temperature is in Celsius, precipitation is in mm
-}
+\dontshow{\}) # examplesIf}
 }

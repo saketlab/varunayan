@@ -6,6 +6,12 @@
 \usage{
 clear_timings()
 }
+\value{
+\code{NULL}, invisibly. Called for its side effect.
+}
 \description{
 Clear all timing data
+}
+\examples{
+clear_timings()
 }

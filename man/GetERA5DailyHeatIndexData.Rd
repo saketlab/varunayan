@@ -103,12 +103,13 @@ Download ERA5 temperature, dewpoint, and wind data for a region and calculate
 heat stress indices.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
 heat_data <- GetERA5DailyHeatIndexData(
   request_id = "india_heat_2023",
   start_date = "2023-05-01",
   end_date = "2023-05-31",
-  json_file = "india.geojson"
+  json_file = region
 )
 
 # With solar radiation for outdoor WBGT
@@ -116,8 +117,8 @@ heat_data <- GetERA5DailyHeatIndexData(
   request_id = "india_heat_2023_solar",
   start_date = "2023-05-01",
   end_date = "2023-05-31",
-  json_file = "india.geojson",
+  json_file = region,
   solar_load = TRUE
 )
-}
+\dontshow{\}) # examplesIf}
 }

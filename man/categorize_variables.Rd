@@ -15,3 +15,6 @@ Named list with variables categorized by aggregation method
 \description{
 Categorize variables by aggregation method
 }
+\examples{
+categorize_variables(c("2m_temperature", "total_precipitation"))
+}

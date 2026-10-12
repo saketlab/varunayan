@@ -8,7 +8,7 @@
 #' @references
 #' Harris et al. (2020) Version 4 of the CRU TS monthly high-resolution
 #' gridded multivariate climate dataset. Sci. Data 7:109.
-#' https://doi.org/10.1038/s41597-020-0453-3
+#' \doi{10.1038/s41597-020-0453-3}
 #' @name cru_ts
 
 .CRU_TS_VERSION <- "4.07"
@@ -116,13 +116,10 @@ list_cru_ts_variables <- function(...) {
 #' @keywords internal
 .download_cru_ts_decade <- function(variable, decade_start, decade_end,
                                     output_dir, use_cache) {
-  cache_key <- digest::digest(
-    list(
-      source = "cru_ts", version = .CRU_TS_VERSION,
-      variable = variable, decade_start = decade_start, decade_end = decade_end
-    ),
-    algo = "md5"
-  )
+  cache_key <- .source_cache_key(list(
+    source = "cru_ts", version = .CRU_TS_VERSION,
+    variable = variable, decade_start = decade_start, decade_end = decade_end
+  ))
 
   if (use_cache) {
     cached <- check_cache(cache_key)
@@ -296,8 +293,7 @@ list_cru_ts_variables <- function(...) {
 #' @return data.frame with columns: year, month, latitude, longitude,
 #'   value, variable.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' # Monthly mean temperature for India 2010-2020
 #' data <- cru_ts_bbox(
 #'   variable = "tmp",
@@ -311,7 +307,6 @@ list_cru_ts_variables <- function(...) {
 #'   start_year = 1981, end_year = 2010,
 #'   north = 71, south = 36, east = 40, west = -10
 #' )
-#' }
 cru_ts_bbox <- function(variable, start_year, end_year,
                         north, south, east, west,
                         output_dir = tempdir(), use_cache = TRUE, ...) {
@@ -351,14 +346,13 @@ cru_ts_bbox <- function(variable, start_year, end_year,
 #' @return data.frame with columns: year, month, latitude, longitude,
 #'   value, variable.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
 #' data <- cru_ts_geojson(
 #'   variable = "tmp",
 #'   start_year = 1981, end_year = 2010,
-#'   geojson_file = "india.geojson"
+#'   geojson_file = region
 #' )
-#' }
 cru_ts_geojson <- function(variable, start_year, end_year, geojson_file,
                            output_dir = tempdir(), use_cache = TRUE, ...) {
   .validate_cru_ts_inputs(variable, start_year, end_year)

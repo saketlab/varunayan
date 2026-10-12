@@ -26,10 +26,11 @@ library(patchwork)
 ```
 
 ```{r download_geojson}
-districts_url <- "https://gist.githubusercontent.com/saketkc/c2041f73fc08d39bb7b7cc39ce7b22e1/raw/2947556a7183455651d411489538452e13addb06/India_LGD_districts.geojson"
+districts_url <- "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-districts.geojson"
 districts_file <- "indian_districts.geojson"
 if (!file.exists(districts_file)) {
-  download.file(districts_url, districts_file, mode = "wb", timeout = 300)
+  options(timeout = max(600, getOption("timeout"))) # LGD GeoJSON is large
+  download.file(districts_url, districts_file, mode = "wb")
 }
 districts_sf <- sf::st_read(districts_file, quiet = TRUE)
 ```

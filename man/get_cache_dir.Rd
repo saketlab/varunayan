@@ -3,7 +3,7 @@
 \name{GetCacheDir}
 \alias{GetCacheDir}
 \alias{get_cache_dir}
-\title{Cache management for downloaded NetCDF files}
+\title{Get cache directory path}
 \usage{
 GetCacheDir(...)
 
@@ -18,6 +18,9 @@ get_cache_dir(create = TRUE)
 Character string with cache directory path
 }
 \description{
-Functions to cache ERA5 and IMD NetCDF files for faster successive queries
-Get cache directory path
+Defaults to \code{tools::R_user_dir("varunayan", "cache")}. Set the option
+\code{varunayan.cache_dir} to use a different directory.
+}
+\examples{
+get_cache_dir(create = FALSE)
 }

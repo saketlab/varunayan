@@ -15,16 +15,25 @@ wbgt_simple(temp_c, dewpoint_c)
 WBGT in Celsius
 }
 \description{
-Calculates the Australian Bureau of Meteorology closed-form WBGT
-approximation (Steadman-based) from air temperature and dewpoint. Suitable
-for occupational heat stress assessment when only temperature and humidity
-are available.
+Australian Bureau of Meteorology approximation
+\code{WBGT = 0.567 * T + 0.393 * e + 3.94}, with \code{e} the vapour pressure in hPa.
+It assumes moderately high solar radiation and light wind, so it
+overestimates WBGT in cloudy or windy conditions and at night. Use daily
+maximum temperature for afternoon conditions. For the physical outdoor
+model see \code{\link[=wbgt_liljegren]{wbgt_liljegren()}}.
 }
 \examples{
 wbgt_simple(35, 25)
 }
 \references{
-Liljegren, J.C., et al. (2008). Modeling the Wet Bulb Globe Temperature
-Using Standard Meteorological Measurements. J. Occup. Environ. Hyg., 5(10), 645-655.
-Methods for Estimating Wet Bulb Globe Temperature
+Australian Bureau of Meteorology. Thermal Comfort observations: About the
+approximation to the WBGT. \url{https://www.bom.gov.au/info/thermal_stress/}
+(formula from American College of Sports Medicine (1984), Prevention of
+thermal injuries during distance running: position stand, Medical Journal
+of Australia, 141, 876).
+
+Carter, A.W., Zaitchik, B.F., Gohlke, J.M., Wang, S., & Richardson, M.B.
+(2020). Methods for Estimating Wet Bulb Globe Temperature From Remote and
+Low-Cost Data: A Comparative Study in Central Alabama. GeoHealth, 4(5),
+e2019GH000231. \doi{10.1029/2019GH000231}
 }

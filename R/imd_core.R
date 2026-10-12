@@ -1,5 +1,3 @@
-#' IMD data download and processing for custom regions
-
 #' Download and process IMD rainfall data for a bounding box
 #'
 #' Downloads IMD gridded rainfall data and filters it to a specified bounding box.
@@ -17,10 +15,9 @@
 #' @param output_dir Directory to save files (default: tempdir()).
 #' @param use_cache Whether to use cached data if available (default: TRUE).
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with processed rainfall data
+#' @return A data.frame with columns `date`, `latitude`, `longitude` and `rainfall` (mm), restricted to the requested region and aggregated to `frequency`.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' data <- imd_rainfall_bbox(
 #'   request_id = "maharashtra_rain",
 #'   start_year = 2023,
@@ -30,7 +27,6 @@
 #'   resolution = 0.25,
 #'   frequency = "monthly"
 #' )
-#' }
 imd_rainfall_bbox <- function(request_id, start_year, end_year,
                               north, south, east, west,
                               resolution = 0.25, frequency = "daily",
@@ -163,8 +159,8 @@ imd_rainfall_point <- function(request_id, start_year, end_year,
 #' Download and process IMD rainfall data for a GeoJSON region
 #'
 #' @param request_id Unique identifier for the request.
-#' @param start_year Start year (1901-2024).
-#' @param end_year End year (1901-2024).
+#' @param start_year Start year (1901-2025).
+#' @param end_year End year (1901-2025).
 #' @param geojson_file Path to GeoJSON file.
 #' @param resolution Spatial resolution: 0.25 or 1.0 degrees (default: 0.25).
 #' @param frequency Temporal frequency (default: "daily").
@@ -172,8 +168,14 @@ imd_rainfall_point <- function(request_id, start_year, end_year,
 #' @param output_dir Directory to save files (default: tempdir()).
 #' @param use_cache Whether to use cached data if available (default: TRUE).
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with processed rainfall data
+#' @return A data.frame with columns `date`, `latitude`, `longitude` and `rainfall` (mm), restricted to the requested region and aggregated to `frequency`.
 #' @export
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
+#' data <- imd_rainfall_geojson(
+#'   request_id = "mh_rain", start_year = 2023, end_year = 2023,
+#'   geojson_file = region, frequency = "monthly"
+#' )
 imd_rainfall_geojson <- function(request_id, start_year, end_year, geojson_file,
                                  resolution = 0.25, frequency = "daily",
                                  save_raw = FALSE, output_dir = tempdir(),
@@ -247,8 +249,8 @@ imd_rainfall_geojson <- function(request_id, start_year, end_year, geojson_file,
 #' Download and process IMD temperature data for a bounding box
 #'
 #' @param request_id Unique identifier for the request.
-#' @param start_year Start year (1951-2024).
-#' @param end_year End year (1951-2024).
+#' @param start_year Start year (1951-2025).
+#' @param end_year End year (1951-2025).
 #' @param north Northern latitude boundary.
 #' @param south Southern latitude boundary.
 #' @param east Eastern longitude boundary.
@@ -259,10 +261,9 @@ imd_rainfall_geojson <- function(request_id, start_year, end_year, geojson_file,
 #' @param output_dir Directory to save files (default: tempdir()).
 #' @param use_cache Whether to use cached data if available (default: TRUE).
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with processed temperature data
+#' @return A data.frame with columns `date`, `latitude`, `longitude` and `temperature` (degrees Celsius), restricted to the requested region and aggregated to `frequency`.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' data <- imd_temperature_bbox(
 #'   request_id = "delhi_tmax",
 #'   start_year = 2023,
@@ -271,7 +272,6 @@ imd_rainfall_geojson <- function(request_id, start_year, end_year, geojson_file,
 #'   east = 78, west = 76,
 #'   var_type = "tmax"
 #' )
-#' }
 imd_temperature_bbox <- function(request_id, start_year, end_year,
                                  north, south, east, west,
                                  var_type = "tmax", frequency = "daily",
@@ -336,8 +336,8 @@ imd_temperature_bbox <- function(request_id, start_year, end_year,
 #' Download and process IMD temperature data for a GeoJSON region
 #'
 #' @param request_id Unique identifier.
-#' @param start_year Start year (1951-2024).
-#' @param end_year End year (1951-2024).
+#' @param start_year Start year (1951-2025).
+#' @param end_year End year (1951-2025).
 #' @param geojson_file Path to GeoJSON file.
 #' @param var_type Temperature type: "tmax" or "tmin".
 #' @param frequency Temporal frequency (default: "daily").
@@ -345,8 +345,14 @@ imd_temperature_bbox <- function(request_id, start_year, end_year,
 #' @param output_dir Directory for output (default: tempdir()).
 #' @param use_cache Whether to use cached data if available (default: TRUE).
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with processed temperature data
+#' @return A data.frame with columns `date`, `latitude`, `longitude` and `temperature` (degrees Celsius), restricted to the requested region and aggregated to `frequency`.
 #' @export
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
+#' data <- imd_temperature_geojson(
+#'   request_id = "mh_tmax", start_year = 2023, end_year = 2023,
+#'   geojson_file = region, var_type = "tmax", frequency = "monthly"
+#' )
 imd_temperature_geojson <- function(request_id, start_year, end_year, geojson_file,
                                     var_type = "tmax", frequency = "daily",
                                     save_raw = FALSE, output_dir = tempdir(),

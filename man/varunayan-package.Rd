@@ -4,11 +4,11 @@
 \name{varunayan-package}
 \alias{varunayan}
 \alias{varunayan-package}
-\title{varunayan: Download and Process Climate Data from ERA5, IMD, HadEX3, and CRU TS}
+\title{varunayan: Download and Process ERA5, IMD, HadEX3 and CRU TS Climate Data}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-R package for downloading and processing ERA5 climate data, IMD (Indian Meteorological Department) gridded data, and HadEX3 global climate extremes (ETCCDI indices) for custom geographical regions. Provides functions to extract climate data using bounding boxes, GeoJSON polygons, or point coordinates and calculate heat indices. Supports various temporal frequencies and spatial resolutions with analysis-ready outputs.
+Download and process climate data for custom geographical regions defined by bounding boxes, 'GeoJSON' polygons, or point coordinates. Supports the fifth generation European Centre for Medium-Range Weather Forecasts atmospheric reanalysis ('ERA5'; Hersbach et al. (2020) \doi{10.1002/qj.3803}) from the 'Copernicus' Climate Data Store (CDS) \url{https://cds.climate.copernicus.eu/}, India Meteorological Department (IMD) gridded rainfall and temperature (Pai et al. (2014) \doi{10.54302/mausam.v65i1.851}), Hadley Centre global land climate extremes indices version 3 ('HadEX3'; Dunn et al. (2020) \doi{10.1029/2019JD032263}), and Climatic Research Unit gridded Time Series ('CRU TS'; Harris et al. (2020) \doi{10.1038/s41597-020-0453-3}). Also computes heat stress indices including heat index, wet-bulb temperature, outdoor wet-bulb globe temperature (Liljegren et al. (2008) \doi{10.1080/15459620802310770}) and the Universal Thermal Climate Index (Bröde et al. (2012) \doi{10.1007/s00484-011-0454-1}), and heat exposure indicators for health studies: heatwave and warm-night frequency and duration under India Meteorological Department and percentile definitions, the Excess Heat Factor (Nairn and Fawcett (2015) \doi{10.3390/ijerph120100227}) and diurnal temperature range.
 }
 \seealso{
 Useful links:
@@ -20,11 +20,12 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Saket Choudhary \email{saketc@iitb.ac.in} (\href{https://orcid.org/0000-0001-5202-7633}{ORCID})
+\strong{Maintainer}: Saket Choudhary \email{saketc@iitb.ac.in} (\href{https://orcid.org/0000-0001-5202-7633}{ORCID}) [copyright holder]
 
 Authors:
 \itemize{
-  \item Saket Choudhary \email{saketc@iitb.ac.in} (\href{https://orcid.org/0000-0001-5202-7633}{ORCID})
+  \item Saket Choudhary \email{saketc@iitb.ac.in} (\href{https://orcid.org/0000-0001-5202-7633}{ORCID}) [copyright holder]
+  \item Darakhshan Nehal
 }
 
 }

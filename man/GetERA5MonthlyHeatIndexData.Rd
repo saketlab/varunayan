@@ -87,18 +87,19 @@ get_era5_monthly_heat_data(
 \item{verbose}{Whether to print progress messages (default: FALSE)}
 }
 \value{
-data.frame with monthly mean values for each grid point
+A data.frame with one row per grid point for the requested month: \code{year}, \code{month}, \code{latitude}, \code{longitude}, monthly means of the daily heat stress variables, and the categorical columns \code{wbgt_risk}, \code{heat_index_risk} and \code{utci_stress}.
 }
 \description{
 Download ERA5 heat stress indices aggregated to a given month.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
 heat_may <- GetERA5MonthlyHeatIndexData(
   request_id = "india_may2023",
   year = 2023,
   month = 5,
-  json_file = "india.geojson"
+  json_file = region
 )
-}
+\dontshow{\}) # examplesIf}
 }

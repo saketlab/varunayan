@@ -23,6 +23,7 @@ export(GetERA5MonthlyHeatIndexData)
 export(GetPackageInfo)
 export(HadEX3Bbox)
 export(HadEX3Geojson)
+export(IMDExposureBbox)
 export(IMDRainfallBbox)
 export(IMDRainfallGeojson)
 export(IMDRainfallPoint)
@@ -54,7 +55,9 @@ export(download_imd_temperature)
 export(era5ify_bbox)
 export(era5ify_geojson)
 export(era5ify_point)
+export(excess_heat_factor)
 export(exclude_cols)
+export(exposure_indicators)
 export(filter_imd_by_bbox)
 export(filter_imd_by_geojson)
 export(get_available_datasets)
@@ -79,7 +82,9 @@ export(hadex3_geojson)
 export(heat_index)
 export(heat_index_from_dewpoint)
 export(heat_index_risk_category)
+export(heatwave_days)
 export(humidex)
+export(imd_exposure_bbox)
 export(imd_rainfall_bbox)
 export(imd_rainfall_geojson)
 export(imd_rainfall_point)
@@ -87,6 +92,8 @@ export(imd_stations)
 export(imd_temperature_bbox)
 export(imd_temperature_by_region)
 export(imd_temperature_geojson)
+export(imd_terrain)
+export(india_elevation)
 export(is_max_var)
 export(is_min_var)
 export(is_rate_var)
@@ -99,6 +106,8 @@ export(list_imd_datasets)
 export(max_vars)
 export(mean_radiant_temperature)
 export(min_vars)
+export(ndbi)
+export(ndvi)
 export(populate_sample_cache)
 export(print_timing_summary)
 export(process_imd_files)
@@ -117,7 +126,10 @@ export(utci_category)
 export(utci_sparse)
 export(vapor_pressure_from_dewpoint)
 export(visualize_grid_overlap)
+export(warm_nights)
+export(wbgt)
 export(wbgt_from_dewpoint)
+export(wbgt_liljegren)
 export(wbgt_risk_category)
 export(wbgt_shade)
 export(wbgt_simple)
@@ -125,68 +137,77 @@ export(wet_bulb_from_dewpoint)
 export(wet_bulb_temperature)
 import(sf)
 import(stars)
-importFrom(data.table,":=")
-importFrom(data.table,.BY)
-importFrom(data.table,.EACHI)
-importFrom(data.table,.GRP)
-importFrom(data.table,.I)
-importFrom(data.table,.N)
-importFrom(data.table,.SD)
-importFrom(data.table,as.data.table)
-importFrom(data.table,data.table)
-importFrom(data.table,month)
-importFrom(data.table,setDT)
-importFrom(data.table,setnames)
-importFrom(data.table,setorder)
-importFrom(data.table,year)
+importFrom(data.table,
+  ":=",
+  .BY,
+  .SD,
+  as.data.table,
+  data.table,
+  fcase,
+  fifelse,
+  mday,
+  month,
+  setnames,
+  setorder,
+  yday,
+  year
+)
 importFrom(digest,digest)
-importFrom(dplyr,across)
-importFrom(dplyr,all_of)
-importFrom(dplyr,any_of)
-importFrom(dplyr,arrange)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,distinct)
-importFrom(dplyr,filter)
-importFrom(dplyr,group_by)
-importFrom(dplyr,inner_join)
-importFrom(dplyr,mutate)
-importFrom(dplyr,n)
-importFrom(dplyr,select)
-importFrom(dplyr,semi_join)
-importFrom(dplyr,summarise)
-importFrom(ecmwfr,wf_get_key)
-importFrom(ecmwfr,wf_request)
-importFrom(ecmwfr,wf_set_key)
+importFrom(dplyr,
+  across,
+  any_of,
+  filter,
+  group_by,
+  inner_join,
+  mutate,
+  select,
+  summarise
+)
+importFrom(ecmwfr,
+  wf_get_key,
+  wf_request,
+  wf_set_key
+)
 importFrom(graphics,grid)
-importFrom(httr,GET)
-importFrom(httr,POST)
-importFrom(httr,config)
-importFrom(httr,content)
-importFrom(httr,headers)
-importFrom(httr,status_code)
-importFrom(httr,timeout)
-importFrom(jsonlite,fromJSON)
-importFrom(jsonlite,toJSON)
+importFrom(httr,
+  GET,
+  HEAD,
+  POST,
+  config,
+  content,
+  headers,
+  status_code,
+  timeout
+)
 importFrom(jsonlite,write_json)
 importFrom(lubridate,ymd)
 importFrom(magrittr,"%>%")
-importFrom(ncdf4,nc_close)
-importFrom(ncdf4,nc_open)
-importFrom(ncdf4,ncvar_get)
+importFrom(ncdf4,
+  nc_close,
+  nc_open,
+  ncvar_get
+)
 importFrom(rlang,.data)
-importFrom(stats,aggregate)
-importFrom(stats,as.formula)
-importFrom(stats,complete.cases)
-importFrom(stats,setNames)
-importFrom(terra,extract)
-importFrom(terra,rast)
-importFrom(tools,R_user_dir)
-importFrom(tools,file_ext)
-importFrom(tools,file_path_sans_ext)
-importFrom(utils,install.packages)
-importFrom(utils,packageVersion)
-importFrom(utils,sessionInfo)
-importFrom(utils,setTxtProgressBar)
-importFrom(utils,txtProgressBar)
-importFrom(utils,unzip)
-importFrom(utils,write.csv)
+importFrom(stats,
+  aggregate,
+  as.formula,
+  complete.cases,
+  setNames
+)
+importFrom(terra,
+  extract,
+  rast
+)
+importFrom(tools,
+  R_user_dir,
+  file_ext,
+  file_path_sans_ext
+)
+importFrom(utils,
+  packageVersion,
+  sessionInfo,
+  setTxtProgressBar,
+  txtProgressBar,
+  unzip,
+  write.csv
+)

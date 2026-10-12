@@ -6,6 +6,12 @@
 \usage{
 exclude_cols
 }
+\value{
+A character vector of variable names.
+}
 \description{
 These are coordinate and metadata columns that should not be aggregated.
+}
+\examples{
+head(exclude_cols)
 }

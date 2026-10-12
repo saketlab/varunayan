@@ -27,9 +27,9 @@ imd_temperature_bbox(
 
 \item{request_id}{Unique identifier for the request.}
 
-\item{start_year}{Start year (1951-2024).}
+\item{start_year}{Start year (1951-2025).}
 
-\item{end_year}{End year (1951-2024).}
+\item{end_year}{End year (1951-2025).}
 
 \item{north}{Northern latitude boundary.}
 
@@ -50,13 +50,13 @@ imd_temperature_bbox(
 \item{use_cache}{Whether to use cached data if available (default: TRUE).}
 }
 \value{
-data.frame with processed temperature data
+A data.frame with columns \code{date}, \code{latitude}, \code{longitude} and \code{temperature} (degrees Celsius), restricted to the requested region and aggregated to \code{frequency}.
 }
 \description{
 Download and process IMD temperature data for a bounding box
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 data <- imd_temperature_bbox(
   request_id = "delhi_tmax",
   start_year = 2023,
@@ -65,5 +65,5 @@ data <- imd_temperature_bbox(
   east = 78, west = 76,
   var_type = "tmax"
 )
-}
+\dontshow{\}) # examplesIf}
 }

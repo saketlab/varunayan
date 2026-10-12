@@ -7,11 +7,14 @@
 list_cache(source = NULL)
 }
 \arguments{
-\item{source}{Filter by source: "era5", "imd", or NULL for all}
+\item{source}{Filter by source: "era5", "imd", "cru_ts", "hadex3", or NULL for all}
 }
 \value{
-data.frame with cache information
+A data.frame with columns \code{file}, \code{source}, \code{size_mb} and \code{modified}, one row per cached file; zero rows if the cache is empty.
 }
 \description{
 List cached files
+}
+\examples{
+list_cache()
 }

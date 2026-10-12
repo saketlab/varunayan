@@ -16,5 +16,5 @@ Covers global land areas (excl. Antarctica) at 0.5 degree resolution,
 \references{
 Harris et al. (2020) Version 4 of the CRU TS monthly high-resolution
 gridded multivariate climate dataset. Sci. Data 7:109.
-https://doi.org/10.1038/s41597-020-0453-3
+\doi{10.1038/s41597-020-0453-3}
 }

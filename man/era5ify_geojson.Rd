@@ -70,7 +70,8 @@ data.frame with processed climate data. When \code{convert_units = TRUE}:
 PascalCase aliases for all exported functions for backward compatibility.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
 setup_cds_credentials(key = "your-cds-api-key")
 
 data <- era5ify_geojson(
@@ -78,8 +79,8 @@ data <- era5ify_geojson(
   variables = c("2m_temperature", "total_precipitation"),
   start_date = "2023-01-01",
   end_date = "2023-01-31",
-  json_file = "region.geojson"
+  json_file = region
 )
 # Temperature is in Celsius, precipitation is in mm
-}
+\dontshow{\}) # examplesIf}
 }

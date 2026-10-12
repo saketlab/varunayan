@@ -16,7 +16,7 @@ setup_cds_credentials(key = NULL)
 environment variable \code{CDS_API_KEY} or ~/.cdsapirc file.}
 }
 \value{
-Invisible TRUE if successful
+Invisibly, \code{TRUE} once the key has been registered with 'ecmwfr'. Errors if no key can be found.
 }
 \description{
 Sets up Copernicus Climate Data Store (CDS) credentials for ERA5 downloads.

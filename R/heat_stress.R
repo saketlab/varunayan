@@ -8,8 +8,8 @@ NULL
 #' Uses the Magnus-Tetens approximation to calculate relative humidity
 #' from air temperature and dewpoint temperature.
 #'
-#' @param temp_c Air temperature in celsius
-#' @param dewpoint_c Dewpoint temperature in celsius
+#' @param temp_c Air temperature in Celsius
+#' @param dewpoint_c Dewpoint temperature in Celsius
 #' @return Relative humidity as percentage (0-100)
 #' @export
 #' @examples
@@ -30,12 +30,12 @@ relative_humidity_from_dewpoint <- function(temp_c, dewpoint_c) {
 #' Calculates wet bulb temperature using the Stull (2011) empirical formula.
 #' Valid for temperatures between -20C and 50C and RH between 5% and 99%.
 #'
-#' @param temp_c Air temperature in celsius
+#' @param temp_c Air temperature in Celsius
 #' @param rh Relative humidity as percentage (0-100)
 #' @return Wet bulb temperature in Celsius
 #' @references Stull, R. (2011). Wet-Bulb Temperature from Relative Humidity
 #'   and Air Temperature. Journal of Applied Meteorology and Climatology,
-#'   50(11), 2267-2269. https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
+#'   50(11), 2267-2269. \doi{10.1175/JAMC-D-11-0143.1}
 #' @export
 #' @examples
 #' wet_bulb_temperature(30, 60)
@@ -51,9 +51,9 @@ wet_bulb_temperature <- function(temp_c, rh) {
 
 #' Calculate wet bulb temperature from dewpoint
 #'
-#' @param temp_c Air temperature in celsius
-#' @param dewpoint_c Dewpoint temperature in celsius
-#' @return Wet bulb temperature in celsius
+#' @param temp_c Air temperature in Celsius
+#' @param dewpoint_c Dewpoint temperature in Celsius
+#' @return Wet bulb temperature in Celsius
 #' @export
 #' @examples
 #' wet_bulb_from_dewpoint(30, 22)
@@ -64,10 +64,13 @@ wet_bulb_from_dewpoint <- function(temp_c, dewpoint_c) {
 
 #' Calculate heat index (apparent temperature)
 #'
+#' US National Weather Service heat index: Steadman's simple formula, replaced
+#' by the Rothfusz (1990) regression with its low- and high-humidity
+#' adjustments once the simple value averaged with temperature reaches 80F.
 #'
-#' @param temp_c Air temperature in celsius
+#' @param temp_c Air temperature in Celsius
 #' @param rh Relative humidity as percentage (0-100)
-#' @return Heat index in celsius
+#' @return Heat index in Celsius
 #' @references Rothfusz, L.P. (1990). The Heat Index Equation.
 #'   NWS Southern Region Technical Attachment, SR/SSD 90-23.
 #'   https://www.weather.gov/media/ffc/ta_htindx.PDF
@@ -76,9 +79,11 @@ wet_bulb_from_dewpoint <- function(temp_c, dewpoint_c) {
 #' heat_index(35, 70)
 heat_index <- function(temp_c, rh) {
   temp_f <- temp_c * 9 / 5 + 32
+  simple_f <- 0.5 * (temp_f + 61.0 + (temp_f - 68.0) * 1.2 + rh * 0.094)
+  # NWS: use the Rothfusz regression once the simple estimate averaged with T reaches 80F
   hi_f <- ifelse(
-    temp_f < 80,
-    0.5 * (temp_f + 61.0 + (temp_f - 68.0) * 1.2 + rh * 0.094),
+    (simple_f + temp_f) / 2 < 80,
+    simple_f,
     {
       hi <- -42.379 +
         2.04901523 * temp_f +
@@ -92,7 +97,7 @@ heat_index <- function(temp_c, rh) {
 
       adj <- ifelse(
         rh < 13 & temp_f >= 80 & temp_f <= 112,
-        -((13 - rh) / 4) * sqrt((17 - abs(temp_f - 95)) / 17),
+        -((13 - rh) / 4) * sqrt(pmax(0, 17 - abs(temp_f - 95)) / 17),
         ifelse(
           rh > 85 & temp_f >= 80 & temp_f <= 87,
           ((rh - 85) / 10) * ((87 - temp_f) / 5),
@@ -109,9 +114,9 @@ heat_index <- function(temp_c, rh) {
 
 #' Calculate heat index from dewpoint
 #'
-#' @param temp_c Air temperature in celsius
-#' @param dewpoint_c Dewpoint temperature in celsius
-#' @return Heat index in celsius
+#' @param temp_c Air temperature in Celsius
+#' @param dewpoint_c Dewpoint temperature in Celsius
+#' @return Heat index in Celsius
 #' @export
 #' @examples
 #' heat_index_from_dewpoint(35, 25)
@@ -122,27 +127,31 @@ heat_index_from_dewpoint <- function(temp_c, dewpoint_c) {
 
 #' Calculate WBGT (Wet Bulb Globe Temperature)
 #'
-#' Calculates the Australian Bureau of Meteorology closed-form WBGT
-#' approximation (Steadman-based) from air temperature and dewpoint. Suitable
-#' for occupational heat stress assessment when only temperature and humidity
-#' are available.
+#' Australian Bureau of Meteorology approximation
+#' `WBGT = 0.567 * T + 0.393 * e + 3.94`, with `e` the vapour pressure in hPa.
+#' It assumes moderately high solar radiation and light wind, so it
+#' overestimates WBGT in cloudy or windy conditions and at night. Use daily
+#' maximum temperature for afternoon conditions. For the physical outdoor
+#' model see [wbgt_liljegren()].
 #'
 #' @param temp_c Air temperature in Celsius
 #' @param dewpoint_c Dewpoint temperature in Celsius
 #' @return WBGT in Celsius
 #' @references
-#'   Liljegren, J.C., et al. (2008). Modeling the Wet Bulb Globe Temperature
-#'   Using Standard Meteorological Measurements. J. Occup. Environ. Hyg., 5(10), 645-655.
-#'   Methods for Estimating Wet Bulb Globe Temperature
-# From Remote and Low-Cost Data: A Comparative Study in Central Alabama Anabel W. Carter, Benjamin F. Zaitchik , Julia M. Gohlke, Suwei Wang , and
-# Molly B. Richardson  https://vtechworks.lib.vt.edu/server/api/core/bitstreams/b482c33c-ca60-4ece-a99f-f2b36cef3eeb/content
+#'   Australian Bureau of Meteorology. Thermal Comfort observations: About the
+#'   approximation to the WBGT. \url{https://www.bom.gov.au/info/thermal_stress/}
+#'   (formula from American College of Sports Medicine (1984), Prevention of
+#'   thermal injuries during distance running: position stand, Medical Journal
+#'   of Australia, 141, 876).
+#'
+#'   Carter, A.W., Zaitchik, B.F., Gohlke, J.M., Wang, S., & Richardson, M.B.
+#'   (2020). Methods for Estimating Wet Bulb Globe Temperature From Remote and
+#'   Low-Cost Data: A Comparative Study in Central Alabama. GeoHealth, 4(5),
+#'   e2019GH000231. \doi{10.1029/2019GH000231}
 #' @export
 #' @examples
 #' wbgt_simple(35, 25)
 wbgt_simple <- function(temp_c, dewpoint_c) {
-  # Australian Bureau of Meteorology closed-form WBGT approximation
-  # (Steadman-based): requires only air temperature and humidity, fully
-  # reproducible. e = vapor pressure in hPa.
   e <- vapor_pressure_from_dewpoint(dewpoint_c)
   0.567 * temp_c + 0.393 * e + 3.94
 }
@@ -167,8 +176,8 @@ wbgt_shade <- function(temp_c, wet_bulb_c) {
 #' Alias for \code{wbgt_simple()} (BoM closed-form WBGT from temperature and
 #' dewpoint).
 #'
-#' @param temp_c Air temperature in celsius
-#' @param dewpoint_c Dewpoint temperature in celsius
+#' @param temp_c Air temperature in Celsius
+#' @param dewpoint_c Dewpoint temperature in Celsius
 #' @return WBGT in Celsius
 #' @export
 #' @examples
@@ -179,23 +188,26 @@ wbgt_from_dewpoint <- function(temp_c, dewpoint_c) {
 
 #' Calculate humidex (Canadian heat index)
 #'
-#' @param temp_c Air temperature in celsius
-#' @param dewpoint_c Dewpoint temperature in celsius
-#' @return Humidex in celsius
+#' @param temp_c Air temperature in Celsius
+#' @param dewpoint_c Dewpoint temperature in Celsius
+#' @return Humidex in Celsius
 #' @references Masterson, J. & Richardson, F.A. (1979). Humidex, A Method of
 #'   Quantifying Human Discomfort Due to Excessive Heat and Humidity.
 #'   Environment Canada, Atmospheric Environment Service.
+#'
+#'   Environment and Climate Change Canada. Glossary: Humidex.
+#'   \url{https://climate.weather.gc.ca/glossary_e.html}
 #' @export
 #' @examples
 #' humidex(30, 22)
 humidex <- function(temp_c, dewpoint_c) {
-  e <- 6.11 * exp(5417.7530 * (1 / 273.16 - 1 / (273.15 + dewpoint_c)))
+  e <- 6.11 * exp(5417.7530 * (1 / 273.15 - 1 / (273.15 + dewpoint_c)))
   temp_c + 0.5555 * (e - 10)
 }
 
 #' Calculate vapor pressure from dewpoint temperature
 #'
-#' @param dewpoint_c Dewpoint temperature in celsius
+#' @param dewpoint_c Dewpoint temperature in Celsius
 #' @return Vapor pressure in hPa (hectopascals)
 #' @export
 #' @examples
@@ -220,10 +232,7 @@ mean_radiant_temperature <- function(temp_c, solar_radiation = NULL, wind_speed 
   if (is.null(solar_radiation)) {
     return(temp_c)
   }
-  # Closed-form radiation-balance estimator for a standard person
-  # (Thorsson et al. 2007): absorb global horizontal shortwave onto the
-  # longwave radiant balance. Deterministic and non-iterative; wind_speed is
-  # unused (wind enters the convective terms of UTCI/WBGT, not the radiant load).
+  # simplified standard-person radiation balance; wind_speed is unused
   sigma <- 5.670374419e-8 # Stefan-Boltzmann, W m^-2 K^-4 (CODATA 2018)
   eps_p <- 0.97 # longwave emissivity of a standard person
   a_k <- 0.7 # shortwave absorption coefficient of a standard person
@@ -260,7 +269,7 @@ mean_radiant_temperature <- function(temp_c, solar_radiation = NULL, wind_speed 
 #' @return UTCI in Celsius
 #' @references Bröde, P., et al. (2012). Deriving the operational procedure for
 #'   the Universal Thermal Climate Index (UTCI). International Journal of
-#'   Biometeorology, 56(3), 481-494.
+#'   Biometeorology, 56(3), 481-494. \doi{10.1007/s00484-011-0454-1}
 #' @export
 #' @examples
 #' utci(30, wind_speed = 2, dewpoint_c = 20)
@@ -502,9 +511,13 @@ utci <- function(temp_c, wind_speed, dewpoint_c, tmrt = NULL) {
 #' @param wind_speed Wind speed at 10m height in m/s (0.5 to 30.3)
 #' @param rh Relative humidity as percentage (5 to 100)
 #' @return UTCI in Celsius
-#' @references Roman, S., Skok, G., Todorovski, L., & Dzeroski, S. (2025).
-#'   UTCI approximation using sparse regression with orthogonal polynomials.
-#'   Zenodo. https://doi.org/10.5281/zenodo.17465548 https://arxiv.org/abs/2508.11307
+#' @references Roman, S., Todorovski, L., Dzeroski, S., & Skok, G. (2025).
+#'   Approximating the universal thermal climate index using sparse regression
+#'   with orthogonal polynomials. \doi{10.48550/arXiv.2508.11307}
+#'
+#'   Roman, S. (2025). Code for Approximating the universal thermal climate
+#'   index (UTCI) using sparse regression with orthogonal polynomials. Zenodo.
+#'   \doi{10.5281/zenodo.17465548}
 #' @export
 #' @examples
 #' utci_sparse(30, tmrt = 40, wind_speed = 2, rh = 60)
@@ -779,14 +792,14 @@ utci_sparse <- function(temp_c, tmrt, wind_speed, rh) {
 #' Classify thermal stress based on UTCI values.
 #'
 #' @param utci_val UTCI value in Celsius
-#' @return Factor with thermal stress category
+#' @return A factor of thermal stress categories, the same length as the input.
 #' @export
 #' @examples
 #' utci_category(c(-20, 0, 20, 30, 40))
 utci_category <- function(utci_val) {
   breaks <- c(-Inf, -40, -27, -13, 0, 9, 26, 32, 38, 46, Inf)
   labels <- c(
-    "Extreme cold stress", "Very strong cold stress", "strong cold stress",
+    "Extreme cold stress", "Very strong cold stress", "Strong cold stress",
     "Moderate cold stress", "Slight cold stress", "No thermal stress",
     "Moderate heat stress", "Strong heat stress", "Very strong heat stress",
     "Extreme heat stress"
@@ -798,8 +811,8 @@ utci_category <- function(utci_val) {
 #'
 #' Calculate all heat stress indices from temperature and dewpoint.
 #'
-#' @param temp_c Air temperature in celsius
-#' @param dewpoint_c Dewpoint temperature in celsius
+#' @param temp_c Air temperature in Celsius
+#' @param dewpoint_c Dewpoint temperature in Celsius
 #' @return Data frame with columns: temp_c, dewpoint_c, rh, wet_bulb, heat_index,
 #'   wbgt, humidex
 #' @export
@@ -820,18 +833,22 @@ calc_heat_indices <- function(temp_c, dewpoint_c) {
   )
 }
 
+# NWS WBGT flag and heat index category thresholds, F to C
+.WBGT_BREAKS <- (c(78, 82, 85, 88) - 32) * 5 / 9
+.HI_BREAKS <- (c(80, 90, 103, 124) - 32) * 5 / 9
+
 #' heat stress risk categories
 #'
-#' Classify heat stress risk based on WBGT values using ISO 7243 guidelines.
+#' Classify heat stress risk using the US National Weather Service WBGT flag
+#' thresholds of 78, 82, 85 and 88 F (25.6, 27.8, 29.4 and 31.1 C).
 #'
-#' @param wbgt WBGT value in celsius
-#' @return Factor with risk category
+#' @param wbgt WBGT value in Celsius
+#' @return A factor of risk categories, the same length as the input.
 #' @export
 #' @examples
 #' wbgt_risk_category(c(25, 28, 31, 34))
 wbgt_risk_category <- function(wbgt) {
-  # NWS/OSHA WBGT flag-condition breaks, converted from 78/82/85/88 degF to degC.
-  breaks <- c(-Inf, 25.5556, 27.7778, 29.4444, 31.1111, Inf)
+  breaks <- c(-Inf, .WBGT_BREAKS, Inf)
   labels <- c("Low", "Moderate", "High", "Very high", "Extreme")
   cut(wbgt, breaks = breaks, labels = labels, right = FALSE)
 }
@@ -841,13 +858,12 @@ wbgt_risk_category <- function(wbgt) {
 #' Classify heat stress risk based on heat index using NWS categories.
 #'
 #' @param hi Heat index value in Celsius
-#' @return Factor with risk category
+#' @return A factor of risk categories, the same length as the input.
 #' @export
 #' @examples
 #' heat_index_risk_category(c(27, 33, 40, 46, 55))
 heat_index_risk_category <- function(hi) {
-  # NWS heat-index categories, converted from 80/90/103/124 degF to degC.
-  breaks <- c(-Inf, 26.6667, 32.2222, 39.4444, 51.1111, Inf)
+  breaks <- c(-Inf, .HI_BREAKS, Inf)
   labels <- c("Normal", "Caution", "Extreme Caution", "Danger", "Extreme Danger")
   cut(hi, breaks = breaks, labels = labels, right = FALSE)
 }
@@ -908,17 +924,16 @@ heat_index_risk_category <- function(hi) {
 #' @param verbose Whether to print progress messages (default: FALSE)
 #' @return data.frame with date, latitude, longitude, and requested variables
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
 #' # Get temperature and humidity
 #' climate <- GetERA5DailyClimate(
 #'   request_id = "india_climate",
 #'   start_date = "2023-05-01",
 #'   end_date = "2023-05-31",
 #'   variables = c("temperature", "humidity"),
-#'   json_file = "india.geojson"
+#'   json_file = region
 #' )
-#' }
 GetERA5DailyClimate <- function(request_id, start_date, end_date,
                                 variables = c("temperature", "humidity"),
                                 json_file = NULL,
@@ -1022,15 +1037,14 @@ get_era5_daily_climate <- GetERA5DailyClimate
 #' @param verbose Whether to print progress messages (default: FALSE)
 #' @return data.frame with date, latitude, longitude, temp_c
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
 #' temp <- GetERA5DailyTemperature(
 #'   request_id = "india_temp",
 #'   start_date = "2023-05-01",
 #'   end_date = "2023-05-31",
-#'   json_file = "india.geojson"
+#'   json_file = region
 #' )
-#' }
 GetERA5DailyTemperature <- function(request_id, start_date, end_date,
                                     json_file = NULL,
                                     north = NULL, south = NULL,
@@ -1057,15 +1071,14 @@ get_era5_daily_temperature <- GetERA5DailyTemperature
 #' @inheritParams GetERA5DailyTemperature
 #' @return data.frame with date, latitude, longitude, temp_c, dewpoint_c, rh
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
 #' humidity <- GetERA5DailyHumidity(
 #'   request_id = "india_humidity",
 #'   start_date = "2023-05-01",
 #'   end_date = "2023-05-31",
-#'   json_file = "india.geojson"
+#'   json_file = region
 #' )
-#' }
 GetERA5DailyHumidity <- function(request_id, start_date, end_date,
                                  json_file = NULL,
                                  north = NULL, south = NULL,
@@ -1092,15 +1105,14 @@ get_era5_daily_humidity <- GetERA5DailyHumidity
 #' @inheritParams GetERA5DailyTemperature
 #' @return data.frame with date, latitude, longitude, temp_c, dewpoint_c, rh, wet_bulb
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
 #' wetbulb <- GetERA5DailyWetBulb(
 #'   request_id = "india_wetbulb",
 #'   start_date = "2023-05-01",
 #'   end_date = "2023-05-31",
-#'   json_file = "india.geojson"
+#'   json_file = region
 #' )
-#' }
 GetERA5DailyWetBulb <- function(request_id, start_date, end_date,
                                 json_file = NULL,
                                 north = NULL, south = NULL,
@@ -1127,15 +1139,14 @@ get_era5_daily_wet_bulb <- GetERA5DailyWetBulb
 #' @inheritParams GetERA5DailyTemperature
 #' @return data.frame with date, latitude, longitude, wind_speed
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
 #' wind <- GetERA5DailyWind(
 #'   request_id = "india_wind",
 #'   start_date = "2023-05-01",
 #'   end_date = "2023-05-31",
-#'   json_file = "india.geojson"
+#'   json_file = region
 #' )
-#' }
 GetERA5DailyWind <- function(request_id, start_date, end_date,
                              json_file = NULL,
                              north = NULL, south = NULL,
@@ -1177,13 +1188,13 @@ get_era5_daily_wind <- GetERA5DailyWind
 #'   wind_speed, rh, wet_bulb, heat_index, wbgt, utci, humidex, wbgt_risk,
 #'   heat_index_risk, utci_stress. When solar_load=TRUE, also includes solar_radiation.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
 #' heat_data <- GetERA5DailyHeatIndexData(
 #'   request_id = "india_heat_2023",
 #'   start_date = "2023-05-01",
 #'   end_date = "2023-05-31",
-#'   json_file = "india.geojson"
+#'   json_file = region
 #' )
 #'
 #' # With solar radiation for outdoor WBGT
@@ -1191,10 +1202,9 @@ get_era5_daily_wind <- GetERA5DailyWind
 #'   request_id = "india_heat_2023_solar",
 #'   start_date = "2023-05-01",
 #'   end_date = "2023-05-31",
-#'   json_file = "india.geojson",
+#'   json_file = region,
 #'   solar_load = TRUE
 #' )
-#' }
 GetERA5DailyHeatIndexData <- function(request_id, start_date, end_date,
                                       json_file = NULL,
                                       north = NULL, south = NULL,
@@ -1287,17 +1297,16 @@ get_era5_daily_heat_data <- GetERA5DailyHeatIndexData
 #' @param resolution Spatial resolution in degrees (default: 0.25)
 #' @param use_cache Whether to use cached data (default: TRUE)
 #' @param verbose Whether to print progress messages (default: FALSE)
-#' @return data.frame with monthly mean values for each grid point
+#' @return A data.frame with one row per grid point for the requested month: `year`, `month`, `latitude`, `longitude`, monthly means of the daily heat stress variables, and the categorical columns `wbgt_risk`, `heat_index_risk` and `utci_stress`.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
 #' heat_may <- GetERA5MonthlyHeatIndexData(
 #'   request_id = "india_may2023",
 #'   year = 2023,
 #'   month = 5,
-#'   json_file = "india.geojson"
+#'   json_file = region
 #' )
-#' }
 GetERA5MonthlyHeatIndexData <- function(request_id, year, month,
                                         json_file = NULL,
                                         north = NULL, south = NULL,

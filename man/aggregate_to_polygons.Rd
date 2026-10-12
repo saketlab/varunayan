@@ -2,8 +2,7 @@
 % Please edit documentation in R/spatial.R
 \name{aggregate_to_polygons}
 \alias{aggregate_to_polygons}
-\title{Spatial utilities for aggregating gridded data to polygons
-Aggregate gridded data to polygon regions}
+\title{Aggregate gridded data to polygon regions}
 \usage{
 aggregate_to_polygons(
   data,
@@ -28,9 +27,18 @@ aggregate_to_polygons(
 \item{agg_fun}{Aggregation function (default: mean)}
 }
 \value{
-Data frame with aggregated values per polygon
+A tibble with one row per polygon: the \code{polygon_id_cols} columns and \code{value}, the mean of \code{value_col} over the grid points assigned to that polygon.
 }
 \description{
-Spatial utilities for aggregating gridded data to polygons
 Aggregate gridded data to polygon regions
+}
+\examples{
+grid <- expand.grid(longitude = seq(72.5, 77.5, by = 1), latitude = seq(18.5, 21.5, by = 1))
+grid$temperature <- seq_len(nrow(grid))
+cells <- sf::st_make_grid(sf::st_as_sfc(sf::st_bbox(
+  c(xmin = 72, ymin = 18, xmax = 78, ymax = 22),
+  crs = 4326
+)), n = c(2, 1))
+polys <- sf::st_sf(region = c("west", "east"), geometry = cells)
+aggregate_to_polygons(grid, polys, value_col = "temperature")
 }

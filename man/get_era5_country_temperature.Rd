@@ -53,7 +53,7 @@ Resolves the country boundary, downloads monthly data via
 averages by year and month.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 # Monthly mean temperature for India
 get_era5_country_temperature("India", "2023-06-01", "2023-06-30")
 
@@ -66,5 +66,5 @@ get_era5_country_temperature("USA", "2023-01-01", "2023-12-31",
 library(sf)
 poly <- st_read("my_country.geojson")
 get_era5_country_temperature(poly, "2023-01-01", "2023-06-30")
-}
+\dontshow{\}) # examplesIf}
 }

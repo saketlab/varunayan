@@ -20,3 +20,6 @@ Character vector of variable names
 \description{
 List all available variables for a dataset type
 }
+\examples{
+head(list_available_variables("single"))
+}

@@ -6,6 +6,12 @@
 \usage{
 min_vars
 }
+\value{
+A character vector of variable names.
+}
 \description{
 Variables that should use minimum aggregation
+}
+\examples{
+head(min_vars)
 }

@@ -56,7 +56,7 @@ Downloads and filters HadEX3 ETCCDI climate extremes data to a geographic
 bounding box. Data covers 1901-2018 at 1.25 x 1.875 degree resolution.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 # Annual maximum daily maximum temperature for Europe 1981-2010
 data <- hadex3_bbox(
   index = "TXx",
@@ -71,5 +71,5 @@ data <- hadex3_bbox(
   north = 35, south = 8, east = 97, west = 68,
   frequency = "monthly"
 )
-}
+\dontshow{\}) # examplesIf}
 }

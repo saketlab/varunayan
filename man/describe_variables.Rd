@@ -17,17 +17,15 @@ describe_variables(variables, dataset_type = "all")
 \item{dataset_type}{Character string indicating dataset type ("single", "pressure", or "all")}
 }
 \value{
-data.frame with detailed variable descriptions
+A data.frame with columns \code{variable_name}, \code{description}, \code{units}, \code{dataset_type} and \code{category}, one row per matched variable.
 }
 \description{
 Describe ERA5 variables in detail
 }
 \examples{
-\dontrun{
 # Describe specific variables
 descriptions <- describe_variables(c("2m_temperature", "total_precipitation"))
 
 # Get descriptions for pressure level variables
 pressure_desc <- describe_variables("temperature", dataset_type = "pressure")
-}
 }

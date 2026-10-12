@@ -7,7 +7,7 @@
 vapor_pressure_from_dewpoint(dewpoint_c)
 }
 \arguments{
-\item{dewpoint_c}{Dewpoint temperature in celsius}
+\item{dewpoint_c}{Dewpoint temperature in Celsius}
 }
 \value{
 Vapor pressure in hPa (hectopascals)

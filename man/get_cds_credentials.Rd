@@ -10,8 +10,15 @@ get_cds_credentials(silent = FALSE)
 \item{silent}{Suppress informational messages}
 }
 \value{
-Logical indicating whether credentials are available
+\code{TRUE} if credentials are available, \code{FALSE} otherwise.
 }
 \description{
-Checks ecmwfr config first, then ~/.cdsapirc
+Checks the \code{CDS_API_KEY} environment variable, then the 'ecmwfr' keyring,
+then \verb{~/.cdsapirc}. A key found in the environment variable or in
+\verb{~/.cdsapirc} is registered with 'ecmwfr' via \code{\link[ecmwfr:wf_set_key]{ecmwfr::wf_set_key()}}.
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+get_cds_credentials()
+\dontshow{\}) # examplesIf}
 }

@@ -13,8 +13,11 @@ show_cache_info()
 \item{...}{Arguments passed to the main function (used by aliases).}
 }
 \value{
-data.frame with cache information (invisible)
+Invisibly, a data.frame with columns \code{name}, \code{size_mb} and \code{mtime} describing cached files, or \code{NULL} if the cache is empty. Called mainly for its side effect of printing a summary as messages.
 }
 \description{
 Show cache contents and statistics
+}
+\examples{
+show_cache_info()
 }

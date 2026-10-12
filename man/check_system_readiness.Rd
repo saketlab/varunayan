@@ -15,8 +15,13 @@ check_system_readiness(verbose = TRUE)
 \item{verbose}{Whether to print detailed information}
 }
 \value{
-Logical indicating if system is ready (invisible)
+Invisibly, \code{TRUE} if all required packages, network access and CDS credentials are available, \code{FALSE} otherwise.
 }
 \description{
 Check system readiness for varunayan operations
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+check_system_readiness()
+\dontshow{\}) # examplesIf}
 }

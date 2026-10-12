@@ -27,8 +27,7 @@ utils::globalVariables(c("weight", "col_name"))
 #'   `temperature_min`). Temperature values are in Celsius.
 #'
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' # Monthly mean temperature for India
 #' get_era5_country_temperature("India", "2023-06-01", "2023-06-30")
 #'
@@ -41,7 +40,6 @@ utils::globalVariables(c("weight", "col_name"))
 #' library(sf)
 #' poly <- st_read("my_country.geojson")
 #' get_era5_country_temperature(poly, "2023-01-01", "2023-06-30")
-#' }
 get_era5_country_temperature <- function(country, start_date, end_date,
                                          variables = "mean",
                                          request_id = NULL,
@@ -81,7 +79,7 @@ get_era5_country_temperature <- function(country, start_date, end_date,
 
   bbox <- sf::st_bbox(polygon)
 
-  # Run st_intersects once on unique grid points, not the full temporal dataset.
+  # st_intersects runs once per unique grid point; the time steps reuse it.
   all_bbox <- lapply(era5_vars, function(v) {
     rid <- paste0(request_id, "_", gsub("[^a-zA-Z0-9]", "_", v))
     era5ify_bbox(

@@ -25,14 +25,14 @@ process_imd_files(
 rainfall reader to crop at read time; NULL reads the full grid (default).}
 }
 \value{
-data.frame with combined data
+A data.frame with columns \code{date}, \code{latitude}, \code{longitude} and the value column (\code{rainfall} or \code{temperature}), combining all files.
 }
 \description{
 Reads and combines multiple IMD data files.
 }
 \examples{
-\dontrun{
-files <- c("imd_tmax_1.0_2023.grd", "imd_tmax_1.0_2024.grd")
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+files <- download_imd_temperature(2023, 2024, var_type = "tmax")
 data <- process_imd_files(files, "tmax", years = c(2023, 2024))
-}
+\dontshow{\}) # examplesIf}
 }

@@ -37,7 +37,7 @@ process_netcdf_to_dataframe <- function(netcdf_file) {
 #' @keywords internal
 .read_ncdf4_fast <- function(netcdf_file) {
   nc <- ncdf4::nc_open(netcdf_file)
-  on.exit(ncdf4::nc_close(nc))
+  on.exit(ncdf4::nc_close(nc), add = TRUE)
 
   dim_names <- names(nc$dim)
   lat_name <- intersect(c("latitude", "lat"), dim_names)[1]
@@ -304,7 +304,7 @@ filter_dataframe_by_geojson <- function(df, geojson_file) {
 
   old_use_s2 <- sf_use_s2()
   sf_use_s2(FALSE)
-  on.exit(sf_use_s2(old_use_s2))
+  on.exit(sf_use_s2(old_use_s2), add = TRUE)
 
   geojson_sf <- st_make_valid(geojson_sf)
 
@@ -430,59 +430,49 @@ aggregate_by_frequency <- function(data, frequency, verbose = FALSE) {
 
   start_time_agg <- Sys.time()
 
-  if (requireNamespace("data.table", quietly = TRUE)) {
-    step_start <- Sys.time()
-    DT <- as.data.table(data)
-    elapsed <- as.numeric(x = difftime(Sys.time(), step_start, units = "secs"))
-    if (verbose) message(sprintf(fmt = "[TIMER] Convert to data.table: %ss", round(elapsed, 3)))
+  step_start <- Sys.time()
+  DT <- as.data.table(data)
+  elapsed <- as.numeric(x = difftime(Sys.time(), step_start, units = "secs"))
+  if (verbose) message(sprintf(fmt = "[TIMER] Convert to data.table: %ss", round(elapsed, 3)))
 
-    step_start <- Sys.time()
-    if (frequency == "daily") {
-      DT[, time_group := as.Date(x = datetime)]
-    } else if (frequency == "monthly") {
-      DT[, time_group := year(datetime) * 100L + month(datetime)]
-    } else if (frequency == "yearly") {
-      DT[, time_group := year(datetime)]
-    } else {
-      DT[, time_group := as.Date(x = datetime)]
-    }
-    elapsed <- as.numeric(x = difftime(Sys.time(), step_start, units = "secs"))
-    if (verbose) message(sprintf(fmt = "[TIMER] Create time groups: %ss", round(elapsed, 3)))
-
-    step_start <- Sys.time()
-    aggregated <- DT[, .(
-      datetime = min(datetime),
-      value = mean(value, na.rm = TRUE)
-    ), by = .(time_group, latitude, longitude, variable)]
-    elapsed <- as.numeric(x = difftime(Sys.time(), step_start, units = "secs"))
-    if (verbose) message(sprintf(fmt = "[TIMER] data.table aggregation: %ss", round(elapsed, 3)))
-
-    step_start <- Sys.time()
-    setorder(aggregated, datetime, latitude, longitude, variable)
-    elapsed <- as.numeric(x = difftime(Sys.time(), step_start, units = "secs"))
-    if (verbose) message(sprintf(fmt = "[TIMER] Sorting: %ss", round(elapsed, 3)))
-
-    aggregated[, time_group := NULL]
-    aggregated <- as.data.frame(aggregated)
+  step_start <- Sys.time()
+  if (frequency == "monthly") {
+    DT[, time_group := year(datetime) * 100L + month(datetime)]
+  } else if (frequency == "yearly") {
+    DT[, time_group := year(datetime)]
   } else {
-    data$time_group <- switch(frequency,
-      "daily" = as.Date(x = data$datetime),
-      "monthly" = format(data$datetime, "%Y-%m"),
-      "yearly" = format(data$datetime, "%Y"),
-      as.Date(x = data$datetime)
-    )
-
-    aggregated <- data %>%
-      group_by(time_group, latitude, longitude, variable) %>%
-      summarise(
-        datetime = min(datetime),
-        value = mean(value, na.rm = TRUE),
-        .groups = "drop"
-      ) %>%
-      select(datetime, latitude, longitude, variable, value) %>%
-      arrange(datetime, latitude, longitude, variable) %>%
-      as.data.frame()
+    DT[, time_group := as.Date(x = datetime)]
   }
+  elapsed <- as.numeric(x = difftime(Sys.time(), step_start, units = "secs"))
+  if (verbose) message(sprintf(fmt = "[TIMER] Create time groups: %ss", round(elapsed, 3)))
+
+  step_start <- Sys.time()
+  aggregated <- DT[, .(
+    datetime = min(datetime),
+    s = sum(value, na.rm = TRUE), mx = max(value, na.rm = TRUE),
+    mn = min(value, na.rm = TRUE), avg = mean(value, na.rm = TRUE)
+  ), by = .(time_group, latitude, longitude, variable)]
+  vars <- unique(aggregated$variable)
+  methods <- stats::setNames(vapply(vars, .aggregation_method, character(1)), vars)
+  aggregated[, method := methods[variable]]
+  # mean of an all-NA group is NaN, which flags it for every method
+  aggregated[, value := fcase(
+    is.nan(avg), NA_real_,
+    method == "sum", as.numeric(s),
+    method == "max", as.numeric(mx),
+    method == "min", as.numeric(mn),
+    default = avg
+  )]
+  aggregated[, c("time_group", "s", "mx", "mn", "avg", "method") := NULL]
+  elapsed <- as.numeric(x = difftime(Sys.time(), step_start, units = "secs"))
+  if (verbose) message(sprintf(fmt = "[TIMER] data.table aggregation: %ss", round(elapsed, 3)))
+
+  step_start <- Sys.time()
+  setorder(aggregated, datetime, latitude, longitude, variable)
+  elapsed <- as.numeric(x = difftime(Sys.time(), step_start, units = "secs"))
+  if (verbose) message(sprintf(fmt = "[TIMER] Sorting: %ss", round(elapsed, 3)))
+
+  aggregated <- as.data.frame(aggregated)
 
   total_agg_time <- as.numeric(x = difftime(Sys.time(), start_time_agg, units = "secs"))
   if (verbose) {

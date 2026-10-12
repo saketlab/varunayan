@@ -1,52 +1,74 @@
-Package: varunayan
 Type: Package
-Title: Download and Process Climate Data from ERA5, IMD, HadEX3, and CRU TS
-Version: 0.1.0.9001
-Authors@R: c(person("Saket", "Choudhary", email = "saketc@iitb.ac.in", role = c("aut", "cre"),
-    comment = c(ORCID = "0000-0001-5202-7633")))
-Description: R package for downloading and processing ERA5 climate data, IMD
-    (Indian Meteorological Department) gridded data, and HadEX3 global climate
-    extremes (ETCCDI indices) for custom geographical regions. Provides functions to
-    extract climate data using bounding boxes, GeoJSON polygons, or point coordinates
-    and calculate heat indices. Supports various temporal frequencies and spatial
-    resolutions with analysis-ready outputs.
+Package: varunayan
+Title: Download and Process ERA5, IMD, HadEX3 and CRU TS Climate Data
+Version: 0.2.0
+Authors@R: c(
+    person("Saket", "Choudhary", , "saketc@iitb.ac.in", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0001-5202-7633")),
+    person("Darakhshan", "Nehal", role = "aut")
+  )
+Description: Download and process climate data for custom geographical
+    regions defined by bounding boxes, 'GeoJSON' polygons, or point
+    coordinates. Supports the fifth generation European Centre for
+    Medium-Range Weather Forecasts atmospheric reanalysis ('ERA5';
+    Hersbach et al. (2020) <doi:10.1002/qj.3803>) from the 'Copernicus'
+    Climate Data Store (CDS) <https://cds.climate.copernicus.eu/>, India
+    Meteorological Department (IMD) gridded rainfall and temperature (Pai
+    et al. (2014) <doi:10.54302/mausam.v65i1.851>), Hadley Centre global
+    land climate extremes indices version 3 ('HadEX3'; Dunn et al. (2020)
+    <doi:10.1029/2019JD032263>), and Climatic Research Unit gridded Time
+    Series ('CRU TS'; Harris et al. (2020)
+    <doi:10.1038/s41597-020-0453-3>). Also computes heat stress indices
+    including heat index, wet-bulb temperature, outdoor wet-bulb globe
+    temperature (Liljegren et al. (2008) <doi:10.1080/15459620802310770>)
+    and the Universal Thermal Climate Index (Bröde et al. (2012)
+    <doi:10.1007/s00484-011-0454-1>), and heat exposure indicators for
+    health studies: heatwave and warm-night frequency and duration under
+    India Meteorological Department and percentile definitions, the Excess
+    Heat Factor (Nairn and Fawcett (2015) <doi:10.3390/ijerph120100227>)
+    and diurnal temperature range. 
 License: MIT + file LICENSE
-URL: https://varunayanr.saketlab.org, https://github.com/saketlab/varunayanR
+URL: https://varunayanr.saketlab.org,
+    https://github.com/saketlab/varunayanR
 BugReports: https://github.com/saketlab/varunayanR/issues
 Depends:
     R (>= 4.1.0)
 Imports:
     data.table,
+    digest,
+    dplyr,
     ecmwfr (>= 2.0.0),
+    httr,
+    jsonlite,
+    lubridate,
+    magrittr,
+    ncdf4,
+    rlang,
     sf,
     stars,
+    stats,
     terra,
-    ncdf4,
-    dplyr,
-    lubridate,
-    jsonlite,
-    magrittr,
-    rlang,
     tools,
     utils,
-    httr,
-    digest,
     parallel
 Suggests:
-    testthat (>= 3.0.0),
-    knitr,
-    rmarkdown,
     ggplot2,
+    ggpubr,
+    gridExtra,
+    knitr,
     maps,
+    ncmeta,
     patchwork,
+    R.utils,
+    rmarkdown,
     scales,
+    testthat (>= 3.1.7),
     tidyr,
     units,
-    R.utils,
-    gridExtra,
-    ncmeta,
-    ggpubr
-VignetteBuilder: knitr
+    withr (>= 2.5.0)
+VignetteBuilder: 
+    knitr
+Config/roxygen2/version: 8.1.0
+Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Config/roxygen2/version: 8.0.0

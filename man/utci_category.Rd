@@ -10,7 +10,7 @@ utci_category(utci_val)
 \item{utci_val}{UTCI value in Celsius}
 }
 \value{
-Factor with thermal stress category
+A factor of thermal stress categories, the same length as the input.
 }
 \description{
 Classify thermal stress based on UTCI values.

@@ -41,6 +41,10 @@ IMDTemperatureGeojson <- function(...) imd_temperature_geojson(...)
 #' @export
 IMDStations <- function(...) imd_stations(...)
 
+#' @rdname imd_exposure_bbox
+#' @export
+IMDExposureBbox <- function(...) imd_exposure_bbox(...)
+
 # Setup and credentials
 #' @rdname setup_cds_credentials
 #' @export

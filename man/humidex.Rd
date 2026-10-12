@@ -7,12 +7,12 @@
 humidex(temp_c, dewpoint_c)
 }
 \arguments{
-\item{temp_c}{Air temperature in celsius}
+\item{temp_c}{Air temperature in Celsius}
 
-\item{dewpoint_c}{Dewpoint temperature in celsius}
+\item{dewpoint_c}{Dewpoint temperature in Celsius}
 }
 \value{
-Humidex in celsius
+Humidex in Celsius
 }
 \description{
 Calculate humidex (Canadian heat index)
@@ -24,4 +24,7 @@ humidex(30, 22)
 Masterson, J. & Richardson, F.A. (1979). Humidex, A Method of
 Quantifying Human Discomfort Due to Excessive Heat and Humidity.
 Environment Canada, Atmospheric Environment Service.
+
+Environment and Climate Change Canada. Glossary: Humidex.
+\url{https://climate.weather.gc.ca/glossary_e.html}
 }

@@ -7,13 +7,14 @@
 wbgt_risk_category(wbgt)
 }
 \arguments{
-\item{wbgt}{WBGT value in celsius}
+\item{wbgt}{WBGT value in Celsius}
 }
 \value{
-Factor with risk category
+A factor of risk categories, the same length as the input.
 }
 \description{
-Classify heat stress risk based on WBGT values using ISO 7243 guidelines.
+Classify heat stress risk using the US National Weather Service WBGT flag
+thresholds of 78, 82, 85 and 88 F (25.6, 27.8, 29.4 and 31.1 C).
 }
 \examples{
 wbgt_risk_category(c(25, 28, 31, 34))

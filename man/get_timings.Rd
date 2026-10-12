@@ -7,8 +7,11 @@
 get_timings()
 }
 \value{
-data.frame with timing information
+A data.frame with columns \code{label}, \code{elapsed_seconds}, \code{timestamp} and \code{duration} (formatted), one row per timed operation; zero rows if nothing has been timed.
 }
 \description{
 Get all recorded timings
+}
+\examples{
+get_timings()
 }

@@ -14,8 +14,12 @@ time_operation(expr, label, verbose = TRUE)
 \item{verbose}{Whether to print timing info (default: TRUE)}
 }
 \value{
-Result of the expression
+The value of \code{expr}. The elapsed time is recorded and can be retrieved with \code{\link[=get_timings]{get_timings()}}.
 }
 \description{
 Time an operation and log the duration
+}
+\examples{
+x <- time_operation(sum(1:10), "sum")
+get_timings()
 }

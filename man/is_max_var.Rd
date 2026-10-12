@@ -15,3 +15,6 @@ Logical indicating if variable should use max
 \description{
 Check if a variable should use maximum
 }
+\examples{
+is_max_var("2m_temperature")
+}

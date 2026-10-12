@@ -11,7 +11,7 @@ get_imd_grid_specs(dataset)
 "rainfall_1.0", "tmax_1.0", "tmin_1.0".}
 }
 \value{
-List with grid specifications.
+A list with elements \code{nlat}, \code{nlon}, \code{lat_start}, \code{lat_end}, \code{lon_start}, \code{lon_end}, \code{resolution} (degrees), \code{unit}, \code{missing_value}, \code{format} and \code{description}.
 }
 \description{
 Returns grid specifications for different IMD datasets.

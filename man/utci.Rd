@@ -29,5 +29,5 @@ utci(35, wind_speed = 1, dewpoint_c = 25, tmrt = 45)
 \references{
 Bröde, P., et al. (2012). Deriving the operational procedure for
 the Universal Thermal Climate Index (UTCI). International Journal of
-Biometeorology, 56(3), 481-494.
+Biometeorology, 56(3), 481-494. \doi{10.1007/s00484-011-0454-1}
 }

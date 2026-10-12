@@ -13,8 +13,11 @@ get_package_info()
 \item{...}{Arguments passed to the main function (used by aliases).}
 }
 \value{
-data.frame with package versions (invisible)
+The \code{\link[utils:sessionInfo]{utils::sessionInfo()}} object, invisibly. Called for its side effect of reporting the R version, platform and versions of key dependencies as messages.
 }
 \description{
 Get package version information
+}
+\examples{
+get_package_info()
 }

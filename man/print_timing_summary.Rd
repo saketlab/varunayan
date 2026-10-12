@@ -6,6 +6,12 @@
 \usage{
 print_timing_summary()
 }
+\value{
+The timing data frame from \code{\link[=get_timings]{get_timings()}}, invisibly (\code{NULL} if empty).
+}
 \description{
 Print timing summary
+}
+\examples{
+print_timing_summary()
 }

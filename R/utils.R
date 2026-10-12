@@ -9,7 +9,12 @@ NULL
 # Suppress R CMD check NOTEs for dplyr NSE variables
 utils::globalVariables(c(
   ".", "..value_col", "datetime", "latitude", "longitude",
-  "time_group", "time_idx", "value", "variable"
+  "time_group", "time_idx", "value", "variable",
+  "s", "mx", "mn", "avg", "method",
+  "year", "month", "tmax", "tmin", "wbgt", "dtr", "has_data", "hot", "trop", "tx90", "tn90",
+  "tx90p", "tn90p", "wsdi", "hw_day", "hw_event", "hw_len", "hw_severe", "wn_day",
+  "wn_event", "wn_len", "wn_severe", "wbgt_high", "wbgt_extreme", "heat_index",
+  "hi_danger", "wet_bulb", "tw31", "terrain", "i.terrain"
 ))
 
 # Package environment for timing data
@@ -38,7 +43,7 @@ convert_to_geojson <- function(data) {
     list(
       type = "Feature",
       geometry = list(type = "Point", coordinates = c(data$lon[i], data$lat[i])),
-      properties = as.list(data[i, !names(data) %in% c("lon", "lat")])
+      properties = as.list(data[i, !names(data) %in% c("lon", "lat"), drop = FALSE])
     )
   })
   list(type = "FeatureCollection", features = features)
@@ -75,13 +80,10 @@ create_temp_geojson_file <- function(geojson_data, request_id) {
 #' @param date_string Character string in various date formats
 #' @return Date object
 parse_date_flexible <- function(date_string) {
-  tryCatch(as.Date(x = date_string, format = "%Y-%m-%d"),
-    error = function(e) {
-      tryCatch(ymd(date_string),
-        error = function(e) stop("Date '", date_string, "' must be in YYYY-MM-DD format")
-      )
-    }
-  )
+  date <- as.Date(x = date_string, format = "%Y-%m-%d")
+  if (is.na(date)) date <- suppressWarnings(ymd(date_string))
+  if (is.na(date)) stop("Date '", date_string, "' must be in YYYY-MM-DD format")
+  date
 }
 
 #' Get bounding box from sf object
@@ -178,8 +180,10 @@ cleanup_temp_files <- function(pattern = "varunayan_.*", directory = tempdir()) 
 
 #' Get package version information
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with package versions (invisible)
+#' @return The [utils::sessionInfo()] object, invisibly. Called for its side effect of reporting the R version, platform and versions of key dependencies as messages.
 #' @export
+#' @examples
+#' get_package_info()
 get_package_info <- function() {
   pkg_info <- sessionInfo()
   message("varunayan Package Information")
@@ -201,8 +205,10 @@ get_package_info <- function() {
 #'
 #' @param verbose Whether to print detailed information
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return Logical indicating if system is ready (invisible)
+#' @return Invisibly, `TRUE` if all required packages, network access and CDS credentials are available, `FALSE` otherwise.
 #' @export
+#' @examplesIf interactive()
+#' check_system_readiness()
 check_system_readiness <- function(verbose = TRUE) {
   if (verbose) message("Checking system readiness...")
 
@@ -254,8 +260,11 @@ check_system_readiness <- function(verbose = TRUE) {
 #' @param expr Expression to time
 #' @param label Label for the operation
 #' @param verbose Whether to print timing info (default: TRUE)
-#' @return Result of the expression
+#' @return The value of `expr`. The elapsed time is recorded and can be retrieved with [get_timings()].
 #' @export
+#' @examples
+#' x <- time_operation(sum(1:10), "sum")
+#' get_timings()
 time_operation <- function(expr, label, verbose = TRUE) {
   start <- Sys.time()
   if (verbose) message("[TIMER] Starting: ", label)
@@ -281,8 +290,10 @@ time_operation <- function(expr, label, verbose = TRUE) {
 }
 
 #' Get all recorded timings
-#' @return data.frame with timing information
+#' @return A data.frame with columns `label`, `elapsed_seconds`, `timestamp` and `duration` (formatted), one row per timed operation; zero rows if nothing has been timed.
 #' @export
+#' @examples
+#' get_timings()
 get_timings <- function() {
   timings <- .varunayan_env$timings
   if (length(x = timings) == 0) {
@@ -309,14 +320,20 @@ get_timings <- function() {
 }
 
 #' Clear all timing data
+#' @return `NULL`, invisibly. Called for its side effect.
 #' @export
+#' @examples
+#' clear_timings()
 clear_timings <- function() {
   .varunayan_env$timings <- list()
   message("Timing data cleared")
 }
 
 #' Print timing summary
+#' @return The timing data frame from [get_timings()], invisibly (`NULL` if empty).
 #' @export
+#' @examples
+#' print_timing_summary()
 print_timing_summary <- function() {
   df <- get_timings()
   if (nrow(x = df) == 0) {
@@ -340,8 +357,12 @@ print_timing_summary <- function() {
 
 #' Read CDS API credentials from ~/.cdsapirc file
 #' @param file_path Path to .cdsapirc file (default: "~/.cdsapirc")
-#' @return List with credentials or NULL
+#' @return A named list of the fields in the file (typically `url` and `key`), or `NULL` if the file does not exist or cannot be parsed.
 #' @export
+#' @examples
+#' f <- tempfile()
+#' writeLines(c("url: https://cds.climate.copernicus.eu/api", "key: abc-123"), f)
+#' read_cdsapirc(f)
 read_cdsapirc <- function(file_path = "~/.cdsapirc") {
   file_path <- path.expand(file_path)
   if (!file.exists(file_path)) {
@@ -370,24 +391,32 @@ read_cdsapirc <- function(file_path = "~/.cdsapirc") {
 
 #' Get CDS API credentials from multiple sources
 #'
-#' Checks ecmwfr config first, then ~/.cdsapirc
+#' Checks the `CDS_API_KEY` environment variable, then the 'ecmwfr' keyring,
+#' then `~/.cdsapirc`. A key found in the environment variable or in
+#' `~/.cdsapirc` is registered with 'ecmwfr' via [ecmwfr::wf_set_key()].
 #'
 #' @param silent Suppress informational messages
-#' @return Logical indicating whether credentials are available
+#' @return `TRUE` if credentials are available, `FALSE` otherwise.
 #' @export
+#' @examplesIf interactive()
+#' get_cds_credentials()
 get_cds_credentials <- function(silent = FALSE) {
-  # Check env var FIRST — allows parallel workers to use different keys
-  env_key <- Sys.getenv("CDS_API_KEY", unset = "")
-  if (nzchar(env_key)) {
-    if (!silent) message("Setting up CDS credentials from CDS_API_KEY environment variable...")
+  register <- function(key, source) {
+    if (!silent) message("Setting up CDS credentials from ", source, "...")
     tryCatch(
       {
-        suppressWarnings(wf_set_key(key = env_key))
+        suppressWarnings(wf_set_key(key = key))
         if (!silent) message("CDS credentials configured")
-        return(TRUE)
+        TRUE
       },
       error = function(e) FALSE
     )
+  }
+
+  # env var first so parallel workers can use different keys
+  env_key <- Sys.getenv("CDS_API_KEY", unset = "")
+  if (nzchar(env_key) && register(env_key, "CDS_API_KEY environment variable")) {
+    return(TRUE)
   }
 
   has_creds <- suppressWarnings(tryCatch(
@@ -403,30 +432,9 @@ get_cds_credentials <- function(silent = FALSE) {
     return(TRUE)
   }
 
-  env_key <- Sys.getenv("CDS_API_KEY", unset = "")
-  if (nzchar(env_key)) {
-    if (!silent) message("Setting up CDS credentials from CDS_API_KEY environment variable...")
-    tryCatch(
-      {
-        suppressWarnings(wf_set_key(key = env_key))
-        if (!silent) message("CDS credentials configured")
-        return(TRUE)
-      },
-      error = function(e) FALSE
-    )
-  }
-
   creds <- read_cdsapirc()
-  if (!is.null(creds) && "key" %in% names(creds)) {
-    if (!silent) message("Setting up CDS credentials from ~/.cdsapirc...")
-    tryCatch(
-      {
-        suppressWarnings(wf_set_key(key = creds$key))
-        if (!silent) message("CDS credentials configured")
-        return(TRUE)
-      },
-      error = function(e) FALSE
-    )
+  if (!is.null(creds) && "key" %in% names(creds) && register(creds$key, "~/.cdsapirc")) {
+    return(TRUE)
   }
 
   if (!silent) {

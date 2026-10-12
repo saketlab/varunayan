@@ -12,3 +12,6 @@ data.frame with available IMD datasets and their characteristics
 \description{
 List available IMD datasets
 }
+\examples{
+list_imd_datasets()
+}

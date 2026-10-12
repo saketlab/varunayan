@@ -57,12 +57,13 @@ data.frame with date, latitude, longitude, temp_c
 Download daily ERA5 temperature data
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
 temp <- GetERA5DailyTemperature(
   request_id = "india_temp",
   start_date = "2023-05-01",
   end_date = "2023-05-31",
-  json_file = "india.geojson"
+  json_file = region
 )
-}
+\dontshow{\}) # examplesIf}
 }

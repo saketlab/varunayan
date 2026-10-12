@@ -57,12 +57,13 @@ data.frame with date, latitude, longitude, temp_c, dewpoint_c, rh, wet_bulb
 Downloads temperature, dewpoint, and calculates RH and wet bulb temperature.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+region <- system.file("extdata", "region.geojson", package = "varunayan")
 wetbulb <- GetERA5DailyWetBulb(
   request_id = "india_wetbulb",
   start_date = "2023-05-01",
   end_date = "2023-05-31",
-  json_file = "india.geojson"
+  json_file = region
 )
-}
+\dontshow{\}) # examplesIf}
 }

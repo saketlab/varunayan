@@ -343,8 +343,8 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
 #'     \item Other variables: original ERA5 units
 #'   }
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
+#' region <- system.file("extdata", "region.geojson", package = "varunayan")
 #' setup_cds_credentials(key = "your-cds-api-key")
 #'
 #' data <- era5ify_geojson(
@@ -352,10 +352,9 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
 #'   variables = c("2m_temperature", "total_precipitation"),
 #'   start_date = "2023-01-01",
 #'   end_date = "2023-01-31",
-#'   json_file = "region.geojson"
+#'   json_file = region
 #' )
 #' # Temperature is in Celsius, precipitation is in mm
-#' }
 era5ify_geojson <- function(request_id, variables, start_date, end_date, json_file,
                             dataset_type = "single", pressure_levels = NULL,
                             frequency = "hourly", resolution = 0.25,
@@ -430,8 +429,7 @@ era5ify_geojson <- function(request_id, variables, start_date, end_date, json_fi
 #'     \item Other variables: original ERA5 units
 #'   }
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' setup_cds_credentials(key = "your-cds-api-key")
 #'
 #' data <- era5ify_bbox(
@@ -442,7 +440,6 @@ era5ify_geojson <- function(request_id, variables, start_date, end_date, json_fi
 #'   north = 40, south = 35, east = -70, west = -75
 #' )
 #' # Temperature is in Celsius, precipitation is in mm
-#' }
 era5ify_bbox <- function(request_id, variables, start_date, end_date,
                          north, south, east, west,
                          dataset_type = "single", pressure_levels = NULL,
@@ -528,8 +525,7 @@ era5ify_bbox <- function(request_id, variables, start_date, end_date,
 #'     \item Other variables: original ERA5 units
 #'   }
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' setup_cds_credentials(key = "your-cds-api-key")
 #'
 #' data <- era5ify_point(
@@ -541,7 +537,6 @@ era5ify_bbox <- function(request_id, variables, start_date, end_date,
 #'   lon = -74.0060
 #' )
 #' # Temperature is in Celsius, precipitation is in mm
-#' }
 era5ify_point <- function(request_id, variables, start_date, end_date, lat, lon,
                           dataset_type = "single", pressure_levels = NULL,
                           frequency = "hourly", save_raw = FALSE, output_dir = tempdir(),

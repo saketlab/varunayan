@@ -18,8 +18,15 @@ filter_imd_by_bbox(data, north, south, east, west)
 \item{west}{Western longitude boundary}
 }
 \value{
-Filtered data.frame
+The input data.frame restricted to rows whose \code{latitude}/\code{longitude} fall inside the region; columns are unchanged.
 }
 \description{
 Filter IMD data by spatial boundaries
+}
+\examples{
+imd <- data.frame(
+  date = rep(as.Date("2023-01-01") + 0:59, each = 2),
+  latitude = 20.5, longitude = c(73.5, 79.5), rainfall = 1
+)
+filter_imd_by_bbox(imd, north = 22, south = 18, east = 76, west = 72)
 }

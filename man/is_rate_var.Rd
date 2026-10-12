@@ -15,3 +15,6 @@ Logical indicating if variable is a rate
 \description{
 Check if a variable is a rate variable
 }
+\examples{
+is_rate_var("2m_temperature")
+}

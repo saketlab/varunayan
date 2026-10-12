@@ -10,8 +10,13 @@ read_cdsapirc(file_path = "~/.cdsapirc")
 \item{file_path}{Path to .cdsapirc file (default: "~/.cdsapirc")}
 }
 \value{
-List with credentials or NULL
+A named list of the fields in the file (typically \code{url} and \code{key}), or \code{NULL} if the file does not exist or cannot be parsed.
 }
 \description{
 Read CDS API credentials from ~/.cdsapirc file
+}
+\examples{
+f <- tempfile()
+writeLines(c("url: https://cds.climate.copernicus.eu/api", "key: abc-123"), f)
+read_cdsapirc(f)
 }

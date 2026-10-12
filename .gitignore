@@ -59,9 +59,27 @@ rsconnect/
 # Test outputs
 tests/testthat/_snaps/
 
+# Downloaded climate data (bundled examples in inst/extdata are kept)
 *.nc
+*.nc.gz
+*.grd
 *.grib
 *.zip
+*.geojson
+!inst/extdata/*.geojson
+
+# Built vignettes and check artefacts
 /doc/
 /Meta/
-*.geojson
+inst/doc
+vignettes/*_files/
+Rplots.pdf
+revdep/
+
+# Credentials
+.cdsapirc
+.env
+.Renviron.local
+
+# downloaded IMD heat bulletin PDFs and extracted CSVs
+data-raw/imd_heat_bulletins/out/
