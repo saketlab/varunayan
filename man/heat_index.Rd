@@ -7,12 +7,12 @@
 heat_index(temp_c, rh)
 }
 \arguments{
-\item{temp_c}{Air temperature in celsius}
+\item{temp_c}{Air temperature in Celsius}
 
-\item{rh}{Relative humidity as percentage (0-100)}
+\item{rh}{Relative humidity as a percentage (0-100)}
 }
 \value{
-Heat index in celsius
+Heat index in Celsius
 }
 \description{
 Calculate heat index (apparent temperature)

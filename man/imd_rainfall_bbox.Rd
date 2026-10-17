@@ -3,7 +3,7 @@
 \name{IMDRainfallBbox}
 \alias{IMDRainfallBbox}
 \alias{imd_rainfall_bbox}
-\title{IMD data download and processing for custom regions
+\title{Functions to download and process IMD data for custom regions
 Download and process IMD rainfall data for a bounding box}
 \usage{
 IMDRainfallBbox(...)
@@ -24,7 +24,7 @@ imd_rainfall_bbox(
 )
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
 \item{request_id}{Unique identifier for the request.}
 
@@ -32,29 +32,29 @@ imd_rainfall_bbox(
 
 \item{end_year}{End year.}
 
-\item{north}{Northern latitude boundary.}
+\item{north}{Latitude of the north boundary.}
 
-\item{south}{Southern latitude boundary.}
+\item{south}{Latitude of the south boundary.}
 
-\item{east}{Eastern longitude boundary.}
+\item{east}{Longitude of the east boundary.}
 
-\item{west}{Western longitude boundary.}
+\item{west}{Longitude of the west boundary.}
 
 \item{resolution}{Spatial resolution: 0.25 or 1.0 degrees (default: 0.25).}
 
 \item{frequency}{Temporal frequency: "daily", "monthly", "yearly" (default: "daily").}
 
-\item{save_raw}{Whether to save raw downloaded files (default: FALSE).}
+\item{save_raw}{If TRUE, keep the raw downloaded files (default: FALSE).}
 
-\item{output_dir}{Directory to save files (default: tempdir()).}
+\item{output_dir}{Directory for the output files (default: tempdir()).}
 
-\item{use_cache}{Whether to use cached data if available (default: TRUE).}
+\item{use_cache}{If TRUE, use the cached data when it is available (default: TRUE).}
 }
 \value{
-data.frame with processed rainfall data
+data.frame with the processed rainfall data.
 }
 \description{
-Downloads IMD gridded rainfall data and filters it to a specified bounding box.
+Downloads IMD gridded rainfall data and keeps only the data in the specified bounding box.
 }
 \examples{
 \dontrun{

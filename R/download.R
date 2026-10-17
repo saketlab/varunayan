@@ -1,14 +1,14 @@
-# ERA5 data download functions using ecmwfr
+# ERA5 data download functions that use ecmwfr
 
-# Signal cds_request_too_large condition if the error looks size-related.
-# "Request has failed" is only treated as size-related for ranges > 400 days.
+# If the error is related to size, signal the cds_request_too_large condition.
+# The function treats "Request has failed" as size-related only for ranges > 400 days.
 signal_if_too_large <- function(err_msg, start_date, end_date) {
   is_size <- grepl("cost limits|too large|request is too large", err_msg, ignore.case = TRUE)
   range_days <- as.numeric(as.Date(end_date) - as.Date(start_date))
   is_generic <- grepl("Request has failed", err_msg) && range_days > 400
   if (is_size || is_generic) {
     cond <- simpleCondition(
-      message = paste0("CDS request too large: ", err_msg),
+      message = paste0("The CDS request is too large: ", err_msg),
       call = sys.call(-2)
     )
     class(cond) <- c("cds_request_too_large", "error", "condition")
@@ -16,24 +16,24 @@ signal_if_too_large <- function(err_msg, start_date, end_date) {
   }
 }
 
-# Variables not available in the monthly-means product (require hourly reanalysis)
+# Variables that the monthly-means product does not supply (they must use hourly reanalysis)
 .MONTHLY_MEANS_UNSUPPORTED <- c(
   "maximum_2m_temperature_since_previous_post_processing",
   "minimum_2m_temperature_since_previous_post_processing"
 )
 
-#' Set up CDS credentials for ERA5 data access
+#' Configure CDS credentials for ERA5 data access
 #'
-#' Sets up Copernicus Climate Data Store (CDS) credentials for ERA5 downloads.
-#' Credentials are checked in the following order:
-#' 1. Directly provided `key` argument
+#' This function configures the Copernicus Climate Data Store (CDS) credentials
+#' for ERA5 downloads. The function examines the credentials in this order:
+#' 1. The `key` argument that you give directly
 #' 2. `CDS_API_KEY` environment variable
 #' 3. `~/.cdsapirc` file
 #'
-#' @param key Your CDS API key (UUID format). If NULL, attempts to read from
-#'   environment variable `CDS_API_KEY` or ~/.cdsapirc file.
+#' @param key Your CDS API key (UUID format). If NULL, the function tries to read
+#'   the key from the `CDS_API_KEY` environment variable or the ~/.cdsapirc file.
 #' @param ... Arguments passed to the main function (used by aliases).
-#' @return Invisible TRUE if successful
+#' @return Invisible TRUE if the function is successful
 #' @export
 #' @examples
 #' \dontrun{
@@ -46,18 +46,18 @@ setup_cds_credentials <- function(key = NULL) {
     env_key <- Sys.getenv("CDS_API_KEY", unset = "")
     if (nzchar(env_key)) {
       key <- env_key
-      message("Using CDS API key from CDS_API_KEY environment variable")
+      message("The package uses the CDS API key from the CDS_API_KEY environment variable")
     } else {
-      message("No key provided, attempting to read from ~/.cdsapirc...")
+      message("You did not give a key. The package tries to read the key from ~/.cdsapirc...")
       creds <- read_cdsapirc()
 
       if (is.null(creds) || !"key" %in% names(creds)) {
         stop(
-          "Could not find CDS credentials.\n",
-          "Please provide credentials using one of these methods:\n",
-          "  1. Provide key directly: setup_cds_credentials(key = 'your-api-key')\n",
-          "  2. Set environment variable: Sys.setenv(CDS_API_KEY = 'your-api-key')\n",
-          "  3. Create ~/.cdsapirc file with format:\n",
+          "Cannot find the CDS credentials.\n",
+          "Give the credentials with one of these methods:\n",
+          "  1. Give the key directly: setup_cds_credentials(key = 'your-api-key')\n",
+          "  2. Set the environment variable: Sys.setenv(CDS_API_KEY = 'your-api-key')\n",
+          "  3. Create the ~/.cdsapirc file with this format:\n",
           "     url: https://cds.climate.copernicus.eu/api\n",
           "     key: your-api-key-here\n\n",
           "Get your API key from: https://cds.climate.copernicus.eu/how-to-api"
@@ -65,7 +65,7 @@ setup_cds_credentials <- function(key = NULL) {
       }
 
       key <- creds$key
-      message("Found credentials in ~/.cdsapirc")
+      message("The package found the credentials in ~/.cdsapirc")
     }
   }
 
@@ -73,14 +73,14 @@ setup_cds_credentials <- function(key = NULL) {
     wf_set_key(key = key)
   })
 
-  message("CDS credentials set successfully!")
-  message("You can now download ERA5 data using varunayan functions.")
+  message("The CDS credentials are set.")
+  message("You can now download ERA5 data with the varunayan functions.")
 
   invisible(TRUE)
 }
 
 
-#' Download ERA5 single-level data using ecmwfr
+#' Download ERA5 single-level data with ecmwfr
 #'
 #' @param variables Character vector of variable names
 #' @param start_date Date object or character string (YYYY-MM-DD)
@@ -91,14 +91,14 @@ setup_cds_credentials <- function(key = NULL) {
 #' @param output_file Character string path for output NetCDF file
 #' @param timeout Numeric value for request timeout in seconds (default: 3600)
 #' @param retry_attempts Integer number of retry attempts (default: 5)
-#' @param use_cache Use cached data if available (default: TRUE)
-#' @param verbose Logical indicating whether to print progress messages
+#' @param use_cache If TRUE, use cached data when it is available (default: TRUE)
+#' @param verbose Logical. If TRUE, print progress messages
 #' @return Character string path to downloaded file
 download_era5_single <- function(variables, start_date, end_date, area = NULL,
                                  resolution = 0.25, frequency = "hourly", output_file,
                                  timeout = 3600, retry_attempts = 5, use_cache = TRUE,
                                  verbose = FALSE) {
-  # Monthly-means product is faster and avoids per-day chunking
+  # The monthly-means product is faster. It does not use per-day chunks.
   use_monthly_means <- (frequency == "monthly") &&
     !any(variables %in% .MONTHLY_MEANS_UNSUPPORTED)
 
@@ -115,7 +115,7 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
 
     cached_file <- check_cache(cache_key)
     if (!is.null(cached_file)) {
-      message(sprintf(fmt = "Using cached data: %s", basename(path = cached_file)))
+      message(sprintf(fmt = "The package uses cached data: %s", basename(path = cached_file)))
       message(sprintf(fmt = "Cache location: %s", cached_file))
       file.copy(cached_file, output_file, overwrite = TRUE)
       return(output_file)
@@ -172,22 +172,22 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
 
   if (!get_cds_credentials(silent = TRUE)) {
     stop(
-      "CDS credentials not found. Please either:\n",
-      "  1. Create ~/.cdsapirc file with your API key, or\n",
+      "Cannot find the CDS credentials. Do one of these steps:\n",
+      "  1. Create the ~/.cdsapirc file with your API key, or\n",
       "  2. Run setup_cds_credentials(key = 'your-api-key')\n\n",
       "Get your API key from: https://cds.climate.copernicus.eu/api-how-to"
     )
   }
 
-  message("Submitting request to Copernicus CDS...")
+  message("The package sends the request to Copernicus CDS...")
   message(sprintf(fmt = "Variables: %s", paste(variables, collapse = ", ")))
   message(sprintf(fmt = "Date range: %s to %s", start_str, end_str))
   if (!is.null(area)) {
     message(sprintf(fmt = "Area: N:%s, W:%s, S:%s, E:%s", area[1], area[2], area[3], area[4]))
   }
 
-  message("Note: ERA5 downloads may take several minutes depending on data size and server load")
-  message(sprintf(fmt = "Request will timeout after %s seconds", timeout))
+  message("Note: An ERA5 download can take several minutes. The time changes with the data size and the server load.")
+  message(sprintf(fmt = "The request will stop after a timeout of %s seconds", timeout))
 
   downloaded_file <- NULL
   last_error <- NULL
@@ -233,29 +233,29 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
     if (!is.null(last_error)) {
       if (grepl(pattern = "401|unauthorized|authentication", last_error$message, ignore.case = TRUE)) {
         stop(
-          "Authentication failed. Please check your CDS API credentials.\n",
-          "Run setup_cds_credentials(key = 'your-api-key') with a valid key.\n",
+          "Authentication failed. Examine your CDS API credentials.\n",
+          "Run setup_cds_credentials(key = 'your-api-key') with a correct key.\n",
           "Get your API key from: https://cds.climate.copernicus.eu/api-how-to"
         )
       } else if (grepl(pattern = "rate.limit|429", last_error$message, ignore.case = TRUE)) {
         rate_limit_hits <- rate_limit_hits + 1
         if (rate_limit_hits > max_rate_limit_hits) {
-          stop("Exceeded ", max_rate_limit_hits, " rate-limit retries. Try again later.")
+          stop("The number of rate-limit retries is more than ", max_rate_limit_hits, ". Try again later.")
         }
         wait_secs <- as.numeric(sub(".*wait (\\d+) seconds.*", "\\1", last_error$message))
         if (is.na(wait_secs)) wait_secs <- 60
         warning(sprintf(
-          fmt = "Rate limited (%d/%d). Waiting %s seconds...",
+          fmt = "CDS applied the rate limit (%d/%d). The package waits %s seconds...",
           rate_limit_hits, max_rate_limit_hits, wait_secs
         ), call. = FALSE)
         Sys.sleep(wait_secs)
-        next # skip the 5s sleep at top since we already waited
+        next # skip the 5s sleep at the top because we waited already
       } else if (grepl(pattern = "timeout|time.*out", last_error$message, ignore.case = TRUE)) {
         failures <- failures + 1
-        warning(sprintf(fmt = "Request timed out on attempt %s. Retrying...", failures), call. = FALSE)
+        warning(sprintf(fmt = "Timeout on attempt %s. The package tries again...", failures), call. = FALSE)
       } else if (grepl(pattern = "queue|busy|server", last_error$message, ignore.case = TRUE)) {
         failures <- failures + 1
-        warning(sprintf(fmt = "CDS server is busy on attempt %s. Retrying...", failures), call. = FALSE)
+        warning(sprintf(fmt = "The CDS server is busy on attempt %s. The package tries again...", failures), call. = FALSE)
       } else {
         failures <- failures + 1
         warning(sprintf(fmt = "Download failed on attempt %s: %s", failures, last_error$message), call. = FALSE)
@@ -266,7 +266,7 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
 
     if (failures > effective_retries) {
       if (use_monthly_means && !is.null(last_error)) {
-        message("Monthly-means request failed. Falling back to regular reanalysis dataset...")
+        message("The monthly-means request failed. The package uses the regular reanalysis dataset...")
         use_monthly_means <- FALSE
 
         date_seq <- seq(from = as.Date(x = start_date), to = as.Date(x = end_date), by = "day")
@@ -289,7 +289,7 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
       stop(
         sprintf("Download failed after %d attempts: ", failures),
         err_msg, "\n",
-        "Check your internet connection and CDS service status at: https://cds.climate.copernicus.eu/"
+        "Examine your internet connection and the CDS service status at: https://cds.climate.copernicus.eu/"
       )
     }
   }
@@ -308,14 +308,14 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
   if (use_cache) {
     tryCatch(
       save_to_cache(final_file, cache_key),
-      error = function(e) warning(sprintf(fmt = "Could not save to cache: %s", e$message), call. = FALSE)
+      error = function(e) warning(sprintf(fmt = "Cannot save to the cache: %s", e$message), call. = FALSE)
     )
   }
 
   final_file
 }
 
-#' Download ERA5 pressure-level data using ecmwfr
+#' Download ERA5 pressure-level data with ecmwfr
 #'
 #' @param variables Character vector of variable names
 #' @param pressure_levels Character vector of pressure levels (e.g., c("1000", "850", "500"))
@@ -325,8 +325,8 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
 #' @param resolution Numeric value for grid resolution (default: 0.25 degrees)
 #' @param frequency Character string: "hourly", "daily", "monthly"
 #' @param output_file Character string path for output NetCDF file
-#' @param use_cache Use cached data if available (default: TRUE)
-#' @param verbose Logical indicating whether to print progress messages
+#' @param use_cache If TRUE, use cached data when it is available (default: TRUE)
+#' @param verbose Logical. If TRUE, print progress messages
 #' @return Character string path to downloaded file
 download_era5_pressure <- function(variables, pressure_levels, start_date, end_date,
                                    area = NULL, resolution = 0.25, frequency = "hourly",
@@ -345,7 +345,7 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
 
     cached_file <- check_cache(cache_key)
     if (!is.null(cached_file)) {
-      message(sprintf(fmt = "Using cached data: %s", basename(path = cached_file)))
+      message(sprintf(fmt = "The package uses cached data: %s", basename(path = cached_file)))
       message(sprintf(fmt = "Cache location: %s", cached_file))
       file.copy(cached_file, output_file, overwrite = TRUE)
       return(output_file)
@@ -384,14 +384,14 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
 
   if (!get_cds_credentials(silent = TRUE)) {
     stop(
-      "CDS credentials not found. Please either:\n",
-      "  1. Create ~/.cdsapirc file with your API key, or\n",
+      "Cannot find the CDS credentials. Do one of these steps:\n",
+      "  1. Create the ~/.cdsapirc file with your API key, or\n",
       "  2. Run setup_cds_credentials(key = 'your-api-key')\n\n",
       "Get your API key from: https://cds.climate.copernicus.eu/api-how-to"
     )
   }
 
-  message("Submitting pressure-level request to Copernicus CDS...")
+  message("The package sends the pressure-level request to Copernicus CDS...")
   message(sprintf(fmt = "Variables: %s", paste(variables, collapse = ", ")))
   message(sprintf(fmt = "Pressure levels: %s hPa", paste(pressure_levels, collapse = ", ")))
   message(sprintf(fmt = "Date range: %s to %s", start_str, end_str))
@@ -399,7 +399,7 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
     message(sprintf(fmt = "Area: N:%s, W:%s, S:%s, E:%s", area[1], area[2], area[3], area[4]))
   }
 
-  message("Note: ERA5 downloads may take several minutes depending on data size and server load")
+  message("Note: An ERA5 download can take several minutes. The time changes with the data size and the server load.")
 
   downloaded_file <- tryCatch(
     {
@@ -412,8 +412,8 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
     error = function(e) {
       if (grepl(pattern = "401|unauthorized|authentication", e$message, ignore.case = TRUE)) {
         stop(
-          "Authentication failed. Please check your CDS API credentials.\n",
-          "Run setup_cds_credentials(key = 'your-api-key') with a valid key.\n",
+          "Authentication failed. Examine your CDS API credentials.\n",
+          "Run setup_cds_credentials(key = 'your-api-key') with a correct key.\n",
           "Get your API key from: https://cds.climate.copernicus.eu/api-how-to"
         )
       }
@@ -422,19 +422,19 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
 
       if (grepl(pattern = "timeout|time.*out", e$message, ignore.case = TRUE)) {
         stop(
-          "Request timed out. This can happen with large data requests.\n",
-          "Try reducing the date range or area size, or try again later.\n",
-          "For large datasets, consider using smaller time chunks or lower resolution."
+          "Timeout of the request. This can occur with large data requests.\n",
+          "Decrease the date range or the area size. Or, try again later.\n",
+          "For large datasets, use smaller time chunks or a lower resolution."
         )
       } else if (grepl(pattern = "queue|busy|server", e$message, ignore.case = TRUE)) {
         stop(
-          "CDS server is busy. Please try again later.\n",
-          "Peak usage times may result in longer waits or timeouts."
+          "The CDS server is busy. Try again later.\n",
+          "At peak times, the wait can be longer, or a timeout can occur."
         )
       } else {
         stop(
           "Download failed: ", e$message, "\n",
-          "Check your internet connection and CDS service status at: https://cds.climate.copernicus.eu/"
+          "Examine your internet connection and the CDS service status at: https://cds.climate.copernicus.eu/"
         )
       }
     }
@@ -454,7 +454,7 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
   if (use_cache) {
     tryCatch(
       save_to_cache(final_file, cache_key),
-      error = function(e) warning(sprintf(fmt = "Could not save to cache: %s", e$message), call. = FALSE)
+      error = function(e) warning(sprintf(fmt = "Cannot save to the cache: %s", e$message), call. = FALSE)
     )
   }
 
@@ -462,7 +462,7 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
 }
 
 extract_zip_to_nc <- function(zip_file, output_dir) {
-  message(sprintf(fmt = "Extracting ZIP file: %s", basename(path = zip_file)))
+  message(sprintf(fmt = "The package extracts the ZIP file: %s", basename(path = zip_file)))
 
   temp_extract_dir <- file.path(output_dir, "extracted")
   dir.create(temp_extract_dir, showWarnings = FALSE)
@@ -473,11 +473,11 @@ extract_zip_to_nc <- function(zip_file, output_dir) {
   nc_files <- list.files(temp_extract_dir, pattern = "\\.nc$", full.names = TRUE)
 
   if (length(x = nc_files) == 0) {
-    stop("No NetCDF files found in ZIP archive: ", zip_file)
+    stop("The ZIP archive does not contain NetCDF files: ", zip_file)
   }
 
   if (length(x = nc_files) > 1) {
-    message(sprintf(fmt = "Merging %d NetCDF files from ZIP", length(x = nc_files)))
+    message(sprintf(fmt = "The package merges %d NetCDF files from the ZIP file", length(x = nc_files)))
     final_file <- merge_nc_files(nc_files, output_dir)
   } else {
     final_file <- file.path(output_dir, basename(path = nc_files[1]))
@@ -517,7 +517,7 @@ merge_nc_files <- function(nc_files, output_dir) {
     })
   }
 
-  if (length(all_vars) == 0) stop("No climate variables found in NetCDF files")
+  if (length(all_vars) == 0) stop("The NetCDF files do not contain climate variables")
 
   merged_file <- file.path(output_dir, paste0("merged_", basename(nc_files[1])))
 
@@ -574,7 +574,7 @@ find_and_extract_download <- function(output_file, target) {
   }
 
   if (is.null(actual_file)) {
-    stop("Downloaded file not found. Expected one of: ", paste(possible_files, collapse = ", "))
+    stop("Cannot find the downloaded file. The package looked for these files: ", paste(possible_files, collapse = ", "))
   }
 
   final_file <- actual_file
@@ -591,7 +591,7 @@ find_and_extract_download <- function(output_file, target) {
 #'
 #' @param variables Character vector of variable names to validate
 #' @param dataset_type Character string: "single" or "pressure"
-#' @return Logical vector indicating which variables are valid
+#' @return Logical vector that shows which variables are valid
 validate_era5_variables <- function(variables, dataset_type) {
   cache_key <- paste0("valid_vars_", dataset_type)
 
@@ -601,7 +601,7 @@ validate_era5_variables <- function(variables, dataset_type) {
     } else if (dataset_type == "pressure") {
       valid_vars <- get_pressure_level_variable_names()
     } else {
-      stop("Invalid dataset_type. Must be 'single' or 'pressure'")
+      stop("Invalid dataset_type. It must be 'single' or 'pressure'")
     }
     assign(cache_key, valid_vars, envir = .varunayan_cache)
   } else {

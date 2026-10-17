@@ -9,7 +9,7 @@ create_temp_geojson_file(geojson_data, request_id)
 \arguments{
 \item{geojson_data}{GeoJSON data to write}
 
-\item{request_id}{Request identifier for unique filename}
+\item{request_id}{Request identifier for a unique filename}
 }
 \value{
 Path to temporary GeoJSON file

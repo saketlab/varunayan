@@ -7,7 +7,7 @@
 save_to_cache(file_path, cache_key)
 }
 \arguments{
-\item{file_path}{Path to file to cache}
+\item{file_path}{Path to the file to cache}
 
 \item{cache_key}{Cache key for the file}
 }

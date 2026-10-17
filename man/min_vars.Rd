@@ -2,10 +2,10 @@
 % Please edit documentation in R/variable_lists.R
 \name{min_vars}
 \alias{min_vars}
-\title{Variables that should use minimum aggregation}
+\title{Variables for minimum aggregation}
 \usage{
 min_vars
 }
 \description{
-Variables that should use minimum aggregation
+Variables for minimum aggregation
 }

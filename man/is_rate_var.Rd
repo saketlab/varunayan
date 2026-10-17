@@ -2,16 +2,16 @@
 % Please edit documentation in R/variable_lists.R
 \name{is_rate_var}
 \alias{is_rate_var}
-\title{Check if a variable is a rate variable}
+\title{Find if a variable is a rate variable}
 \usage{
 is_rate_var(var_name)
 }
 \arguments{
-\item{var_name}{Character string variable name}
+\item{var_name}{Variable name as a character string}
 }
 \value{
-Logical indicating if variable is a rate
+Logical. TRUE if the variable is a rate
 }
 \description{
-Check if a variable is a rate variable
+Find if a variable is a rate variable
 }

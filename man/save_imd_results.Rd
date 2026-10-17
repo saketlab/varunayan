@@ -7,7 +7,7 @@
 save_imd_results(data, request_id, var_type, resolution, frequency, output_dir)
 }
 \arguments{
-\item{data}{data.frame with processed data}
+\item{data}{data.frame with the processed data}
 
 \item{request_id}{Request identifier}
 

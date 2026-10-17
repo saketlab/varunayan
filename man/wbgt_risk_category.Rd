@@ -2,18 +2,19 @@
 % Please edit documentation in R/heat_stress.R
 \name{wbgt_risk_category}
 \alias{wbgt_risk_category}
-\title{heat stress risk categories}
+\title{Heat stress risk categories}
 \usage{
 wbgt_risk_category(wbgt)
 }
 \arguments{
-\item{wbgt}{WBGT value in celsius}
+\item{wbgt}{WBGT value in Celsius}
 }
 \value{
-Factor with risk category
+Factor with the risk category
 }
 \description{
-Classify heat stress risk based on WBGT values using ISO 7243 guidelines.
+This function puts WBGT values into heat stress risk categories. It uses the
+ISO 7243 guidelines.
 }
 \examples{
 wbgt_risk_category(c(25, 28, 31, 34))

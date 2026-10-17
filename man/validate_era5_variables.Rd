@@ -12,7 +12,7 @@ validate_era5_variables(variables, dataset_type)
 \item{dataset_type}{Character string: "single" or "pressure"}
 }
 \value{
-Logical vector indicating which variables are valid
+Logical vector that shows which variables are valid
 }
 \description{
 Validate ERA5 variable names

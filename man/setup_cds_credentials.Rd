@@ -3,7 +3,7 @@
 \name{SetupCdsCredentials}
 \alias{SetupCdsCredentials}
 \alias{setup_cds_credentials}
-\title{Set up CDS credentials for ERA5 data access}
+\title{Configure CDS credentials for ERA5 data access}
 \usage{
 SetupCdsCredentials(...)
 
@@ -12,17 +12,17 @@ setup_cds_credentials(key = NULL)
 \arguments{
 \item{...}{Arguments passed to the main function (used by aliases).}
 
-\item{key}{Your CDS API key (UUID format). If NULL, attempts to read from
-environment variable \code{CDS_API_KEY} or ~/.cdsapirc file.}
+\item{key}{Your CDS API key (UUID format). If NULL, the function tries to read
+the key from the \code{CDS_API_KEY} environment variable or the ~/.cdsapirc file.}
 }
 \value{
-Invisible TRUE if successful
+Invisible TRUE if the function is successful
 }
 \description{
-Sets up Copernicus Climate Data Store (CDS) credentials for ERA5 downloads.
-Credentials are checked in the following order:
+This function configures the Copernicus Climate Data Store (CDS) credentials
+for ERA5 downloads. The function examines the credentials in this order:
 \enumerate{
-\item Directly provided \code{key} argument
+\item The \code{key} argument that you give directly
 \item \code{CDS_API_KEY} environment variable
 \item \verb{~/.cdsapirc} file
 }

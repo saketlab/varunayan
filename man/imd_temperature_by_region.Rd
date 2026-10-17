@@ -2,7 +2,7 @@
 % Please edit documentation in R/imd_core.R
 \name{imd_temperature_by_region}
 \alias{imd_temperature_by_region}
-\title{Download IMD temperature aggregated per GeoJSON feature (region x time)}
+\title{Download IMD temperature aggregated for each GeoJSON feature (region x time)}
 \usage{
 imd_temperature_by_region(
   request_id,
@@ -22,25 +22,27 @@ imd_temperature_by_region(
 
 \item{end_year}{End year (<= 2024).}
 
-\item{geojson_file}{Path to a GeoJSON whose features are the regions.}
+\item{geojson_file}{Path to a GeoJSON file. Each feature in the file is one region.}
 
-\item{feature_col}{Name of the GeoJSON property to group by (e.g.
-\code{"state_name"}). If NULL, the first non-geometry column is used.}
+\item{feature_col}{Name of the GeoJSON property that sets the groups (for
+example, \code{"state_name"}). If NULL, the function uses the first column that
+is not the geometry column.}
 
-\item{var_type}{\code{"tmax"}, \code{"tmin"}, or \code{"tmean"} (mean of tmax & tmin).
-Default \code{"tmean"}.}
+\item{var_type}{\code{"tmax"}, \code{"tmin"}, or \code{"tmean"} (mean of tmax and tmin).
+The default is \code{"tmean"}.}
 
 \item{frequency}{\code{"monthly"} (default), \code{"yearly"}, or \code{"daily"}.}
 
-\item{use_cache}{Use cached IMD downloads if available (default TRUE).}
+\item{use_cache}{If TRUE, use the cached IMD downloads when they are available (default TRUE).}
 }
 \value{
-A data.frame: \code{region}, \code{year}, \code{month} (if monthly), \code{temperature}.
+A data.frame with the columns \code{region}, \code{year}, \code{month} (only for monthly data), and \code{temperature}.
 }
 \description{
-Unlike \code{\link[=imd_temperature_geojson]{imd_temperature_geojson()}}, which returns grid points clipped to
-the GeoJSON boundary, this returns one row per feature (e.g. per state)
-per time period, with the region-mean temperature.
+\code{\link[=imd_temperature_geojson]{imd_temperature_geojson()}} returns the grid points in the GeoJSON boundary.
+This function is different. It returns one row for each feature (for example,
+each state) and each time period. Each row contains the mean temperature of
+the region.
 }
 \examples{
 \dontrun{

@@ -10,14 +10,15 @@ GetCacheDir(...)
 get_cache_dir(create = TRUE)
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments for the main function (for use by aliases).}
 
-\item{create}{Create directory if it doesn't exist (default: TRUE)}
+\item{create}{Create the directory when it does not exist (default: TRUE)}
 }
 \value{
 Character string with cache directory path
 }
 \description{
-Functions to cache ERA5 and IMD NetCDF files for faster successive queries
+Functions to cache ERA5 and IMD NetCDF files. The cache makes the next
+queries faster.
 Get cache directory path
 }

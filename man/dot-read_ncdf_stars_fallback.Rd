@@ -2,7 +2,7 @@
 % Please edit documentation in R/processing.R
 \name{.read_ncdf_stars_fallback}
 \alias{.read_ncdf_stars_fallback}
-\title{Stars-based NetCDF reader (fallback for non-standard files)}
+\title{NetCDF reader with stars (fallback for non-standard files)}
 \usage{
 .read_ncdf_stars_fallback(netcdf_file)
 }
@@ -13,6 +13,6 @@
 data.frame in long format
 }
 \description{
-Stars-based NetCDF reader (fallback for non-standard files)
+NetCDF reader with stars (fallback for non-standard files)
 }
 \keyword{internal}

@@ -74,33 +74,36 @@ get_era5_daily_heat_data(
 
 \item{end_date}{End date in "YYYY-MM-DD" format}
 
-\item{json_file}{Path to GeoJSON file defining the region (for geojson method)}
+\item{json_file}{Path to the GeoJSON file that defines the region (for the geojson method)}
 
-\item{north}{Northern latitude boundary (for bbox method)}
+\item{north}{Northern latitude boundary (for the bbox method)}
 
-\item{south}{Southern latitude boundary (for bbox method)}
+\item{south}{Southern latitude boundary (for the bbox method)}
 
-\item{east}{Eastern longitude boundary (for bbox method)}
+\item{east}{Eastern longitude boundary (for the bbox method)}
 
-\item{west}{Western longitude boundary (for bbox method)}
+\item{west}{Western longitude boundary (for the bbox method)}
 
-\item{solar_load}{Whether to include solar radiation in calculations (default: FALSE).
-When TRUE, downloads solar radiation data and uses it for WBGT and UTCI.}
+\item{solar_load}{If TRUE, include solar radiation in the calculations
+(default: FALSE). If TRUE, the function downloads solar radiation data and
+uses these data for WBGT and UTCI.}
 
 \item{resolution}{Spatial resolution in degrees (default: 0.25)}
 
-\item{use_cache}{Whether to use cached data if available (default: TRUE)}
+\item{use_cache}{If TRUE, the function uses cached data when the data is
+available (default: TRUE)}
 
-\item{verbose}{Whether to print progress messages (default: FALSE)}
+\item{verbose}{If TRUE, the function prints progress messages (default: FALSE)}
 }
 \value{
 data.frame with columns: date, latitude, longitude, temp_c, dewpoint_c,
 wind_speed, rh, wet_bulb, heat_index, wbgt, utci, humidex, wbgt_risk,
-heat_index_risk, utci_stress. When solar_load=TRUE, also includes solar_radiation.
+heat_index_risk, utci_stress. If solar_load=TRUE, the data.frame
+also contains solar_radiation.
 }
 \description{
-Download ERA5 temperature, dewpoint, and wind data for a region and calculate
-heat stress indices.
+This function downloads ERA5 temperature, dewpoint, and wind data for a
+region. Then it calculates the heat stress indices.
 }
 \examples{
 \dontrun{

@@ -2,10 +2,10 @@
 % Please edit documentation in R/utils.R
 \name{print_timing_summary}
 \alias{print_timing_summary}
-\title{Print timing summary}
+\title{Print a summary of the time data}
 \usage{
 print_timing_summary()
 }
 \description{
-Print timing summary
+Print a summary of the time data
 }

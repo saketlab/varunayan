@@ -2,20 +2,20 @@
 % Please edit documentation in R/utils.R
 \name{time_operation}
 \alias{time_operation}
-\title{Time an operation and log the duration}
+\title{Measure the time of an operation and record the duration}
 \usage{
 time_operation(expr, label, verbose = TRUE)
 }
 \arguments{
-\item{expr}{Expression to time}
+\item{expr}{Expression to measure}
 
 \item{label}{Label for the operation}
 
-\item{verbose}{Whether to print timing info (default: TRUE)}
+\item{verbose}{If TRUE, print the time information (default: TRUE)}
 }
 \value{
 Result of the expression
 }
 \description{
-Time an operation and log the duration
+Measure the time of an operation and record the duration
 }

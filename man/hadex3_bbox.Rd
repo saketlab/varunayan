@@ -3,7 +3,7 @@
 \name{HadEX3Bbox}
 \alias{HadEX3Bbox}
 \alias{hadex3_bbox}
-\title{Download HadEX3 climate extremes data for a bounding box}
+\title{Download HadEX3 data on climate extremes for a bounding box}
 \usage{
 HadEX3Bbox(...)
 
@@ -22,7 +22,7 @@ hadex3_bbox(
 )
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
 \item{index}{ETCCDI index name (e.g. "TXx", "Rx1day"). See \code{\link[=list_hadex3_indices]{list_hadex3_indices()}}.}
 
@@ -30,34 +30,35 @@ hadex3_bbox(
 
 \item{end_year}{End year (1901-2018).}
 
-\item{north}{Northern latitude boundary.}
+\item{north}{North boundary (latitude).}
 
-\item{south}{Southern latitude boundary.}
+\item{south}{South boundary (latitude).}
 
-\item{east}{Eastern longitude boundary.}
+\item{east}{East boundary (longitude).}
 
-\item{west}{Western longitude boundary.}
+\item{west}{West boundary (longitude).}
 
 \item{frequency}{Temporal frequency: "annual" or "monthly" (default: "annual").}
 
-\item{baseline}{Reference period for percentile-based indices: "61-90" (default)
-or "81-10". Only applies to annual frequency.}
+\item{baseline}{Reference period for the indices that use percentiles: "61-90"
+(default) or "81-10". This argument applies only to the annual frequency.}
 
 \item{output_dir}{Directory for temporary files (default: \code{tempdir()}).}
 
-\item{use_cache}{Whether to use cached data (default: TRUE).}
+\item{use_cache}{If TRUE, use the data in the cache (default: TRUE).}
 }
 \value{
-data.frame with columns: year (+ month for monthly), latitude,
-longitude, value, index.
+A data.frame with the columns: year (and month for monthly data),
+latitude, longitude, value, index.
 }
 \description{
-Downloads and filters HadEX3 ETCCDI climate extremes data to a geographic
-bounding box. Data covers 1901-2018 at 1.25 x 1.875 degree resolution.
+Downloads HadEX3 data on ETCCDI climate extremes and filters the data to a
+geographic bounding box. The data is for 1901-2018 at a resolution of
+1.25 x 1.875 degrees.
 }
 \examples{
 \dontrun{
-# Annual maximum daily maximum temperature for Europe 1981-2010
+# Annual maximum of the daily maximum temperature for Europe, 1981-2010
 data <- hadex3_bbox(
   index = "TXx",
   start_year = 1981, end_year = 2010,

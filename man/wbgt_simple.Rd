@@ -15,10 +15,10 @@ wbgt_simple(temp_c, dewpoint_c)
 WBGT in Celsius
 }
 \description{
-Calculates the Australian Bureau of Meteorology closed-form WBGT
-approximation (Steadman-based) from air temperature and dewpoint. Suitable
-for occupational heat stress assessment when only temperature and humidity
-are available.
+This function calculates WBGT with the closed-form approximation of the
+Australian Bureau of Meteorology (Steadman-based). It uses the air temperature
+and the dewpoint. Use this function for occupational heat stress assessment
+when you have only temperature and humidity data.
 }
 \examples{
 wbgt_simple(35, 25)

@@ -7,12 +7,12 @@
 convert_era5_units(data)
 }
 \arguments{
-\item{data}{data.frame with ERA5 data containing 'variable' and 'value' columns}
+\item{data}{data.frame of ERA5 data with 'variable' and 'value' columns}
 }
 \value{
 data.frame with converted units
 }
 \description{
-Converts temperature from Kelvin to Celsius and precipitation from meters to mm.
+This function converts temperature from Kelvin to Celsius. It converts precipitation from meters to mm.
 }
 \keyword{internal}

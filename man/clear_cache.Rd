@@ -10,11 +10,11 @@ ClearCache(...)
 clear_cache(source = NULL, older_than = NULL, confirm = TRUE)
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments for the main function (for use by aliases).}
 
 \item{source}{Clear only "era5", "imd", or NULL for all}
 
-\item{older_than}{Remove files older than this many days (NULL = all)}
+\item{older_than}{Remove files that are older than this number of days (NULL = all)}
 
 \item{confirm}{Ask for confirmation (default: TRUE)}
 }

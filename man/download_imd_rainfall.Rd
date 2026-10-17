@@ -20,15 +20,15 @@ download_imd_rainfall(
 
 \item{resolution}{Spatial resolution: 0.25 or 1.0 degrees.}
 
-\item{output_dir}{Directory to save downloaded files.}
+\item{output_dir}{Directory for the downloaded files.}
 
-\item{use_cache}{Whether to use cached data if available (default: TRUE).}
+\item{use_cache}{If TRUE, use the cached data when it is available (default: TRUE).}
 }
 \value{
-Character vector of downloaded file paths
+Character vector of the paths to the downloaded files.
 }
 \description{
-Downloads daily gridded rainfall data from IMD at specified resolution.
+Downloads daily gridded rainfall data from IMD at the specified resolution.
 }
 \examples{
 \dontrun{

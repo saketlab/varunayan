@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{validate_coordinates}
 \alias{validate_coordinates}
-\title{Validate geographic coordinates}
+\title{Make sure that geographic coordinates are valid}
 \usage{
 validate_coordinates(lat, lon)
 }
@@ -12,8 +12,8 @@ validate_coordinates(lat, lon)
 \item{lon}{Longitude value}
 }
 \value{
-Logical indicating if coordinates are valid
+Logical. TRUE if the coordinates are valid
 }
 \description{
-Validate geographic coordinates
+Make sure that geographic coordinates are valid
 }

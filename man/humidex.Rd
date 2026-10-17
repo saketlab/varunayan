@@ -7,12 +7,12 @@
 humidex(temp_c, dewpoint_c)
 }
 \arguments{
-\item{temp_c}{Air temperature in celsius}
+\item{temp_c}{Air temperature in Celsius}
 
-\item{dewpoint_c}{Dewpoint temperature in celsius}
+\item{dewpoint_c}{Dewpoint temperature in Celsius}
 }
 \value{
-Humidex in celsius
+Humidex in Celsius
 }
 \description{
 Calculate humidex (Canadian heat index)

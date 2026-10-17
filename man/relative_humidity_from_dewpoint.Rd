@@ -7,16 +7,16 @@
 relative_humidity_from_dewpoint(temp_c, dewpoint_c)
 }
 \arguments{
-\item{temp_c}{Air temperature in celsius}
+\item{temp_c}{Air temperature in Celsius}
 
-\item{dewpoint_c}{Dewpoint temperature in celsius}
+\item{dewpoint_c}{Dewpoint temperature in Celsius}
 }
 \value{
-Relative humidity as percentage (0-100)
+Relative humidity as a percentage (0-100)
 }
 \description{
-Uses the Magnus-Tetens approximation to calculate relative humidity
-from air temperature and dewpoint temperature.
+This function uses the Magnus-Tetens approximation to calculate the relative
+humidity from the air temperature and the dewpoint temperature.
 }
 \examples{
 relative_humidity_from_dewpoint(25, 18)

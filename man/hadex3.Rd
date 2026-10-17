@@ -8,8 +8,8 @@
 .HADEX3_ANNUAL_INDICES
 }
 \description{
-Functions to download and process the Met Office HadEX3 global climate
-extremes dataset based on ETCCDI indices.
+Functions that download and process the Met Office HadEX3 global dataset
+of climate extremes. The dataset uses the ETCCDI indices.
 }
 \references{
 Dunn et al. (2020) Development of an updated global land in-situ-based dataset

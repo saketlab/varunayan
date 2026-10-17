@@ -11,7 +11,7 @@ aggregate_by_frequency(data, frequency, verbose = FALSE)
 
 \item{frequency}{Character string: "daily", "monthly", "yearly"}
 
-\item{verbose}{Logical indicating whether to print progress messages}
+\item{verbose}{Logical. If TRUE, the function prints progress messages}
 }
 \value{
 data.frame with temporally aggregated data

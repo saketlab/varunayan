@@ -2,10 +2,10 @@
 % Please edit documentation in R/utils.R
 \name{clear_timings}
 \alias{clear_timings}
-\title{Clear all timing data}
+\title{Clear all time data}
 \usage{
 clear_timings()
 }
 \description{
-Clear all timing data
+Clear all time data
 }

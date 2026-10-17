@@ -40,21 +40,22 @@ get_era5_daily_humidity(
 
 \item{end_date}{End date in "YYYY-MM-DD" format}
 
-\item{json_file}{Path to GeoJSON file defining the region}
+\item{json_file}{Path to the GeoJSON file that defines the region}
 
 \item{north, south, east, west}{Bounding box coordinates (alternative to json_file)}
 
 \item{resolution}{Spatial resolution in degrees (default: 0.25)}
 
-\item{use_cache}{Whether to use cached data (default: TRUE)}
+\item{use_cache}{If TRUE, the function uses cached data (default: TRUE)}
 
-\item{verbose}{Whether to print progress messages (default: FALSE)}
+\item{verbose}{If TRUE, the function prints progress messages (default: FALSE)}
 }
 \value{
 data.frame with date, latitude, longitude, temp_c, dewpoint_c, rh
 }
 \description{
-Downloads temperature, dewpoint, and calculates relative humidity.
+This function downloads temperature and dewpoint data. Then it calculates the
+relative humidity.
 }
 \examples{
 \dontrun{

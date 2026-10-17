@@ -2,13 +2,13 @@
 % Please edit documentation in R/utils.R
 \name{get_timings}
 \alias{get_timings}
-\title{Get all recorded timings}
+\title{Get all recorded time measurements}
 \usage{
 get_timings()
 }
 \value{
-data.frame with timing information
+data.frame with time information
 }
 \description{
-Get all recorded timings
+Get all recorded time measurements
 }

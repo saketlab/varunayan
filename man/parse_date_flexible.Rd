@@ -2,16 +2,16 @@
 % Please edit documentation in R/utils.R
 \name{parse_date_flexible}
 \alias{parse_date_flexible}
-\title{Parse date string flexibly}
+\title{Parse a date string in different formats}
 \usage{
 parse_date_flexible(date_string)
 }
 \arguments{
-\item{date_string}{Character string in various date formats}
+\item{date_string}{Character string in one of different date formats}
 }
 \value{
 Date object
 }
 \description{
-Parse date string flexibly
+Parse a date string in different formats
 }

@@ -10,10 +10,11 @@ heat_index_risk_category(hi)
 \item{hi}{Heat index value in Celsius}
 }
 \value{
-Factor with risk category
+Factor with the risk category
 }
 \description{
-Classify heat stress risk based on heat index using NWS categories.
+This function puts heat index values into heat stress risk categories. It
+uses the NWS categories.
 }
 \examples{
 heat_index_risk_category(c(27, 33, 40, 46, 55))

@@ -7,16 +7,16 @@
 wbgt_from_dewpoint(temp_c, dewpoint_c)
 }
 \arguments{
-\item{temp_c}{Air temperature in celsius}
+\item{temp_c}{Air temperature in Celsius}
 
-\item{dewpoint_c}{Dewpoint temperature in celsius}
+\item{dewpoint_c}{Dewpoint temperature in Celsius}
 }
 \value{
 WBGT in Celsius
 }
 \description{
-Alias for \code{wbgt_simple()} (BoM closed-form WBGT from temperature and
-dewpoint).
+This function is an alias for \code{wbgt_simple()}. It calculates the BoM
+closed-form WBGT from temperature and dewpoint.
 }
 \examples{
 wbgt_from_dewpoint(35, 25)

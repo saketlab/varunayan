@@ -20,7 +20,7 @@ imd_rainfall_geojson(
 )
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
 \item{request_id}{Unique identifier for the request.}
 
@@ -28,20 +28,20 @@ imd_rainfall_geojson(
 
 \item{end_year}{End year (1901-2024).}
 
-\item{geojson_file}{Path to GeoJSON file.}
+\item{geojson_file}{Path to the GeoJSON file.}
 
 \item{resolution}{Spatial resolution: 0.25 or 1.0 degrees (default: 0.25).}
 
 \item{frequency}{Temporal frequency (default: "daily").}
 
-\item{save_raw}{Whether to save raw files (default: FALSE).}
+\item{save_raw}{If TRUE, keep the raw files (default: FALSE).}
 
-\item{output_dir}{Directory to save files (default: tempdir()).}
+\item{output_dir}{Directory for the output files (default: tempdir()).}
 
-\item{use_cache}{Whether to use cached data if available (default: TRUE).}
+\item{use_cache}{If TRUE, use the cached data when it is available (default: TRUE).}
 }
 \value{
-data.frame with processed rainfall data
+data.frame with the processed rainfall data.
 }
 \description{
 Download and process IMD rainfall data for a GeoJSON region

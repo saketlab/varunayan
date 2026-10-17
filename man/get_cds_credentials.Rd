@@ -2,16 +2,16 @@
 % Please edit documentation in R/utils.R
 \name{get_cds_credentials}
 \alias{get_cds_credentials}
-\title{Get CDS API credentials from multiple sources}
+\title{Get CDS API credentials from different sources}
 \usage{
 get_cds_credentials(silent = FALSE)
 }
 \arguments{
-\item{silent}{Suppress informational messages}
+\item{silent}{If TRUE, do not show information messages}
 }
 \value{
-Logical indicating whether credentials are available
+Logical. TRUE if credentials are available
 }
 \description{
-Checks ecmwfr config first, then ~/.cdsapirc
+Examines the ecmwfr config first. Then it examines ~/.cdsapirc.
 }

@@ -2,11 +2,11 @@
 % Please edit documentation in R/cru_ts.R
 \name{.parse_cru_ts_time}
 \alias{.parse_cru_ts_time}
-\title{Parse CRU TS time coordinate to Date vector}
+\title{Parse the CRU TS time coordinate to a Date vector}
 \usage{
 .parse_cru_ts_time(time_var, time_units)
 }
 \description{
-Parse CRU TS time coordinate to Date vector
+Parse the CRU TS time coordinate to a Date vector
 }
 \keyword{internal}

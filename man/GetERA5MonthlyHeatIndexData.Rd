@@ -70,27 +70,28 @@ get_era5_monthly_heat_data(
 \arguments{
 \item{request_id}{Unique identifier for the data request}
 
-\item{year}{Year (e.g., 2023)}
+\item{year}{Year (for example, 2023)}
 
 \item{month}{Month (1-12)}
 
-\item{json_file}{Path to GeoJSON file defining the region}
+\item{json_file}{Path to the GeoJSON file that defines the region}
 
 \item{north, south, east, west}{Bounding box coordinates (alternative to json_file)}
 
-\item{solar_load}{Whether to include solar radiation (default: FALSE)}
+\item{solar_load}{If TRUE, include solar radiation (default: FALSE)}
 
 \item{resolution}{Spatial resolution in degrees (default: 0.25)}
 
-\item{use_cache}{Whether to use cached data (default: TRUE)}
+\item{use_cache}{If TRUE, the function uses cached data (default: TRUE)}
 
-\item{verbose}{Whether to print progress messages (default: FALSE)}
+\item{verbose}{If TRUE, the function prints progress messages (default: FALSE)}
 }
 \value{
 data.frame with monthly mean values for each grid point
 }
 \description{
-Download ERA5 heat stress indices aggregated to a given month.
+This function downloads ERA5 heat stress indices and aggregates them to the
+specified month.
 }
 \examples{
 \dontrun{

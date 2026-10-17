@@ -3,18 +3,18 @@
 \name{GetAvailablePressureLevels}
 \alias{GetAvailablePressureLevels}
 \alias{get_available_pressure_levels}
-\title{Get standard pressure levels available in ERA5}
+\title{Get the standard pressure levels that are available in ERA5}
 \usage{
 GetAvailablePressureLevels(...)
 
 get_available_pressure_levels()
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 }
 \value{
 Character vector of pressure levels in hPa
 }
 \description{
-Get standard pressure levels available in ERA5
+Get the standard pressure levels that are available in ERA5
 }

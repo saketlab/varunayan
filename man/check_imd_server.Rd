@@ -2,19 +2,19 @@
 % Please edit documentation in R/imd_download.R
 \name{check_imd_server}
 \alias{check_imd_server}
-\title{Check IMD server connectivity}
+\title{Check the connection to the IMD server}
 \usage{
 check_imd_server(base_url = "https://www.imdpune.gov.in/", timeout = 30)
 }
 \arguments{
-\item{base_url}{Base URL to test.}
+\item{base_url}{Base URL for the test.}
 
 \item{timeout}{Connection timeout in seconds.}
 }
 \value{
-Logical indicating if server is reachable
+Logical. TRUE if the server is available.
 }
 \description{
-Check IMD server connectivity
+Check the connection to the IMD server
 }
 \keyword{internal}

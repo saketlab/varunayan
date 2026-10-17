@@ -1,6 +1,7 @@
 #' PascalCase Aliases
 #'
-#' PascalCase aliases for all exported functions for backward compatibility.
+#' PascalCase aliases for all exported functions. The aliases keep backward
+#' compatibility.
 #' @name varunayan-aliases
 
 # ERA5 functions

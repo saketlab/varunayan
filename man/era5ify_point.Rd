@@ -46,23 +46,24 @@ era5ify_point(
 
 \item{frequency}{Temporal frequency ("hourly", "daily", "monthly").}
 
-\item{save_raw}{Whether to save raw downloaded files.}
+\item{save_raw}{If TRUE, save the raw downloaded files.}
 
-\item{output_dir}{Directory to save files (default: tempdir()).}
+\item{output_dir}{Directory for the saved files (default: tempdir()).}
 
-\item{use_cache}{Whether to use cached data if available (default: TRUE).}
+\item{use_cache}{If TRUE, use cached data when it is available (default: TRUE).}
 
-\item{convert_units}{Whether to convert units to user-friendly formats (default: TRUE).
-When TRUE, temperature variables are returned in Celsius (converted from Kelvin)
-and precipitation variables are returned in mm (converted from meters).}
+\item{convert_units}{If TRUE, convert units to user-friendly formats (default: TRUE).
+When TRUE, the function returns temperature variables in Celsius (converted from Kelvin).
+It returns precipitation variables in mm (converted from meters).}
 
-\item{verbose}{Whether to print detailed progress messages.}
+\item{verbose}{If TRUE, print detailed progress messages.}
 
-\item{use_timeseries_api}{Whether to use the CDS time-series endpoint, which
-serves a point directly and is much faster than subsetting a gridded
-download (default: NA, meaning use it for hourly single-level requests,
-the only ones it supports). Set FALSE to force the gridded download. The
-gridded download is used automatically if the endpoint is unavailable.}
+\item{use_timeseries_api}{If TRUE, use the CDS time-series endpoint. This
+endpoint gives the data for a point directly. It is much faster than a
+subset of a gridded download. The default is NA: use the endpoint only for
+hourly single-level requests, because the endpoint supports only these
+requests. Set FALSE to always use the gridded download. If the endpoint is
+not available, the function automatically uses the gridded download.}
 }
 \value{
 data.frame with processed climate data. When \code{convert_units = TRUE}:
@@ -87,6 +88,6 @@ data <- era5ify_point(
   lat = 40.7128,
   lon = -74.0060
 )
-# Temperature is in Celsius, precipitation is in mm
+# Temperature is in Celsius. Precipitation is in mm.
 }
 }

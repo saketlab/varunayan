@@ -2,11 +2,11 @@
 % Please edit documentation in R/variable_lists.R
 \name{sum_vars}
 \alias{sum_vars}
-\title{Variables that should be summed over time}
+\title{Variables to sum over time}
 \usage{
 sum_vars
 }
 \description{
-Accumulation variables (precipitation, radiation) that use sum for temporal
-aggregation.
+Accumulation variables (precipitation, radiation). Temporal aggregation uses
+the sum for these variables.
 }

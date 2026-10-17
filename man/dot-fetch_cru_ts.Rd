@@ -2,11 +2,11 @@
 % Please edit documentation in R/cru_ts.R
 \name{.fetch_cru_ts}
 \alias{.fetch_cru_ts}
-\title{Fetch CRU TS data for a variable and year range}
+\title{Get CRU TS data for a variable and a range of years}
 \usage{
 .fetch_cru_ts(variable, start_year, end_year, use_cache, output_dir)
 }
 \description{
-Fetch CRU TS data for a variable and year range
+Get CRU TS data for a variable and a range of years
 }
 \keyword{internal}

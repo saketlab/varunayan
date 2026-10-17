@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{varunayan-utils}
 \alias{varunayan-utils}
-\title{Utility functions for Varunayan R package}
+\title{Utility functions for the Varunayan R package}
 \description{
-Utility functions for Varunayan R package
+Utility functions for the Varunayan R package
 }

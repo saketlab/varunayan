@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial.R
 \name{check_grid_coverage}
 \alias{check_grid_coverage}
-\title{Check grid coverage statistics for polygons}
+\title{Calculate the grid coverage statistics for polygons}
 \usage{
 check_grid_coverage(grid_data, polygons, polygon_id_cols = NULL)
 }
@@ -11,11 +11,11 @@ check_grid_coverage(grid_data, polygons, polygon_id_cols = NULL)
 
 \item{polygons}{sf object with polygon geometries}
 
-\item{polygon_id_cols}{Column names to identify polygons}
+\item{polygon_id_cols}{Column names that identify the polygons}
 }
 \value{
 List with coverage statistics
 }
 \description{
-Check grid coverage statistics for polygons
+Calculate the grid coverage statistics for polygons
 }

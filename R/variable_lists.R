@@ -3,10 +3,10 @@
 #' @name variable_lists
 NULL
 
-#' Variables that should be summed over time
+#' Variables to sum over time
 #'
-#' Accumulation variables (precipitation, radiation) that use sum for temporal
-#' aggregation.
+#' Accumulation variables (precipitation, radiation). Temporal aggregation uses
+#' the sum for these variables.
 #'
 #' @export
 sum_vars <- c(
@@ -51,7 +51,7 @@ sum_vars <- c(
   "vimd", "vertically_integrated_moisture_divergence"
 )
 
-#' Variables that should use maximum aggregation
+#' Variables for maximum aggregation
 #'
 #' @export
 max_vars <- c(
@@ -61,7 +61,7 @@ max_vars <- c(
   "hmax", "maximum_individual_wave_height"
 )
 
-#' Variables that should use minimum aggregation
+#' Variables for minimum aggregation
 #'
 #' @export
 min_vars <- c(
@@ -69,7 +69,7 @@ min_vars <- c(
   "mntpr", "minimum_total_precipitation_rate"
 )
 
-#' Rate variables that should be averaged
+#' Rate variables to average
 #'
 #' @export
 rate_vars <- c(
@@ -117,12 +117,12 @@ rate_vars <- c(
   "avg_vimdf", "average_vertically_integrated_moisture_divergence"
 )
 
-# Non-climate metadata variables that CDS may embed in NetCDF files
+# Non-climate metadata variables that CDS can put in NetCDF files
 .NC_METADATA_VARS <- c("number", "expver")
 
 #' Columns to exclude from aggregation
 #'
-#' These are coordinate and metadata columns that should not be aggregated.
+#' Aggregation does not apply to these coordinate and metadata columns.
 #'
 #' @export
 exclude_cols <- c(
@@ -130,10 +130,10 @@ exclude_cols <- c(
   .NC_METADATA_VARS, "valid_time", "datetime", "variable"
 )
 
-#' Check if a variable should be summed
+#' Find if a variable uses sum aggregation
 #'
-#' @param var_name Character string variable name
-#' @return Logical indicating if variable should be summed
+#' @param var_name Variable name as a character string
+#' @return Logical. TRUE if the variable uses sum aggregation
 #' @export
 is_sum_var <- function(var_name) {
   var_lower <- tolower(x = var_name)
@@ -143,10 +143,10 @@ is_sum_var <- function(var_name) {
   }, logical(1)))
 }
 
-#' Check if a variable should use maximum
+#' Find if a variable uses maximum aggregation
 #'
-#' @param var_name Character string variable name
-#' @return Logical indicating if variable should use max
+#' @param var_name Variable name as a character string
+#' @return Logical. TRUE if the variable uses maximum aggregation
 #' @export
 is_max_var <- function(var_name) {
   var_lower <- tolower(x = var_name)
@@ -156,10 +156,10 @@ is_max_var <- function(var_name) {
   }, logical(1)))
 }
 
-#' Check if a variable should use minimum
+#' Find if a variable uses minimum aggregation
 #'
-#' @param var_name Character string variable name
-#' @return Logical indicating if variable should use min
+#' @param var_name Variable name as a character string
+#' @return Logical. TRUE if the variable uses minimum aggregation
 #' @export
 is_min_var <- function(var_name) {
   var_lower <- tolower(x = var_name)
@@ -169,10 +169,10 @@ is_min_var <- function(var_name) {
   }, logical(1)))
 }
 
-#' Check if a variable is a rate variable
+#' Find if a variable is a rate variable
 #'
-#' @param var_name Character string variable name
-#' @return Logical indicating if variable is a rate
+#' @param var_name Variable name as a character string
+#' @return Logical. TRUE if the variable is a rate
 #' @export
 is_rate_var <- function(var_name) {
   var_lower <- tolower(x = var_name)
@@ -182,13 +182,13 @@ is_rate_var <- function(var_name) {
   }, logical(1)))
 }
 
-#' Categorize variables by aggregation method
+#' Sort variables by aggregation method
 #'
 #' @param var_names Character vector of variable names
-#' @return Named list with variables categorized by aggregation method
+#' @return Named list of the variables, sorted by aggregation method
 #' @export
 categorize_variables <- function(var_names) {
-  # Remove excluded columns
+  # Remove the excluded columns
   var_names <- setdiff(var_names, exclude_cols)
 
   sum_cols <- var_names[vapply(var_names, is_sum_var, logical(1))]
@@ -196,7 +196,7 @@ categorize_variables <- function(var_names) {
   min_cols <- var_names[vapply(var_names, is_min_var, logical(1))]
   rate_cols <- var_names[vapply(var_names, is_rate_var, logical(1))]
 
-  # Average columns are those not covered by other methods
+  # Average columns are the columns that the other methods do not include
   special_cols <- unique(x = c(sum_cols, max_cols, min_cols, rate_cols))
   avg_cols <- setdiff(var_names, special_cols)
 

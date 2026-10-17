@@ -2,7 +2,7 @@
 % Please edit documentation in R/download_timeseries.R
 \name{download_era5_timeseries}
 \alias{download_era5_timeseries}
-\title{Download ERA5 data for a point via the CDS time-series endpoint}
+\title{Download ERA5 data for a point with the CDS time-series endpoint}
 \usage{
 download_era5_timeseries(
   variables,
@@ -26,20 +26,21 @@ download_era5_timeseries(
 
 \item{lon}{Longitude of the point location.}
 
-\item{output_dir}{Directory to save files (default: tempdir()).}
+\item{output_dir}{Directory for the saved files (default: tempdir()).}
 
-\item{timeout}{Seconds to wait for the request before giving up.}
+\item{timeout}{Number of seconds to wait for the request before the function stops.}
 
-\item{verbose}{Whether to print detailed progress messages.}
+\item{verbose}{If TRUE, print detailed progress messages.}
 }
 \value{
-data.frame with datetime, latitude, longitude, variable, and value
-columns, in original ERA5 units.
+data.frame with the datetime, latitude, longitude, variable, and value
+columns. The values are in the original ERA5 units.
 }
 \description{
-Retrieves \code{reanalysis-era5-single-levels-timeseries}, which serves a single
-location directly instead of returning gridded fields that must be subset.
-For long hourly requests at one point this is substantially faster than
-\code{download_era5_single()}, which pays field-retrieval cost per timestep.
+This function gets \code{reanalysis-era5-single-levels-timeseries}. This endpoint
+gives the data for one location directly. It does not return gridded fields
+that you must subset. For long hourly requests at one point, this function is
+much faster than \code{download_era5_single()}. That function has a field-retrieval
+cost for each timestep.
 }
 \keyword{internal}

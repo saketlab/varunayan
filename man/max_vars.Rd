@@ -2,10 +2,10 @@
 % Please edit documentation in R/variable_lists.R
 \name{max_vars}
 \alias{max_vars}
-\title{Variables that should use maximum aggregation}
+\title{Variables for maximum aggregation}
 \usage{
 max_vars
 }
 \description{
-Variables that should use maximum aggregation
+Variables for maximum aggregation
 }

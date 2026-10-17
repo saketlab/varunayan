@@ -14,21 +14,21 @@
 #' @importFrom lubridate ymd
 #' @importFrom magrittr "%>%"
 #' @importFrom ncdf4 nc_open nc_close ncvar_get
-#' @importFrom rlang .data
+#' @importFrom rlang .data %||%
 #' @importFrom tools R_user_dir file_ext file_path_sans_ext
 #' @importFrom utils unzip sessionInfo packageVersion install.packages
 ## usethis namespace: end
 
-# Required for data.table operations
+# data.table operations must have this flag
 .datatable.aware <- TRUE
 
-# Package startup message - only show CDS setup hint if credentials not found
+# Startup message. Show the CDS setup hint only if the package cannot find credentials.
 .onAttach <- function(libname, pkgname) {
-  # Check ~/.cdsapirc file first (most common setup)
+  # Examine the ~/.cdsapirc file first. Most users use this setup.
   cdsapirc <- path.expand("~/.cdsapirc")
   has_creds <- file.exists(cdsapirc)
 
-  # Also check ecmwfr credentials if file not found
+  # If the file does not exist, also examine the ecmwfr credentials
   if (!has_creds) {
     has_creds <- tryCatch(
       {
@@ -41,13 +41,13 @@
 
   if (!has_creds) {
     packageStartupMessage("varunayan: Configure CDS credentials with setup_cds_credentials()")
-    packageStartupMessage("Visit: https://cds.climate.copernicus.eu/api-how-to")
+    packageStartupMessage("Refer to: https://cds.climate.copernicus.eu/api-how-to")
   }
 }
 
-# Package detach cleanup
+# Remove temporary files when the package unloads
 .onUnload <- function(libpath) {
-  # Clean up any temporary files
+  # Delete the temporary files
   temp_files <- list.files(path = tempdir(), pattern = "varunayan_.*\\.(nc|geojson)", full.names = TRUE)
   if (length(x = temp_files) > 0) {
     unlink(x = temp_files)

@@ -33,9 +33,9 @@ library(ggplot2)
 library(tidyr)
 ```
 
-The [HadEX3](https://www.metoffice.gov.uk/hadobs/hadex3/) dataset from the Met Office Hadley Centre provides global gridded climate extremes based on 27 ETCCDI indices, at 1.25 x 1.875 degree resolution over 1901-2018.
+The [HadEX3](https://www.metoffice.gov.uk/hadobs/hadex3/) dataset from the Met Office Hadley Centre gives global gridded climate extremes. The dataset uses 27 ETCCDI indices. The resolution is 1.25 x 1.875 degrees, and the period is 1901-2018.
 
-Available indices and their descriptions:
+This table shows the available indices and their descriptions:
 
 ```{r list_indices}
 list_hadex3_indices() |>
@@ -46,7 +46,7 @@ list_hadex3_indices() |>
 ## Download
 
 ```{r download, eval = FALSE}
-# Annual TXx (max of daily max temp) for India
+# Annual TXx (maximum of the daily maximum temperature) for India
 india_txx <- hadex3_bbox(
   index = "TXx",
   start_year = 1951, end_year = 2018,
@@ -54,7 +54,7 @@ india_txx <- hadex3_bbox(
   frequency = "annual"
 )
 
-# Annual Rx1day (max 1-day rainfall) for India
+# Annual Rx1day (maximum 1-day rainfall) for India
 india_rx1day <- hadex3_bbox(
   index = "Rx1day",
   start_year = 1951, end_year = 2018,
@@ -83,10 +83,10 @@ if (!nzchar(data_path)) {
 }
 ```
 
-## Annual temperature extremes trend
+## Trend of annual temperature extremes
 
-We take the spatial mean of annual TXx (the hottest day) across India's grid cells
-and add a loess trend.
+We calculate the spatial mean of annual TXx (the hottest day) for all grid cells in India.
+Then we add a loess trend.
 
 ```{r txx_trend, fig.height = 4}
 txx_annual <- india_txx |>
@@ -102,7 +102,7 @@ ggplot(txx_annual, aes(x = year, y = mean_txx)) +
   labs(
     x = NULL, y = "TXx (\u00b0C)",
     title = "India: Annual Maximum Temperature (TXx), 1951-2018",
-    subtitle = "Spatial mean across grid cells; line = loess trend"
+    subtitle = "Spatial mean of all grid cells. Line = loess trend"
   ) +
   theme_minimal(base_size = 11) +
   theme(panel.grid.minor = element_blank())
@@ -110,8 +110,9 @@ ggplot(txx_annual, aes(x = year, y = mean_txx)) +
 
 ## Seasonal patterns from monthly data
 
-Averaging monthly TXx over 1981-2018, we see the typical pre-monsoon peak in
-May-June and the cooler post-monsoon months.
+We calculate the mean monthly TXx for 1981-2018.
+The result shows the usual pre-monsoon peak in May and June.
+The result also shows the cooler post-monsoon months.
 
 ```{r monthly_seasonal, fig.height = 4}
 seasonal <- india_txx_mon |>
@@ -132,7 +133,7 @@ ggplot(seasonal, aes(x = month_label, y = mean_txx, group = 1)) +
 
 ## Extreme rainfall trend (Rx1day)
 
-Annual maximum 1-day precipitation (Rx1day) over India 1951-2018.
+This plot shows the annual maximum 1-day precipitation (Rx1day) for India from 1951 to 2018.
 
 ```{r rx1day_trend, fig.height = 4}
 rx1_annual <- india_rx1day |>
@@ -148,7 +149,7 @@ ggplot(rx1_annual, aes(x = year, y = mean_rx1)) +
   labs(
     x = NULL, y = "Rx1day (mm)",
     title = "India: Annual Maximum 1-Day Rainfall (Rx1day), 1951-2018",
-    subtitle = "Spatial mean; line = loess trend"
+    subtitle = "Spatial mean. Line = loess trend"
   ) +
   theme_minimal(base_size = 11) +
   theme(panel.grid.minor = element_blank())
@@ -156,7 +157,7 @@ ggplot(rx1_annual, aes(x = year, y = mean_rx1)) +
 
 ## Decadal spatial distribution of TXx
 
-We compare the spatial pattern of TXx across three decades.
+We compare the spatial pattern of TXx in three decades.
 
 ```{r spatial_decades, fig.width = 10, fig.height = 4}
 decades <- india_txx |>

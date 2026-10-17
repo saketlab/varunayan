@@ -13,14 +13,15 @@ utci(temp_c, wind_speed, dewpoint_c, tmrt = NULL)
 
 \item{dewpoint_c}{Dewpoint temperature in Celsius (to calculate vapor pressure)}
 
-\item{tmrt}{Mean radiant temperature in Celsius (optional, defaults to temp_c)}
+\item{tmrt}{Mean radiant temperature in Celsius (optional, the default is temp_c)}
 }
 \value{
 UTCI in Celsius
 }
 \description{
-Calculates UTCI using the polynomial approximation from Bröde et al. (2012),
-based on a multi-node model of human thermoregulation.
+This function uses the polynomial approximation of Bröde et al. (2012) to
+calculate UTCI. The approximation uses a multi-node model of human
+thermoregulation.
 }
 \examples{
 utci(30, wind_speed = 2, dewpoint_c = 20)

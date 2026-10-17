@@ -7,16 +7,17 @@
 calc_heat_indices(temp_c, dewpoint_c)
 }
 \arguments{
-\item{temp_c}{Air temperature in celsius}
+\item{temp_c}{Air temperature in Celsius}
 
-\item{dewpoint_c}{Dewpoint temperature in celsius}
+\item{dewpoint_c}{Dewpoint temperature in Celsius}
 }
 \value{
 Data frame with columns: temp_c, dewpoint_c, rh, wet_bulb, heat_index,
 wbgt, humidex
 }
 \description{
-Calculate all heat stress indices from temperature and dewpoint.
+This function calculates all heat stress indices from temperature and
+dewpoint.
 }
 \examples{
 calc_heat_indices(35, 25)

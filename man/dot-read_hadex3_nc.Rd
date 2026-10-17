@@ -7,18 +7,19 @@
 .read_hadex3_nc(nc_file, index, frequency)
 }
 \arguments{
-\item{nc_file}{Path to decompressed .nc file.}
+\item{nc_file}{Path to the decompressed .nc file.}
 
 \item{index}{ETCCDI index name.}
 
 \item{frequency}{"annual" or "monthly".}
 }
 \value{
-data.frame with columns year (+ month for monthly), latitude, longitude, value.
+A data.frame with the columns year (and month for monthly data), latitude, longitude, value.
 }
 \description{
-HadEX3 NetCDF files use dimension names "longitude"/"latitude" (not "lon"/"lat"),
-longitudes in 0-360 range, and variable name "Ann" for annual files vs. the
-index name (e.g. "TXx") for monthly files. All files have dims (longitude, latitude, time).
+HadEX3 NetCDF files use the dimension names "longitude" and "latitude" (not
+"lon" and "lat"). The longitudes are in the range 0-360. Annual files use the
+variable name "Ann". Monthly files use the index name (for example, "TXx").
+All files have the dimensions (longitude, latitude, time).
 }
 \keyword{internal}

@@ -10,27 +10,29 @@ IMDStations(...)
 imd_stations(with_coordinates = TRUE, cores = 4)
 }
 \arguments{
-\item{...}{Ignored (present for alias compatibility).}
+\item{...}{Not used. This argument is necessary for compatibility with the aliases.}
 
-\item{with_coordinates}{Logical; if \code{TRUE} (default) fetch \code{latitude} and
-\code{longitude} for every station (one request per station). If \code{FALSE}, return
-only \code{station_id} and \code{name}.}
+\item{with_coordinates}{Logical. If \code{TRUE} (default), the function gets
+\code{latitude} and \code{longitude} for each station (one request for each station).
+If \code{FALSE}, the function returns only \code{station_id} and \code{name}.}
 
-\item{cores}{Integer; number of parallel workers used to fetch coordinates
-(passed to \code{\link[parallel:mclapply]{parallel::mclapply()}}). Defaults to 4; set to 1 on Windows.}
+\item{cores}{Integer. The number of parallel workers that get the
+coordinates (the function sends this value to \code{\link[parallel:mclapply]{parallel::mclapply()}}). The
+default is 4. On Windows, set it to 1.}
 }
 \value{
-A \code{data.frame} with columns \code{station_id}, \code{name}, and — when
-\code{with_coordinates = TRUE} — \code{latitude}, \code{longitude} (\code{NA} where IMD has no
-coordinate for a station).
+A \code{data.frame} with the columns \code{station_id} and \code{name}. If
+\code{with_coordinates = TRUE}, the data frame also has the columns \code{latitude}
+and \code{longitude}. The value is \code{NA} if IMD has no coordinate for a station.
 }
 \description{
-Retrieves the India Meteorological Department (IMD) city-weather station list
-and, optionally, each station's latitude/longitude. IMD's legacy endpoints
-expose only station names; its responsive site serves a per-station JSON record
-(\code{api/fetchCity_static.php}) that includes \code{lat}/\code{lon}, which this function
-pairs with the station list. The returned coordinates can be fed directly to
-\code{\link[=era5ify_point]{era5ify_point()}} or used to build maps.
+Gets the India Meteorological Department (IMD) city-weather station list.
+As an option, it also gets the latitude and longitude of each station. The
+legacy IMD endpoints give only the station names. The responsive IMD site
+gives a JSON record for each station (\code{api/fetchCity_static.php}). This record
+contains \code{lat} and \code{lon}. The function adds these values to the station list.
+You can use the returned coordinates directly as input to \code{\link[=era5ify_point]{era5ify_point()}}.
+You can also use them to make maps.
 }
 \examples{
 \dontrun{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{format_pressure_levels}
 \alias{format_pressure_levels}
-\title{Convert pressure levels to character format required by CDS API}
+\title{Convert pressure levels to the character format necessary for the CDS API}
 \usage{
 format_pressure_levels(pressure_levels)
 }
@@ -13,5 +13,5 @@ format_pressure_levels(pressure_levels)
 Character vector of pressure levels
 }
 \description{
-Convert pressure levels to character format required by CDS API
+Convert pressure levels to the character format necessary for the CDS API
 }

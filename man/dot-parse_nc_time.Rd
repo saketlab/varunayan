@@ -2,20 +2,20 @@
 % Please edit documentation in R/processing.R
 \name{.parse_nc_time}
 \alias{.parse_nc_time}
-\title{Parse numeric time values from NetCDF}
+\title{Parse numeric time values from a NetCDF file}
 \usage{
 .parse_nc_time(time_vals, time_units = NULL)
 }
 \arguments{
 \item{time_vals}{Numeric time values}
 
-\item{time_units}{Character string from the NetCDF time dimension units attribute
-(e.g. "seconds since 1970-01-01", "hours since 1900-01-01")}
+\item{time_units}{Character string from the units attribute of the NetCDF time
+dimension (for example, "seconds since 1970-01-01", "hours since 1900-01-01")}
 }
 \value{
 POSIXct vector
 }
 \description{
-Parse numeric time values from NetCDF
+Parse numeric time values from a NetCDF file
 }
 \keyword{internal}

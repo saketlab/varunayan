@@ -2,7 +2,7 @@
 % Please edit documentation in R/core.R
 \name{compute_optimal_chunk_size}
 \alias{compute_optimal_chunk_size}
-\title{Compute optimal chunk size to stay within CDS field limits}
+\title{Calculate the optimal chunk size for the CDS field limits}
 \usage{
 compute_optimal_chunk_size(n_variables, frequency, n_pressure_levels = 1L)
 }
@@ -14,10 +14,11 @@ compute_optimal_chunk_size(n_variables, frequency, n_pressure_levels = 1L)
 \item{n_pressure_levels}{Number of pressure levels (1 for single-level)}
 }
 \value{
-Integer: max years (monthly) or max days (hourly/daily) per chunk
+Integer: maximum years (monthly) or maximum days (hourly/daily) for each chunk
 }
 \description{
-Uses 90\% of the CDS limit as headroom. Returns max years for monthly
-frequency, max days for hourly/daily.
+The function uses 90\% of the CDS limit to keep a margin. For monthly
+frequency, it returns the maximum number of years. For hourly or daily
+frequency, it returns the maximum number of days.
 }
 \keyword{internal}

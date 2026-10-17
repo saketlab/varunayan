@@ -2,10 +2,10 @@
 % Please edit documentation in R/variable_lists.R
 \name{rate_vars}
 \alias{rate_vars}
-\title{Rate variables that should be averaged}
+\title{Rate variables to average}
 \usage{
 rate_vars
 }
 \description{
-Rate variables that should be averaged
+Rate variables to average
 }

@@ -22,10 +22,10 @@ library(varunayan)
 
 ## ERA5 data
 
-ERA5 provides global climate reanalysis data. Requires [CDS API credentials](https://cds.climate.copernicus.eu/how-to-api).
+ERA5 gives global climate reanalysis data. To get ERA5 data, you must have [CDS API credentials](https://cds.climate.copernicus.eu/how-to-api).
 
 ```{r era5-setup, eval=FALSE}
-# One-time setup
+# Do this step one time only
 setup_cds_credentials(key = "your-personal-access-token")
 ```
 
@@ -70,12 +70,12 @@ df <- era5ify_point(
 
 ## IMD data
 
-IMD provides high-resolution gridded data for India. No credentials required.
+IMD gives high-resolution gridded data for India. You can get IMD data without credentials.
 
 ### Rainfall
 
 ```{r imd-rainfall, eval=FALSE}
-# 0.25 degree resolution rainfall
+# Rainfall at 0.25 degree resolution
 df <- imd_rainfall_bbox(
   request_id = "maharashtra_rain",
   start_year = 2023,
@@ -111,22 +111,22 @@ df <- imd_rainfall_geojson(
 )
 ```
 
-## Variable discovery
+## Find variables
 
 ```{r variables, message=FALSE}
-# Search variables
+# Find variables
 search_variable("temperature")
 
-# Get descriptions
+# Get the descriptions of variables
 describe_variables(c("2m_temperature", "total_precipitation"))
 
-# List all
+# Show all the available variables
 head(list_available_variables("single"), 10)
 ```
 
-## Cache management
+## Cache
 
 ```{r cache, message=FALSE}
-# View cache
+# Show the cache information
 show_cache_info()
 ```

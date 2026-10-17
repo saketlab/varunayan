@@ -19,20 +19,20 @@ download_imd_temperature(
 
 \item{var_type}{Type of temperature: "tmax" or "tmin".}
 
-\item{output_dir}{Directory to save downloaded files.}
+\item{output_dir}{Directory for the downloaded files.}
 
-\item{use_cache}{Whether to use cached data if available (default: TRUE).}
+\item{use_cache}{If TRUE, use the cached data when it is available (default: TRUE).}
 }
 \value{
-Character vector of downloaded file paths
+Character vector of the paths to the downloaded files.
 }
 \description{
-Downloads daily gridded temperature data (max or min) from IMD.
-Temperature data is at 1.0 degree resolution only.
+Downloads daily gridded temperature data (maximum or minimum) from IMD.
+Temperature data is available only at 1.0 degree resolution.
 }
 \examples{
 \dontrun{
-# Download max temperature for 2023-2025
+# Download maximum temperature for 2023-2025
 files <- download_imd_temperature(
   start_year = 2023,
   end_year = 2025,

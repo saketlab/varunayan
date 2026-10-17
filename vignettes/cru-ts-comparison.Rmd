@@ -34,12 +34,12 @@ library(tidyr)
 library(patchwork)
 ```
 
-How well do [ERA5](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview) and [CRU TS](https://crudata.uea.ac.uk/cru/data/hrg/) agree on monthly temperature over India? They are two independent records covering 2000-2018:
+This vignette examines how much [ERA5](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview) and [CRU TS](https://crudata.uea.ac.uk/cru/data/hrg/) agree on the monthly temperature for India. The two datasets are independent records for the period 2000-2018:
 
-- **ERA5** - ECMWF reanalysis at 0.25°, pulled with `era5ify_bbox`
-- **CRU TS v4.07** - station-interpolated observations from UEA at 0.5°, pulled with `cru_ts_bbox`
+- **ERA5** - ECMWF reanalysis at 0.25°. We get these data with `era5ify_bbox`.
+- **CRU TS v4.07** - station-interpolated observations from UEA at 0.5°. We get these data with `cru_ts_bbox`.
 
-CRU TS variable dictionary with ERA5 equivalents:
+This table shows the CRU TS variables and the equivalent ERA5 variables:
 
 ```{r variable_dict}
 list_cru_ts_variables() |>
@@ -81,7 +81,7 @@ if (!nzchar(data_path)) {
 
 ## Monthly time series
 
-Spatial mean temperature across all India grid cells, month by month:
+This plot shows the spatial mean temperature of all grid cells in India for each month:
 
 ```{r monthly_ts, fig.height = 4}
 era5_monthly <- era5_tmp |>
@@ -104,7 +104,7 @@ ggplot(temp_all, aes(x = date, y = temp, color = source)) +
   labs(
     x = NULL, y = "Mean temperature (\u00b0C)", color = NULL,
     title = "India: Monthly Mean Temperature — ERA5 vs CRU TS (2000-2018)",
-    subtitle = "Spatial mean across all grid cells"
+    subtitle = "Spatial mean of all grid cells"
   ) +
   theme_minimal(base_size = 11) +
   theme(legend.position = "top", panel.grid.minor = element_blank())
@@ -140,7 +140,7 @@ ggplot(temp_wide, aes(x = `CRU TS`, y = ERA5)) +
 
 ## Seasonal cycle
 
-Averaged over 2000-2018, the seasonal cycles nearly overlap:
+When we calculate the mean for 2000-2018, the two seasonal cycles are almost the same:
 
 ```{r seasonal, fig.height = 4}
 seasonal <- temp_all |>
@@ -162,10 +162,10 @@ ggplot(seasonal, aes(x = month_label, y = temp, color = source, group = source))
 
 ## Spatial bias map
 
-To compare grid cell by grid cell, we snap ERA5 (0.25°) onto the CRU TS 0.5° grid and look at the difference:
+To compare each grid cell, we put the ERA5 values (0.25°) on the CRU TS 0.5° grid. Then we examine the difference:
 
 ```{r spatial_bias, fig.width = 10, fig.height = 5}
-# Snap ERA5 (0.25° grid at whole degrees) to CRU TS grid (0.5° grid offset by 0.25°).
+# Put the ERA5 values (0.25° grid at whole degrees) on the CRU TS grid (0.5° grid with a 0.25° offset).
 # CRU TS grid centers: floor(x/0.5)*0.5 + 0.25 → 6.25, 6.75, 7.25, ...
 era5_spatial <- era5_tmp |>
   mutate(
@@ -245,7 +245,7 @@ ggplot(annual, aes(x = year, y = temp, color = source)) +
   theme(legend.position = "top", panel.grid.minor = element_blank())
 ```
 
-## When to use which
+## Select a dataset
 
 ```{r comparison_table, echo = FALSE}
 comparison <- data.frame(
@@ -269,4 +269,13 @@ comparison <- data.frame(
 knitr::kable(comparison, align = "lll")
 ```
 
-CRU TS is the simpler choice when you need long historical baselines without CDS credentials, or monthly land-only temperature is enough. ERA5 wins when you need sub-monthly frequency, ocean coverage, or variables beyond temperature.
+CRU TS is easier to use in these conditions:
+
+- You must have long historical baselines without CDS credentials.
+- Monthly land-only temperature is sufficient.
+
+ERA5 is the better dataset in these conditions:
+
+- You must have data at a frequency of less than one month.
+- You must have data for the ocean.
+- You must have variables other than temperature.

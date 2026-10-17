@@ -19,13 +19,14 @@ process_imd_files(
 
 \item{resolution}{Resolution (for rainfall): 0.25 or 1.0.}
 
-\item{years}{Integer vector. Years corresponding to each file.}
+\item{years}{Integer vector. The year of each file.}
 
-\item{bbox}{Optional named list/vector (north, south, east, west) passed to the
-rainfall reader to crop at read time; NULL reads the full grid (default).}
+\item{bbox}{Optional named list or vector (north, south, east, west). The
+function sends it to the rainfall reader, which crops the grid at read time.
+If NULL, the function reads the full grid (default).}
 }
 \value{
-data.frame with combined data
+data.frame with the combined data.
 }
 \description{
 Reads and combines multiple IMD data files.

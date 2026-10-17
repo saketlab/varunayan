@@ -1,11 +1,12 @@
 #' Cache management for downloaded NetCDF files
 #'
-#' Functions to cache ERA5 and IMD NetCDF files for faster successive queries
+#' Functions to cache ERA5 and IMD NetCDF files. The cache makes the next
+#' queries faster.
 
 #' Get cache directory path
 #'
-#' @param create Create directory if it doesn't exist (default: TRUE)
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param create Create the directory when it does not exist (default: TRUE)
+#' @param ... Arguments for the main function (for use by aliases).
 #' @return Character string with cache directory path
 #' @export
 get_cache_dir <- function(create = TRUE) {
@@ -16,7 +17,7 @@ get_cache_dir <- function(create = TRUE) {
   cache_dir
 }
 
-#' Generate cache key for download parameters
+#' Make a cache key for download parameters
 #'
 #' @param source Data source: "era5" or "imd"
 #' @param variables Variable names
@@ -52,9 +53,9 @@ generate_cache_key <- function(source, variables = NULL, start_date, end_date,
   paste0(prefix, "_", cache_key)
 }
 
-#' Check if data exists in cache
-#' @param cache_key Cache key to check
-#' @return Path to cached file if exists, NULL otherwise
+#' Find if data is in the cache
+#' @param cache_key Cache key to examine
+#' @return Path to the cached file if the file exists. If not, NULL.
 #' @keywords internal
 check_cache <- function(cache_key) {
   cache_dir <- get_cache_dir(create = FALSE)
@@ -71,7 +72,7 @@ check_cache <- function(cache_key) {
 }
 
 #' Save file to cache
-#' @param file_path Path to file to cache
+#' @param file_path Path to the file to cache
 #' @param cache_key Cache key for the file
 #' @return Path to cached file
 #' @keywords internal
@@ -105,7 +106,7 @@ list_cache <- function(source = NULL) {
 
   files <- list.files(path = cache_dir, pattern = "\\.(nc|grd)$", full.names = TRUE)
   if (length(x = files) == 0) {
-    message("No cached files found")
+    message("The cache has no files")
     return(empty_df)
   }
 
@@ -134,16 +135,16 @@ list_cache <- function(source = NULL) {
     size_mb = round(x = file_info$size / 1024^2, digits = 2),
     modified = format(x = file_info$mtime, format = "%Y-%m-%d %H:%M:%S")
   )
-  message("Found ", nrow(x = result), " cached file(s), total: ", round(x = sum(result$size_mb), digits = 2), " MB")
+  message("The cache has ", nrow(x = result), " file(s), total: ", round(x = sum(result$size_mb), digits = 2), " MB")
   result
 }
 
 #' Clear cache
 #'
 #' @param source Clear only "era5", "imd", or NULL for all
-#' @param older_than Remove files older than this many days (NULL = all)
+#' @param older_than Remove files that are older than this number of days (NULL = all)
 #' @param confirm Ask for confirmation (default: TRUE)
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param ... Arguments for the main function (for use by aliases).
 #' @return Number of files deleted (invisible)
 #' @export
 clear_cache <- function(source = NULL, older_than = NULL, confirm = TRUE) {
@@ -179,10 +180,10 @@ clear_cache <- function(source = NULL, older_than = NULL, confirm = TRUE) {
   total_size_mb <- sum(file.info(files)$size) / 1024^2
 
   if (confirm) {
-    message("About to delete ", length(x = files), " file(s) (", round(x = total_size_mb, digits = 2), " MB)")
+    message("The function will delete ", length(x = files), " file(s) (", round(x = total_size_mb, digits = 2), " MB)")
     response <- readline(prompt = "Are you sure? (yes/no): ")
     if (tolower(x = response) != "yes") {
-      message("Cancelled")
+      message("Canceled")
       return(invisible(x = 0))
     }
   }
@@ -222,7 +223,7 @@ cache_stats <- function() {
 }
 
 #' Show cache contents and statistics
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param ... Arguments for the main function (for use by aliases).
 #' @return data.frame with cache information (invisible)
 #' @export
 show_cache_info <- function() {
@@ -246,9 +247,9 @@ show_cache_info <- function() {
   file_info$name <- basename(path = files)
   file_info$size_mb <- round(x = file_info$size / 1024^2, digits = 2)
 
-  message("Found ", nrow(x = file_info), " file(s), total: ", round(x = sum(file_info$size_mb), digits = 1), " MB\n")
+  message("The cache has ", nrow(x = file_info), " file(s), total: ", round(x = sum(file_info$size_mb), digits = 1), " MB\n")
 
-  # Group by source
+  # Divide the files by source
   imd_files <- file_info[grepl(pattern = "imd", x = file_info$name, ignore.case = TRUE), ]
   era5_files <- file_info[grepl(pattern = "era5", x = file_info$name, ignore.case = TRUE), ]
 
@@ -262,12 +263,12 @@ show_cache_info <- function() {
   invisible(x = file_info[, c("name", "size_mb", "mtime")])
 }
 
-#' Populate cache with sample IMD data
+#' Fill the cache with sample IMD data
 #'
-#' Copies sample IMD data files to cache for offline testing.
+#' Copies sample IMD data files to the cache for offline tests.
 #'
-#' @param force Overwrite existing cached files (default: FALSE)
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param force If TRUE, overwrite the cached files that exist (default: FALSE)
+#' @param ... Arguments for the main function (for use by aliases).
 #' @return List of cached files (invisible)
 #' @export
 populate_sample_cache <- function(force = FALSE) {
@@ -286,11 +287,11 @@ populate_sample_cache <- function(force = FALSE) {
   }
 
   if (is.null(x = sample_dir)) {
-    warning("Sample data directory not found")
+    warning("Cannot find the sample data directory")
     return(invisible(x = NULL))
   }
 
-  message("Populating cache with sample IMD data...")
+  message("The function puts sample IMD data in the cache...")
 
   samples <- list(
     list(file = "rain_2024.nc", var_type = "rainfall", res = 0.25, desc = "Rainfall 0.25\u00B0 (2024)"),
@@ -310,7 +311,7 @@ populate_sample_cache <- function(force = FALSE) {
 
     existing <- check_cache(cache_key = cache_key)
     if (!is.null(x = existing) && !force) {
-      message(s$desc, ": already cached")
+      message(s$desc, ": already in the cache")
       cached_files[[s$desc]] <- existing
       next
     }

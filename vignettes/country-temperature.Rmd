@@ -31,17 +31,20 @@ library(tidyr)
 library(patchwork)
 ```
 
-`get_era5_country_temperature()` resolves a country boundary, downloads
-monthly ERA5 data, and returns cosine-latitude area-weighted national
-averages. We get all of that from one call, instead of finding boundaries,
-writing GeoJSON, calling `era5ify_geojson()`, and aggregating grid cells by hand.
+`get_era5_country_temperature()` does three steps.
+First, the function finds the boundary of a country.
+Then it downloads monthly ERA5 data.
+Then it returns national averages with cosine-latitude area weights.
 
-Here we pull monthly mean, max, and min temperatures for four European and four South Asian
-countries in 2024.
+One call does all of these steps.
+You do not have to find boundaries, write GeoJSON, call `era5ify_geojson()`, and aggregate grid cells manually.
+
+In this example, we get the monthly mean, maximum, and minimum temperatures for 2024.
+We get these data for four European countries and four South Asian countries.
 
 ## Download data
 
-We pass the `variables` shorthands `"mean"`, `"max"`, and `"min"`.
+We give the short values `"mean"`, `"max"`, and `"min"` to the `variables` argument.
 
 ```{r download, eval = FALSE}
 countries <- c(
@@ -71,7 +74,8 @@ temps <- readRDS(system.file("extdata", "country_temps.rds", package = "varunaya
 head(temps)
 ```
 
-We tag each country with its region for faceting.
+We add the region of each country to the data.
+The plots use the region to make facets.
 
 ```{r regions}
 region_map <- c(
@@ -83,7 +87,7 @@ region_map <- c(
 temps$region <- region_map[temps$country]
 temps$month_label <- factor(month.abb[temps$month], levels = month.abb)
 
-# Cool tones for Europe, warm tones for South Asia
+# Cool colors for Europe, warm colors for South Asia
 country_colors <- c(
   France = "#2166AC", Germany = "#4393C3",
   Spain = "#92C5DE", Norway = "#053061",
@@ -113,9 +117,9 @@ ggplot(temps, aes(x = month_label, y = country, fill = temperature_mean)) +
   )
 ```
 
-South Asian countries stay above 20 &deg;C year-round. European countries
-swing 20+ &deg;C between winter and summer, with Norway dropping below
-freezing from November through March.
+The temperatures of South Asian countries stay more than 20 &deg;C for all of the year.
+The temperatures of European countries change by more than 20 &deg;C between winter and summer.
+In Norway, the temperature is less than 0 &deg;C from November to March.
 
 ## Monthly trend lines with min/max ribbon
 
@@ -142,8 +146,8 @@ ggplot(temps, aes(x = month, color = country, fill = country)) +
 
 ## Diurnal range
 
-The gap between daily max and min (DTR) is wider in continental and arid
-climates than in humid tropical ones.
+The diurnal temperature range (DTR) is the difference between the daily maximum and the daily minimum.
+The DTR is larger in continental and arid climates than in humid tropical climates.
 
 ```{r dtr, fig.height = 6}
 temps$dtr <- temps$temperature_max - temps$temperature_min
@@ -165,7 +169,8 @@ ggplot(temps, aes(x = month, y = dtr, color = country)) +
 
 ## Regional comparison
 
-Finally, we put all eight countries on a single axis, with line type separating the two regions.
+Last, we show all eight countries on one axis.
+The line type shows the region of each country.
 
 ```{r comparison, fig.height = 6}
 ggplot(temps, aes(

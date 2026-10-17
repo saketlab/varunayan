@@ -2,7 +2,7 @@
 % Please edit documentation in R/heat_stress.R
 \name{utci_sparse}
 \alias{utci_sparse}
-\title{Calculate UTCI using sparse regression approximation}
+\title{Calculate UTCI with a sparse regression approximation}
 \usage{
 utci_sparse(temp_c, tmrt, wind_speed, rh)
 }
@@ -13,16 +13,16 @@ utci_sparse(temp_c, tmrt, wind_speed, rh)
 
 \item{wind_speed}{Wind speed at 10m height in m/s (0.5 to 30.3)}
 
-\item{rh}{Relative humidity as percentage (5 to 100)}
+\item{rh}{Relative humidity as a percentage (5 to 100)}
 }
 \value{
 UTCI in Celsius
 }
 \description{
-Calculates UTCI using the sparse regression approximation with Legendre
-polynomials from Roman et al. (2025). This is a more accurate approximation
-than the original Bröde et al. (2012) polynomial, with fewer terms and
-better numerical stability.
+This function uses the sparse regression approximation of Roman et al. (2025)
+to calculate UTCI. This approximation uses Legendre polynomials. It is more
+accurate than the original polynomial of Bröde et al. (2012). It has fewer
+terms and better numerical stability.
 }
 \examples{
 utci_sparse(30, tmrt = 40, wind_speed = 2, rh = 60)

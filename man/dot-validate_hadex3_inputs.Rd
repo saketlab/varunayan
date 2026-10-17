@@ -2,11 +2,11 @@
 % Please edit documentation in R/hadex3.R
 \name{.validate_hadex3_inputs}
 \alias{.validate_hadex3_inputs}
-\title{Validate HadEX3 inputs}
+\title{Make sure that the HadEX3 inputs are valid}
 \usage{
 .validate_hadex3_inputs(index, frequency, baseline, start_year, end_year)
 }
 \description{
-Validate HadEX3 inputs
+Make sure that the HadEX3 inputs are valid
 }
 \keyword{internal}

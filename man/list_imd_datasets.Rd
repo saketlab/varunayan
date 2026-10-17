@@ -7,7 +7,7 @@
 list_imd_datasets()
 }
 \value{
-data.frame with available IMD datasets and their characteristics
+data.frame with the available IMD datasets and their properties.
 }
 \description{
 List available IMD datasets

@@ -10,7 +10,7 @@ GetPackageInfo(...)
 get_package_info()
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments for the main function (for use by aliases).}
 }
 \value{
 data.frame with package versions (invisible)

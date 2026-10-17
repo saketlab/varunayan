@@ -10,11 +10,11 @@ DescribeVariables(...)
 describe_variables(variables, dataset_type = "all")
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
 \item{variables}{Character vector of variable names to describe}
 
-\item{dataset_type}{Character string indicating dataset type ("single", "pressure", or "all")}
+\item{dataset_type}{Character string that gives the dataset type ("single", "pressure", or "all")}
 }
 \value{
 data.frame with detailed variable descriptions

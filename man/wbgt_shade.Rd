@@ -15,8 +15,8 @@ wbgt_shade(temp_c, wet_bulb_c)
 WBGT in Celsius
 }
 \description{
-Uses the indoor formula 0.7\emph{Tw + 0.3}Ta. For a closed-form estimate from
-temperature and humidity alone, use \code{wbgt_simple()}.
+This function uses the indoor formula 0.7\emph{Tw + 0.3}Ta. To get a closed-form
+estimate from only temperature and humidity, use \code{wbgt_simple()}.
 }
 \examples{
 wbgt_shade(35, 27)

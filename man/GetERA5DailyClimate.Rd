@@ -45,22 +45,22 @@ get_era5_daily_climate(
 \item{variables}{Character vector of variables to download. Options:
 "temperature", "humidity", "wet_bulb", "wind", "solar"}
 
-\item{json_file}{Path to GeoJSON file defining the region}
+\item{json_file}{Path to the GeoJSON file that defines the region}
 
 \item{north, south, east, west}{Bounding box coordinates (alternative to json_file)}
 
 \item{resolution}{Spatial resolution in degrees (default: 0.25)}
 
-\item{use_cache}{Whether to use cached data (default: TRUE)}
+\item{use_cache}{If TRUE, the function uses cached data (default: TRUE)}
 
-\item{verbose}{Whether to print progress messages (default: FALSE)}
+\item{verbose}{If TRUE, the function prints progress messages (default: FALSE)}
 }
 \value{
 data.frame with date, latitude, longitude, and requested variables
 }
 \description{
-Download ERA5 climate variables (temperature, humidity, wet bulb, wind,
-solar radiation) for a region.
+This function downloads ERA5 climate variables (temperature, humidity, wet
+bulb, wind, solar radiation) for a region.
 }
 \examples{
 \dontrun{

@@ -7,7 +7,7 @@
 filter_netcdf_by_bbox(netcdf_file, north, south, east, west)
 }
 \arguments{
-\item{netcdf_file}{Character string path to NetCDF file}
+\item{netcdf_file}{Path to the NetCDF file, as a character string}
 
 \item{north}{Northern latitude boundary}
 

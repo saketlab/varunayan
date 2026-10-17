@@ -1,30 +1,30 @@
 utils::globalVariables(c("weight", "col_name"))
 
-#' Get ERA5 country-level temperature data
+#' Get ERA5 temperature data for a country
 #'
-#' Download and aggregate ERA5 temperature data for a country.
-#' Resolves the country boundary, downloads monthly data via
-#' [era5ify_geojson()], and returns area-weighted (cosine-latitude) country-level
-#' averages by year and month.
+#' Downloads ERA5 temperature data for a country and aggregates the data.
+#' The function finds the country boundary and downloads monthly data with
+#' [era5ify_geojson()]. It returns country-level averages for each year and
+#' month, with area weights (cosine of latitude).
 #'
-#' @param country One of: a country name string (resolved via
-#'   \code{maps::map()}), a path to a GeoJSON file, or an `sf` object.
-#'   Common aliases like `"USA"` and `"UK"` are handled automatically.
+#' @param country One of: a country name string (the function uses
+#'   \code{maps::map()} to find it), a path to a GeoJSON file, or an `sf` object.
+#'   The function automatically accepts common aliases, for example `"USA"` and `"UK"`.
 #' @param start_date Start date in `"YYYY-MM-DD"` format.
 #' @param end_date End date in `"YYYY-MM-DD"` format.
 #' @param variables Character vector of temperature shorthand names or ERA5
 #'   variable names. Shorthands: `"mean"` (2m_temperature), `"max"`
 #'   (maximum_2m_temperature_since_previous_post_processing), `"min"`
 #'   (minimum_2m_temperature_since_previous_post_processing). Default: `"mean"`.
-#' @param request_id Optional request identifier. Auto-generated from the
-#'   country name if not provided.
+#' @param request_id Optional request identifier. If you do not supply it, the
+#'   function makes it from the country name.
 #' @param resolution Spatial resolution in degrees (default: 0.25).
-#' @param verbose Whether to print detailed progress messages.
-#' @param ... Additional arguments passed to [era5ify_geojson()].
+#' @param verbose If TRUE, show detailed progress messages.
+#' @param ... More arguments that the function sends to [era5ify_geojson()].
 #'
-#' @return A data.frame with columns `year`, `month`, and one column per
-#'   requested variable (e.g., `temperature_mean`, `temperature_max`,
-#'   `temperature_min`). Temperature values are in Celsius.
+#' @return A data.frame with the columns `year`, `month`, and one column for
+#'   each requested variable (for example, `temperature_mean`, `temperature_max`,
+#'   `temperature_min`). The temperature values are in Celsius.
 #'
 #' @export
 #' @examples
@@ -32,12 +32,12 @@ utils::globalVariables(c("weight", "col_name"))
 #' # Monthly mean temperature for India
 #' get_era5_country_temperature("India", "2023-06-01", "2023-06-30")
 #'
-#' # Mean and max temperature for USA
+#' # Mean and max temperature for the USA
 #' get_era5_country_temperature("USA", "2023-01-01", "2023-12-31",
 #'   variables = c("mean", "max")
 #' )
 #'
-#' # Using an sf object directly
+#' # Use an sf object directly
 #' library(sf)
 #' poly <- st_read("my_country.geojson")
 #' get_era5_country_temperature(poly, "2023-01-01", "2023-06-30")
@@ -127,9 +127,9 @@ get_era5_country_temperature <- function(country, start_date, end_date,
   as.data.frame(wide)
 }
 
-#' Resolve a country specification to an sf polygon
+#' Convert a country specification to an sf polygon
 #'
-#' @param country A country name (string), file path to GeoJSON, or sf object.
+#' @param country A country name (string), a file path to a GeoJSON file, or an sf object.
 #' @return An sf object with the country polygon.
 #' @keywords internal
 .resolve_country_polygon <- function(country) {
@@ -138,7 +138,7 @@ get_era5_country_temperature <- function(country, start_date, end_date,
   }
 
   if (!is.character(country) || length(country) != 1) {
-    stop("'country' must be a country name (string), file path, or sf object.")
+    stop("'country' must be a country name (string), a file path, or an sf object.")
   }
 
   if (file.exists(country)) {
@@ -147,7 +147,7 @@ get_era5_country_temperature <- function(country, start_date, end_date,
 
   if (!requireNamespace("maps", quietly = TRUE)) {
     stop(
-      "Package 'maps' is required to resolve country names. ",
+      "Package 'maps' is necessary to find country names. ",
       "Install it with: install.packages('maps')"
     )
   }
@@ -205,7 +205,7 @@ get_era5_country_temperature <- function(country, start_date, end_date,
   if (is.null(map_data)) {
     stop(
       sprintf("Country '%s' not found in maps database. ", country),
-      "Check available names with: maps::map('world')$names"
+      "To see the available names, use: maps::map('world')$names"
     )
   }
 

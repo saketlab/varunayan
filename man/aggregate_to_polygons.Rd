@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial.R
 \name{aggregate_to_polygons}
 \alias{aggregate_to_polygons}
-\title{Spatial utilities for aggregating gridded data to polygons
+\title{Spatial utilities that aggregate gridded data to polygons
 Aggregate gridded data to polygon regions}
 \usage{
 aggregate_to_polygons(
@@ -11,26 +11,55 @@ aggregate_to_polygons(
   value_col,
   method = c("nearest_centroid", "point_in_polygon"),
   polygon_id_cols = NULL,
-  agg_fun = mean
+  agg_fun = function(x) mean(x, na.rm = TRUE),
+  by = NULL,
+  fill_empty = FALSE
 )
 }
 \arguments{
 \item{data}{Data frame with longitude, latitude, and value columns}
 
-\item{polygons}{sf object with polygon geometries}
+\item{polygons}{sf object with polygon geometries (CRS 4326)}
 
-\item{value_col}{Name of the column containing values to aggregate}
+\item{value_col}{Name of the column to aggregate, or a character vector
+of names. Give names to set the result columns, for example
+\code{c(tmean = "temp_c")}. A column without a name keeps its name.}
 
-\item{method}{Aggregation method: "point_in_polygon" or "nearest_centroid"}
+\item{method}{Aggregation method: \code{"nearest_centroid"} (each polygon gets
+the cell nearest to a point on its surface) or \code{"point_in_polygon"} (each
+polygon gets the cells in it)}
 
-\item{polygon_id_cols}{Character vector of column names to use as polygon identifiers}
+\item{polygon_id_cols}{Character vector of column names to use as polygon
+identifiers. The default is all the columns of \code{polygons} except the
+geometry.}
 
-\item{agg_fun}{Aggregation function (default: mean)}
+\item{agg_fun}{Aggregation function. It gets the values of one group,
+which can include \code{NA}. The default is the mean without the \code{NA} values.}
+
+\item{by}{Optional character vector of more group columns in \code{data}, for
+example \code{"date"}. The result then has one row for each polygon and each
+value of \code{by}.}
+
+\item{fill_empty}{For \code{"point_in_polygon"}: if \code{TRUE}, a polygon with no
+cell in it (smaller than a cell) gets the cell nearest to a point on its
+surface.}
 }
 \value{
-Data frame with aggregated values per polygon
+Data frame with the polygon identifiers, the \code{by} columns and the
+aggregated values. It has one row for each polygon and each value of
+\code{by}. A polygon with no cell has \code{NA}.
 }
 \description{
-Spatial utilities for aggregating gridded data to polygons
-Aggregate gridded data to polygon regions
+Assigns each grid cell to a polygon, then aggregates the values of the
+cells in each polygon. The spatial match uses only the distinct cells.
+Thus, a daily series with many dates does not make the match slower.
+}
+\examples{
+if (requireNamespace("sf", quietly = TRUE)) {
+  square <- function(x0) sf::st_polygon(list(rbind(c(x0, 0), c(x0 + 1, 0), c(x0 + 1, 1), c(x0, 1), c(x0, 0))))
+  polygons <- sf::st_sf(id = c("a", "b"), geometry = sf::st_sfc(square(0), square(1), crs = 4326))
+  grid <- expand.grid(longitude = c(0.25, 0.75, 1.25, 1.75), latitude = 0.5, date = as.Date("2020-01-01") + 0:1)
+  grid$temp <- seq_len(nrow(grid))
+  aggregate_to_polygons(grid, polygons, "temp", method = "point_in_polygon", by = "date")
+}
 }

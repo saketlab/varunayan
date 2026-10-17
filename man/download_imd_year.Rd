@@ -22,12 +22,12 @@ download_imd_year(
 
 \item{base_url}{Base URL.}
 
-\item{output_file}{Path to save the downloaded file.}
+\item{output_file}{Path for the downloaded file.}
 
 \item{max_retries}{Maximum number of retry attempts.}
 }
 \value{
-Character string path to downloaded file
+Character string. The path to the downloaded file.
 }
 \description{
 Internal function to download a single year of IMD data

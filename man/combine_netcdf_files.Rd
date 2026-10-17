@@ -2,18 +2,18 @@
 % Please edit documentation in R/processing.R
 \name{combine_netcdf_files}
 \alias{combine_netcdf_files}
-\title{Combine multiple NetCDF files into single data.frame}
+\title{Combine NetCDF files into one data.frame}
 \usage{
 combine_netcdf_files(netcdf_files, verbose = FALSE)
 }
 \arguments{
 \item{netcdf_files}{Character vector of NetCDF file paths}
 
-\item{verbose}{Logical indicating whether to print progress messages}
+\item{verbose}{Logical. If TRUE, the function prints progress messages}
 }
 \value{
 data.frame with combined data from all files
 }
 \description{
-Combine multiple NetCDF files into single data.frame
+Combine NetCDF files into one data.frame
 }

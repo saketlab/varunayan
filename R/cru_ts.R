@@ -1,9 +1,9 @@
 #' CRU TS Gridded Climate Dataset
 #'
-#' Functions to download and process the University of East Anglia Climatic
-#' Research Unit Time-Series (CRU TS) gridded monthly climate dataset.
-#' Covers global land areas (excl. Antarctica) at 0.5 degree resolution,
-#' 1901-2022.
+#' Functions that download and process the gridded monthly climate dataset of
+#' the University of East Anglia Climatic Research Unit Time-Series (CRU TS).
+#' The dataset gives data for the global land areas (not Antarctica) at a
+#' resolution of 0.5 degrees, for 1901-2022.
 #'
 #' @references
 #' Harris et al. (2020) Version 4 of the CRU TS monthly high-resolution
@@ -30,10 +30,10 @@
 
 #' Variable data dictionary for CRU TS
 #'
-#' Maps CRU TS variable codes to common names, units, and ERA5 equivalents.
+#' Gives the common names, units, and ERA5 equivalents of the CRU TS variable codes.
 #'
-#' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with columns: variable, name, description, unit,
+#' @param ... Arguments that the aliases send to the primary function.
+#' @return A data.frame with the columns: variable, name, description, unit,
 #'   era5_equivalent, hadex3_equivalent.
 #' @export
 #' @examples
@@ -89,7 +89,7 @@ list_cru_ts_variables <- function(...) {
   )
 }
 
-#' Build CRU TS download URL for a specific decade file
+#' Make the CRU TS download URL for a specific decade file
 #' @param variable CRU TS variable code.
 #' @param decade_start Start year of the decade file.
 #' @param decade_end End year of the decade file.
@@ -103,7 +103,7 @@ list_cru_ts_variables <- function(...) {
   sprintf("%s/%s/%s", .CRU_TS_BASE_URL, variable, filename)
 }
 
-#' Find which decade files overlap with a year range
+#' Find the decade files that overlap a range of years
 #' @keywords internal
 .cru_ts_needed_decades <- function(start_year, end_year) {
   Filter(
@@ -127,7 +127,7 @@ list_cru_ts_variables <- function(...) {
   if (use_cache) {
     cached <- check_cache(cache_key)
     if (!is.null(cached)) {
-      message(sprintf("Loading CRU TS %s %d-%d from cache.", variable, decade_start, decade_end))
+      message(sprintf("The function loads CRU TS %s %d-%d from the cache.", variable, decade_start, decade_end))
       return(readRDS(cached))
     }
   }
@@ -136,7 +136,7 @@ list_cru_ts_variables <- function(...) {
   gz_file <- file.path(output_dir, basename(url))
   nc_file <- sub("\\.gz$", "", gz_file)
 
-  message(sprintf("Downloading CRU TS %s %d-%d...", variable, decade_start, decade_end))
+  message(sprintf("The function downloads CRU TS %s %d-%d...", variable, decade_start, decade_end))
 
   response <- tryCatch(
     httr::GET(url, httr::timeout(600), httr::write_disk(gz_file, overwrite = TRUE)),
@@ -150,7 +150,7 @@ list_cru_ts_variables <- function(...) {
     ))
   }
 
-  message("Decompressing...")
+  message("The function decompresses the file...")
   .decompress_gz(gz_file, nc_file)
   unlink(gz_file)
   on.exit(unlink(nc_file), add = TRUE)
@@ -162,7 +162,7 @@ list_cru_ts_variables <- function(...) {
     saveRDS(data, rds_file)
     tryCatch(
       save_to_cache(rds_file, cache_key),
-      error = function(e) warning("Could not cache CRU TS data: ", e$message, call. = FALSE)
+      error = function(e) warning("Cannot save the CRU TS data to the cache: ", e$message, call. = FALSE)
     )
     unlink(rds_file)
   }
@@ -171,9 +171,9 @@ list_cru_ts_variables <- function(...) {
 }
 
 #' Read a CRU TS NetCDF file into a data.frame
-#' @param nc_file Path to decompressed .nc file.
+#' @param nc_file Path to the decompressed .nc file.
 #' @param variable CRU TS variable code.
-#' @return data.frame with year, month, latitude, longitude, value, variable.
+#' @return A data.frame with the columns year, month, latitude, longitude, value, variable.
 #' @keywords internal
 .read_cru_ts_nc <- function(nc_file, variable) {
   nc <- ncdf4::nc_open(nc_file)
@@ -184,7 +184,7 @@ list_cru_ts_variables <- function(...) {
 
   if (!variable %in% names(nc$var)) {
     stop(sprintf(
-      "Variable '%s' not found in NetCDF. Available: %s",
+      "Variable '%s' is not in the NetCDF file. Available variables: %s",
       variable, paste(names(nc$var), collapse = ", ")
     ))
   }
@@ -224,7 +224,7 @@ list_cru_ts_variables <- function(...) {
   result
 }
 
-#' Parse CRU TS time coordinate to Date vector
+#' Parse the CRU TS time coordinate to a Date vector
 #' @keywords internal
 .parse_cru_ts_time <- function(time_var, time_units) {
   if (grepl("days since", time_units, ignore.case = TRUE)) {
@@ -237,30 +237,30 @@ list_cru_ts_variables <- function(...) {
     total_months <- base_year * 12L + (base_month - 1L) + as.integer(round(time_var))
     as.Date(sprintf("%d-%02d-01", total_months %/% 12L, total_months %% 12L + 1L))
   } else {
-    stop("Unrecognised time units in CRU TS file: ", time_units)
+    stop("The time units in the CRU TS file are not known: ", time_units)
   }
 }
 
-#' Validate CRU TS inputs
+#' Make sure that the CRU TS inputs are valid
 #' @keywords internal
 .validate_cru_ts_inputs <- function(variable, start_year, end_year) {
   valid_vars <- list_cru_ts_variables()$variable
   if (!variable %in% valid_vars) {
     stop(sprintf(
-      "'%s' is not a valid CRU TS variable.\nAvailable variables: %s\nSee list_cru_ts_variables() for details.",
+      "'%s' is not a valid CRU TS variable.\nAvailable variables: %s\nFor more data, refer to list_cru_ts_variables().",
       variable, paste(valid_vars, collapse = ", ")
     ))
   }
   if (start_year < .CRU_TS_YEAR_START || end_year > .CRU_TS_YEAR_END) {
     stop(sprintf(
-      "CRU TS v%s covers %d-%d. Requested: %d-%d.",
+      "CRU TS v%s data is available for %d-%d. The requested years are %d-%d.",
       .CRU_TS_VERSION, .CRU_TS_YEAR_START, .CRU_TS_YEAR_END, start_year, end_year
     ))
   }
   if (start_year > end_year) stop("start_year must be <= end_year")
 }
 
-#' Fetch CRU TS data for a variable and year range
+#' Get CRU TS data for a variable and a range of years
 #' @keywords internal
 .fetch_cru_ts <- function(variable, start_year, end_year, use_cache, output_dir) {
   decades <- .cru_ts_needed_decades(start_year, end_year)
@@ -277,35 +277,35 @@ list_cru_ts_variables <- function(...) {
 
 #' Download CRU TS climate data for a bounding box
 #'
-#' Downloads and filters CRU TS v4.07 monthly gridded climate data to a
-#' geographic bounding box. Data covers global land areas at 0.5 degree
-#' resolution, 1901-2022.
+#' Downloads CRU TS v4.07 monthly gridded climate data and filters the data to
+#' a geographic bounding box. The data is for the global land areas at a
+#' resolution of 0.5 degrees, for 1901-2022.
 #'
 #' @param variable CRU TS variable code. See [list_cru_ts_variables()].
 #'   Common values: "tmp" (mean temperature), "pre" (precipitation),
 #'   "tmx" (max temperature), "tmn" (min temperature).
 #' @param start_year Start year (1901-2022).
 #' @param end_year End year (1901-2022).
-#' @param north Northern latitude boundary.
-#' @param south Southern latitude boundary.
-#' @param east Eastern longitude boundary.
-#' @param west Western longitude boundary.
+#' @param north North boundary (latitude).
+#' @param south South boundary (latitude).
+#' @param east East boundary (longitude).
+#' @param west West boundary (longitude).
 #' @param output_dir Directory for temporary files (default: `tempdir()`).
-#' @param use_cache Whether to use cached data (default: TRUE).
-#' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with columns: year, month, latitude, longitude,
+#' @param use_cache If TRUE, use the data in the cache (default: TRUE).
+#' @param ... Arguments that the aliases send to the primary function.
+#' @return A data.frame with the columns: year, month, latitude, longitude,
 #'   value, variable.
 #' @export
 #' @examples
 #' \dontrun{
-#' # Monthly mean temperature for India 2010-2020
+#' # Monthly mean temperature for India, 2010-2020
 #' data <- cru_ts_bbox(
 #'   variable = "tmp",
 #'   start_year = 2010, end_year = 2020,
 #'   north = 35, south = 8, east = 97, west = 68
 #' )
 #'
-#' # Precipitation for Europe 1981-2010
+#' # Precipitation for Europe, 1981-2010
 #' data <- cru_ts_bbox(
 #'   variable = "pre",
 #'   start_year = 1981, end_year = 2010,
@@ -318,7 +318,7 @@ cru_ts_bbox <- function(variable, start_year, end_year,
   .validate_cru_ts_inputs(variable, start_year, end_year)
   if (!validate_bbox(north, south, east, west)) stop("Invalid bounding box coordinates")
 
-  message("=== CRU TS Download and Processing ===")
+  message("=== CRU TS: Download and Process the Data ===")
   message(sprintf("Variable: %s | Years: %d-%d", variable, start_year, end_year))
   message(sprintf("Bounding box: N:%s S:%s E:%s W:%s", north, south, east, west))
 
@@ -332,23 +332,23 @@ cru_ts_bbox <- function(variable, start_year, end_year,
   ]
   rownames(data) <- NULL
 
-  message(sprintf("Filtered to %d data points.", nrow(data)))
+  message(sprintf("%d data points remain after the filter.", nrow(data)))
   data
 }
 
 #' Download CRU TS climate data for a GeoJSON region
 #'
-#' Downloads and filters CRU TS v4.07 monthly gridded climate data to a
-#' geographic region defined by a GeoJSON polygon.
+#' Downloads CRU TS v4.07 monthly gridded climate data and filters the data to
+#' a geographic region. A GeoJSON polygon defines the region.
 #'
 #' @param variable CRU TS variable code. See [list_cru_ts_variables()].
 #' @param start_year Start year (1901-2022).
 #' @param end_year End year (1901-2022).
-#' @param geojson_file Path to a GeoJSON file defining the region.
+#' @param geojson_file Path to a GeoJSON file that defines the region.
 #' @param output_dir Directory for temporary files (default: `tempdir()`).
-#' @param use_cache Whether to use cached data (default: TRUE).
-#' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with columns: year, month, latitude, longitude,
+#' @param use_cache If TRUE, use the data in the cache (default: TRUE).
+#' @param ... Arguments that the aliases send to the primary function.
+#' @return A data.frame with the columns: year, month, latitude, longitude,
 #'   value, variable.
 #' @export
 #' @examples
@@ -364,7 +364,7 @@ cru_ts_geojson <- function(variable, start_year, end_year, geojson_file,
   .validate_cru_ts_inputs(variable, start_year, end_year)
   if (!file.exists(geojson_file)) stop("GeoJSON file not found: ", geojson_file)
 
-  message("=== CRU TS Download and Processing ===")
+  message("=== CRU TS: Download and Process the Data ===")
   message(sprintf("Variable: %s | Years: %d-%d", variable, start_year, end_year))
   message(sprintf("GeoJSON: %s", basename(geojson_file)))
 
@@ -372,7 +372,7 @@ cru_ts_geojson <- function(variable, start_year, end_year, geojson_file,
 
   data <- .fetch_cru_ts(variable, start_year, end_year, use_cache, output_dir)
 
-  # Coarse bbox pre-filter
+  # Apply a coarse bbox filter first
   region_sf <- sf::st_read(geojson_file, quiet = TRUE)
   bbox <- sf::st_bbox(region_sf)
   data <- data[
@@ -385,6 +385,6 @@ cru_ts_geojson <- function(variable, start_year, end_year, geojson_file,
   }
 
   rownames(data) <- NULL
-  message(sprintf("Filtered to %d data points.", nrow(data)))
+  message(sprintf("%d data points remain after the filter.", nrow(data)))
   data
 }

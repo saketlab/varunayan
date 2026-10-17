@@ -2,13 +2,13 @@
 % Please edit documentation in R/imd_processing.R
 \name{read_imd_temperature}
 \alias{read_imd_temperature}
-\title{IMD data processing functions
+\title{Functions to process IMD data
 Read IMD binary temperature file}
 \usage{
 read_imd_temperature(file_path, var_type, year)
 }
 \arguments{
-\item{file_path}{Path to IMD binary file (.grd).}
+\item{file_path}{Path to the IMD binary file (.grd).}
 
 \item{var_type}{Variable type: "tmax" or "tmin".}
 
@@ -18,7 +18,7 @@ read_imd_temperature(file_path, var_type, year)
 data.frame with columns: date, latitude, longitude, temperature
 }
 \description{
-Reads IMD binary temperature data (max or min) and converts to data.frame.
+Reads IMD binary temperature data (maximum or minimum) and converts the data to a data.frame.
 }
 \examples{
 \dontrun{

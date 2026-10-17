@@ -2,13 +2,13 @@
 % Please edit documentation in R/search_and_desc.R
 \name{get_single_level_variables}
 \alias{get_single_level_variables}
-\title{Get single-level variables dataset}
+\title{Get the dataset of single-level variables}
 \usage{
 get_single_level_variables()
 }
 \value{
-List containing single-level variable categories
+List that contains the single-level variable categories
 }
 \description{
-Get single-level variables dataset
+Get the dataset of single-level variables
 }

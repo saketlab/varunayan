@@ -2,11 +2,11 @@
 % Please edit documentation in R/hadex3.R
 \name{.parse_hadex3_years}
 \alias{.parse_hadex3_years}
-\title{Parse year values from annual HadEX3 time coordinate}
+\title{Parse the year values from the annual HadEX3 time coordinate}
 \usage{
 .parse_hadex3_years(time_var, time_units)
 }
 \description{
-HadEX3 annual files use units "years" (plain integers 1901-2018).
+HadEX3 annual files use the unit "years" (integers 1901-2018).
 }
 \keyword{internal}

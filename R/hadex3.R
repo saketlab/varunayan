@@ -1,7 +1,7 @@
 #' HadEX3 Climate Extremes Dataset
 #'
-#' Functions to download and process the Met Office HadEX3 global climate
-#' extremes dataset based on ETCCDI indices.
+#' Functions that download and process the Met Office HadEX3 global dataset
+#' of climate extremes. The dataset uses the ETCCDI indices.
 #'
 #' @references
 #' Dunn et al. (2020) Development of an updated global land in-situ-based dataset
@@ -9,7 +9,7 @@
 #' https://doi.org/10.1029/2019JD032263
 #' @name hadex3
 
-# Annual indices (baseline period determines availability of some)
+# Annual indices (the baseline period controls the availability of some indices)
 .HADEX3_ANNUAL_INDICES <- c(
   "TXx", "TXn", "TNx", "TNn",
   "TX90p", "TX10p", "TN90p", "TN10p",
@@ -20,7 +20,7 @@
   "R95pTOT", "R99pTOT", "SDII"
 )
 
-# Monthly indices (subset of annual)
+# Monthly indices (a subset of the annual indices)
 .HADEX3_MONTHLY_INDICES <- c(
   "TXx", "TXn", "TNx", "TNn",
   "TX90p", "TX10p", "TN90p", "TN10p",
@@ -39,7 +39,7 @@
 .HADEX3_YEAR_START <- 1901L
 .HADEX3_YEAR_END <- 2018L
 
-#' Build HadEX3 download URL
+#' Make the HadEX3 download URL
 #' @param index ETCCDI index name (e.g. "TXx").
 #' @param frequency "annual" or "monthly".
 #' @param baseline Baseline period: "61-90" or "81-10" (annual only).
@@ -61,14 +61,14 @@
 #' @param frequency "annual" or "monthly".
 #' @param baseline Baseline period for annual data.
 #' @param output_dir Directory for temporary files.
-#' @return Path to decompressed .nc file.
+#' @return Path to the decompressed .nc file.
 #' @keywords internal
 .download_hadex3_file <- function(index, frequency, baseline, output_dir) {
   url <- .hadex3_url(index, frequency, baseline)
   gz_file <- file.path(output_dir, basename(url))
   nc_file <- sub("\\.gz$", "", gz_file)
 
-  message(sprintf("Downloading HadEX3 %s (%s) from Met Office...", index, frequency))
+  message(sprintf("The function downloads HadEX3 %s (%s) from the Met Office...", index, frequency))
   message(sprintf("URL: %s", url))
 
   response <- tryCatch(
@@ -78,16 +78,16 @@
 
   if (httr::status_code(response) != 200) {
     stop(sprintf(
-      "HTTP %d downloading HadEX3 %s. Check that '%s' is a valid index for '%s' frequency.",
+      "HTTP %d for the download of HadEX3 %s. Make sure that '%s' is a valid index for the '%s' frequency.",
       httr::status_code(response), index, index, frequency
     ))
   }
 
   if (!file.exists(gz_file) || file.size(gz_file) == 0) {
-    stop("Downloaded file is empty or missing.")
+    stop("The downloaded file is empty or missing.")
   }
 
-  message("Decompressing...")
+  message("The function decompresses the file...")
   .decompress_gz(gz_file, nc_file)
   unlink(gz_file)
 
@@ -115,14 +115,15 @@
 
 #' Read a HadEX3 NetCDF file into a data.frame
 #'
-#' HadEX3 NetCDF files use dimension names "longitude"/"latitude" (not "lon"/"lat"),
-#' longitudes in 0-360 range, and variable name "Ann" for annual files vs. the
-#' index name (e.g. "TXx") for monthly files. All files have dims (longitude, latitude, time).
+#' HadEX3 NetCDF files use the dimension names "longitude" and "latitude" (not
+#' "lon" and "lat"). The longitudes are in the range 0-360. Annual files use the
+#' variable name "Ann". Monthly files use the index name (for example, "TXx").
+#' All files have the dimensions (longitude, latitude, time).
 #'
-#' @param nc_file Path to decompressed .nc file.
+#' @param nc_file Path to the decompressed .nc file.
 #' @param index ETCCDI index name.
 #' @param frequency "annual" or "monthly".
-#' @return data.frame with columns year (+ month for monthly), latitude, longitude, value.
+#' @return A data.frame with the columns year (and month for monthly data), latitude, longitude, value.
 #' @keywords internal
 .read_hadex3_nc <- function(nc_file, index, frequency) {
   nc <- ncdf4::nc_open(nc_file)
@@ -133,12 +134,12 @@
   # Convert 0-360 to -180-180
   lon <- ifelse(lon_raw > 180, lon_raw - 360, lon_raw)
 
-  # Annual files use "Ann"; monthly files use the index name
+  # Annual files use "Ann". Monthly files use the index name.
   var_name <- if (frequency == "annual") "Ann" else index
   if (!var_name %in% names(nc$var)) {
     available <- names(nc$var)
     stop(sprintf(
-      "Variable '%s' not found in NetCDF. Available: %s",
+      "Variable '%s' is not in the NetCDF file. Available variables: %s",
       var_name, paste(available, collapse = ", ")
     ))
   }
@@ -161,13 +162,13 @@
   result
 }
 
-#' Parse year values from annual HadEX3 time coordinate
+#' Parse the year values from the annual HadEX3 time coordinate
 #'
-#' HadEX3 annual files use units "years" (plain integers 1901-2018).
+#' HadEX3 annual files use the unit "years" (integers 1901-2018).
 #' @keywords internal
 .parse_hadex3_years <- function(time_var, time_units) {
   if (grepl("^years$", trimws(time_units), ignore.case = TRUE)) {
-    # Plain integer years (e.g. 1901, 1902, ...)
+    # Integer years (for example, 1901, 1902, ...)
     as.integer(round(time_var))
   } else if (grepl("years since", time_units, ignore.case = TRUE)) {
     base_year <- as.integer(sub(".*since\\s+(\\d{4}).*", "\\1", time_units))
@@ -181,7 +182,7 @@
   }
 }
 
-#' Parse year+month from monthly HadEX3 time coordinate
+#' Parse the year and month from the monthly HadEX3 time coordinate
 #' @keywords internal
 .parse_hadex3_months <- function(time_var, time_units) {
   if (grepl("months since", time_units, ignore.case = TRUE)) {
@@ -198,11 +199,11 @@
       month = as.integer(format(dates, "%m"))
     )
   } else {
-    stop("Unrecognised time units in monthly HadEX3 file: ", time_units)
+    stop("The time units in the monthly HadEX3 file are not known: ", time_units)
   }
 }
 
-#' Expand annual NetCDF array to data.frame
+#' Expand the annual NetCDF array to a data.frame
 #' @keywords internal
 .expand_hadex3_annual <- function(vals, lat, lon, years, fill_val) {
   n_lon <- length(lon)
@@ -230,7 +231,7 @@
   result
 }
 
-#' Expand monthly NetCDF array to data.frame
+#' Expand the monthly NetCDF array to a data.frame
 #' @keywords internal
 .expand_hadex3_monthly <- function(vals, lat, lon, year_months, fill_val) {
   n_lon <- length(lon)
@@ -259,7 +260,7 @@
   result
 }
 
-#' Validate HadEX3 inputs
+#' Make sure that the HadEX3 inputs are valid
 #' @keywords internal
 .validate_hadex3_inputs <- function(index, frequency, baseline, start_year, end_year) {
   frequency <- match.arg(frequency, c("annual", "monthly"))
@@ -276,7 +277,7 @@
     baseline <- match.arg(baseline, c("61-90", "81-10"))
     if (baseline == "81-10" && !index %in% .HADEX3_81_10_INDICES) {
       stop(sprintf(
-        "Baseline '81-10' is only available for: %s",
+        "Baseline '81-10' is available only for: %s",
         paste(.HADEX3_81_10_INDICES, collapse = ", ")
       ))
     }
@@ -284,7 +285,7 @@
 
   if (start_year < .HADEX3_YEAR_START || end_year > .HADEX3_YEAR_END) {
     stop(sprintf(
-      "HadEX3 data covers %d-%d. Requested: %d-%d.",
+      "HadEX3 data is available for %d-%d. The requested years are %d-%d.",
       .HADEX3_YEAR_START, .HADEX3_YEAR_END, start_year, end_year
     ))
   }
@@ -293,7 +294,7 @@
   frequency
 }
 
-#' Fetch HadEX3 index data (with caching)
+#' Get HadEX3 index data and use the cache
 #' @keywords internal
 .fetch_hadex3 <- function(index, frequency, baseline, use_cache, output_dir) {
   cache_key <- digest::digest(
@@ -304,7 +305,7 @@
   if (use_cache) {
     cached <- check_cache(cache_key)
     if (!is.null(cached)) {
-      message(sprintf("Loading HadEX3 %s (%s) from cache.", index, frequency))
+      message(sprintf("The function loads HadEX3 %s (%s) from the cache.", index, frequency))
       return(readRDS(cached))
     }
   }
@@ -312,7 +313,7 @@
   nc_file <- .download_hadex3_file(index, frequency, baseline, output_dir)
   on.exit(unlink(nc_file), add = TRUE)
 
-  message("Reading NetCDF data...")
+  message("The function reads the NetCDF data...")
   data <- .read_hadex3_nc(nc_file, index, frequency)
   message(sprintf("Read %d global grid points.", nrow(data)))
 
@@ -321,7 +322,7 @@
     saveRDS(data, rds_file)
     tryCatch(
       save_to_cache(rds_file, cache_key),
-      error = function(e) warning("Could not cache HadEX3 data: ", e$message, call. = FALSE)
+      error = function(e) warning("Cannot save the HadEX3 data to the cache: ", e$message, call. = FALSE)
     )
     unlink(rds_file)
   }
@@ -329,30 +330,31 @@
   data
 }
 
-#' Download HadEX3 climate extremes data for a bounding box
+#' Download HadEX3 data on climate extremes for a bounding box
 #'
-#' Downloads and filters HadEX3 ETCCDI climate extremes data to a geographic
-#' bounding box. Data covers 1901-2018 at 1.25 x 1.875 degree resolution.
+#' Downloads HadEX3 data on ETCCDI climate extremes and filters the data to a
+#' geographic bounding box. The data is for 1901-2018 at a resolution of
+#' 1.25 x 1.875 degrees.
 #'
 #' @param index ETCCDI index name (e.g. "TXx", "Rx1day"). See [list_hadex3_indices()].
 #' @param start_year Start year (1901-2018).
 #' @param end_year End year (1901-2018).
-#' @param north Northern latitude boundary.
-#' @param south Southern latitude boundary.
-#' @param east Eastern longitude boundary.
-#' @param west Western longitude boundary.
+#' @param north North boundary (latitude).
+#' @param south South boundary (latitude).
+#' @param east East boundary (longitude).
+#' @param west West boundary (longitude).
 #' @param frequency Temporal frequency: "annual" or "monthly" (default: "annual").
-#' @param baseline Reference period for percentile-based indices: "61-90" (default)
-#'   or "81-10". Only applies to annual frequency.
+#' @param baseline Reference period for the indices that use percentiles: "61-90"
+#'   (default) or "81-10". This argument applies only to the annual frequency.
 #' @param output_dir Directory for temporary files (default: `tempdir()`).
-#' @param use_cache Whether to use cached data (default: TRUE).
-#' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with columns: year (+ month for monthly), latitude,
-#'   longitude, value, index.
+#' @param use_cache If TRUE, use the data in the cache (default: TRUE).
+#' @param ... Arguments that the aliases send to the primary function.
+#' @return A data.frame with the columns: year (and month for monthly data),
+#'   latitude, longitude, value, index.
 #' @export
 #' @examples
 #' \dontrun{
-#' # Annual maximum daily maximum temperature for Europe 1981-2010
+#' # Annual maximum of the daily maximum temperature for Europe, 1981-2010
 #' data <- hadex3_bbox(
 #'   index = "TXx",
 #'   start_year = 1981, end_year = 2010,
@@ -375,7 +377,7 @@ hadex3_bbox <- function(index, start_year, end_year,
 
   if (!validate_bbox(north, south, east, west)) stop("Invalid bounding box coordinates")
 
-  message("=== HadEX3 Download and Processing ===")
+  message("=== HadEX3: Download and Process the Data ===")
   message(sprintf("Index: %s | Frequency: %s | Years: %d-%d", index, frequency, start_year, end_year))
   message(sprintf("Bounding box: N:%s S:%s E:%s W:%s", north, south, east, west))
 
@@ -390,27 +392,27 @@ hadex3_bbox <- function(index, start_year, end_year,
   ]
   rownames(data) <- NULL
 
-  message(sprintf("Filtered to %d data points.", nrow(data)))
+  message(sprintf("%d data points remain after the filter.", nrow(data)))
   data
 }
 
-#' Download HadEX3 climate extremes data for a GeoJSON region
+#' Download HadEX3 data on climate extremes for a GeoJSON region
 #'
-#' Downloads and filters HadEX3 ETCCDI climate extremes data to a geographic
-#' region defined by a GeoJSON polygon.
+#' Downloads HadEX3 data on ETCCDI climate extremes and filters the data to a
+#' geographic region. A GeoJSON polygon defines the region.
 #'
 #' @param index ETCCDI index name (e.g. "TXx", "Rx1day"). See [list_hadex3_indices()].
 #' @param start_year Start year (1901-2018).
 #' @param end_year End year (1901-2018).
-#' @param geojson_file Path to a GeoJSON file defining the region.
+#' @param geojson_file Path to a GeoJSON file that defines the region.
 #' @param frequency Temporal frequency: "annual" or "monthly" (default: "annual").
-#' @param baseline Reference period for percentile-based indices: "61-90" (default)
-#'   or "81-10". Only applies to annual frequency.
+#' @param baseline Reference period for the indices that use percentiles: "61-90"
+#'   (default) or "81-10". This argument applies only to the annual frequency.
 #' @param output_dir Directory for temporary files (default: `tempdir()`).
-#' @param use_cache Whether to use cached data (default: TRUE).
-#' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with columns: year (+ month for monthly), latitude,
-#'   longitude, value, index.
+#' @param use_cache If TRUE, use the data in the cache (default: TRUE).
+#' @param ... Arguments that the aliases send to the primary function.
+#' @return A data.frame with the columns: year (and month for monthly data),
+#'   latitude, longitude, value, index.
 #' @export
 #' @examples
 #' \dontrun{
@@ -427,7 +429,7 @@ hadex3_geojson <- function(index, start_year, end_year, geojson_file,
 
   if (!file.exists(geojson_file)) stop("GeoJSON file not found: ", geojson_file)
 
-  message("=== HadEX3 Download and Processing ===")
+  message("=== HadEX3: Download and Process the Data ===")
   message(sprintf("Index: %s | Frequency: %s | Years: %d-%d", index, frequency, start_year, end_year))
   message(sprintf("GeoJSON: %s", basename(geojson_file)))
 
@@ -437,7 +439,7 @@ hadex3_geojson <- function(index, start_year, end_year, geojson_file,
 
   data <- data[data$year >= start_year & data$year <= end_year, ]
 
-  # Coarse bbox pre-filter before precise polygon test
+  # Apply a coarse bbox filter before the precise polygon test
   region_sf <- sf::st_read(geojson_file, quiet = TRUE)
   bbox <- sf::st_bbox(region_sf)
   data <- data[
@@ -450,19 +452,19 @@ hadex3_geojson <- function(index, start_year, end_year, geojson_file,
   }
 
   rownames(data) <- NULL
-  message(sprintf("Filtered to %d data points.", nrow(data)))
+  message(sprintf("%d data points remain after the filter.", nrow(data)))
   data
 }
 
-#' List available HadEX3 ETCCDI indices
+#' List the available HadEX3 ETCCDI indices
 #'
-#' Returns a data.frame describing all ETCCDI climate extremes indices
-#' available in the HadEX3 dataset, including their temporal availability
-#' and physical interpretation.
+#' Returns a data.frame that describes all the ETCCDI indices of climate
+#' extremes in the HadEX3 dataset. The data.frame shows the temporal
+#' availability and the physical quantity of each index.
 #'
 #' @param frequency Filter by frequency: "annual", "monthly", or "all" (default).
-#' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with columns: index, category, description, unit,
+#' @param ... Arguments that the aliases send to the primary function.
+#' @return A data.frame with the columns: index, category, description, unit,
 #'   annual, monthly.
 #' @export
 #' @examples

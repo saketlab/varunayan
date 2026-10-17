@@ -9,7 +9,7 @@ filter_imd_by_geojson(data, geojson_file)
 \arguments{
 \item{data}{data.frame with IMD data}
 
-\item{geojson_file}{Path to GeoJSON file}
+\item{geojson_file}{Path to the GeoJSON file}
 }
 \value{
 Filtered data.frame

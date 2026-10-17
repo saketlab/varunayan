@@ -6,8 +6,14 @@
 ^pkgdown$
 ^\..*$
 ^\.\.Rcheck$
-^inst/doc$
 ^docs$
 ^.*\.geojson
 ^varunayanR\.Rcheck$
 ^varunayan_.*\.tar\.gz$
+^temp$
+^CLAUDE\.md$
+^AGENTS\.md$
+^cran-checks\.md$
+^cran-comments\.md$
+^deploy_pages\.sh$
+^man/figures/og-card\.png$

@@ -2,11 +2,11 @@
 % Please edit documentation in R/cru_ts.R
 \name{.validate_cru_ts_inputs}
 \alias{.validate_cru_ts_inputs}
-\title{Validate CRU TS inputs}
+\title{Make sure that the CRU TS inputs are valid}
 \usage{
 .validate_cru_ts_inputs(variable, start_year, end_year)
 }
 \description{
-Validate CRU TS inputs
+Make sure that the CRU TS inputs are valid
 }
 \keyword{internal}

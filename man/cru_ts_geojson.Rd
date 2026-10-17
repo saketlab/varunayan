@@ -18,7 +18,7 @@ cru_ts_geojson(
 )
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
 \item{variable}{CRU TS variable code. See \code{\link[=list_cru_ts_variables]{list_cru_ts_variables()}}.}
 
@@ -26,19 +26,19 @@ cru_ts_geojson(
 
 \item{end_year}{End year (1901-2022).}
 
-\item{geojson_file}{Path to a GeoJSON file defining the region.}
+\item{geojson_file}{Path to a GeoJSON file that defines the region.}
 
 \item{output_dir}{Directory for temporary files (default: \code{tempdir()}).}
 
-\item{use_cache}{Whether to use cached data (default: TRUE).}
+\item{use_cache}{If TRUE, use the data in the cache (default: TRUE).}
 }
 \value{
-data.frame with columns: year, month, latitude, longitude,
+A data.frame with the columns: year, month, latitude, longitude,
 value, variable.
 }
 \description{
-Downloads and filters CRU TS v4.07 monthly gridded climate data to a
-geographic region defined by a GeoJSON polygon.
+Downloads CRU TS v4.07 monthly gridded climate data and filters the data to
+a geographic region. A GeoJSON polygon defines the region.
 }
 \examples{
 \dontrun{
