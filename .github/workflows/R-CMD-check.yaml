@@ -17,12 +17,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # CRAN check flavours: r-devel, r-release and r-oldrel on Linux, macOS and Windows
         config:
-          - {os: ubuntu-latest,  r: 'release'}
-          - {os: macos-latest,   r: 'release'}
-          - {os: windows-latest, r: 'release'}
           - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,  r: 'release'}
           - {os: ubuntu-latest,  r: 'oldrel-1'}
+          - {os: macos-latest,   r: 'release'}
+          - {os: macos-latest,   r: 'oldrel-1'}
+          - {os: windows-latest, r: 'devel'}
+          - {os: windows-latest, r: 'release'}
+          - {os: windows-latest, r: 'oldrel-1'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -40,13 +44,23 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      # LaTeX for the PDF manual, which CRAN builds
+      - uses: r-lib/actions/setup-tinytex@v2
+
+      - name: Install LaTeX packages for the manual
+        run: tlmgr install inconsolata
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
 
+      # Full CRAN check: vignettes built, manual built, Suggests required
       - uses: r-lib/actions/check-r-package@v2
+        env:
+          _R_CHECK_FORCE_SUGGESTS_: true
         with:
           upload-snapshots: true
-          build_args: 'c("--no-manual", "--no-build-vignettes")'
-          args: 'c("--no-manual", "--as-cran", "--no-build-vignettes", "--ignore-vignettes")'
+          build_args: 'character()'
+          args: 'c("--as-cran")'
+          error-on: '"warning"'
