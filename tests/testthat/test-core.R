@@ -497,7 +497,8 @@ test_that("era5ify_point works for single-level data (default dataset_type)", {
 
   out <- suppressMessages(era5ify_point(
     "pt", "2m_temperature", "2023-01-01", "2023-01-01",
-    lat = 19.8, lon = 77.3, output_dir = d, use_cache = FALSE
+    lat = 19.8, lon = 77.3, output_dir = d, use_cache = FALSE,
+    use_timeseries_api = FALSE # the default would call the live timeseries API
   ))
   expect_gt(nrow(out), 0)
   expect_true(all(out$latitude == 19.75 & out$longitude == 77.25))
