@@ -2,21 +2,21 @@
 % Please edit documentation in R/imd_processing.R
 \name{read_imd_rainfall_ncdf4}
 \alias{read_imd_rainfall_ncdf4}
-\title{Read IMD NetCDF using ncdf4}
+\title{Read IMD NetCDF with ncdf4}
 \usage{
 read_imd_rainfall_ncdf4(file_path, grid_specs, year)
 }
 \arguments{
-\item{file_path}{Path to NetCDF file}
+\item{file_path}{Path to the NetCDF file}
 
 \item{grid_specs}{Grid specifications}
 
-\item{year}{Year of data}
+\item{year}{Year of the data}
 }
 \value{
 data.frame
 }
 \description{
-Read IMD NetCDF using ncdf4
+Read IMD NetCDF with ncdf4
 }
 \keyword{internal}

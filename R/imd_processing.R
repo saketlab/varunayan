@@ -3,9 +3,9 @@
 
 #' Read IMD binary temperature file
 #'
-#' Reads IMD binary temperature data (max or min) and converts to data.frame.
+#' Reads IMD binary temperature data (maximum or minimum) and converts the data to a data.frame.
 #'
-#' @param file_path Path to IMD binary file (.grd).
+#' @param file_path Path to the IMD binary file (.grd).
 #' @param var_type Variable type: "tmax" or "tmin".
 #' @param year Year of the data.
 #' @return data.frame with columns: date, latitude, longitude, temperature
@@ -14,12 +14,12 @@
 #' f <- download_imd_temperature(2023, 2023, var_type = "tmax")
 #' tmax_data <- read_imd_temperature(f, "tmax", 2023)
 read_imd_temperature <- function(file_path, var_type, year) {
-  if (!file.exists(file_path)) stop("File not found: ", file_path)
+  if (!file.exists(file_path)) stop("Cannot find the file: ", file_path)
 
   dataset_id <- paste0(var_type, "_1.0")
   grid_specs <- get_imd_grid_specs(dataset_id)
 
-  message(sprintf(fmt = "Reading IMD %s data for %s", var_type, year))
+  message(sprintf(fmt = "Read of IMD %s data for %s", var_type, year))
   message(sprintf(fmt = "Grid: %sx%s points", grid_specs$nlat, grid_specs$nlon))
 
   n_days <- if (is_leap_year(year)) 366 else 365
@@ -30,7 +30,7 @@ read_imd_temperature <- function(file_path, var_type, year) {
     raw_data <- readBin(con, "numeric", n = n_values, size = 4, endian = "little")
 
     if (length(x = raw_data) != n_values) {
-      warning(sprintf(fmt = "Expected %s values but got %s", n_values, length(x = raw_data)), call. = FALSE)
+      warning(sprintf(fmt = "Expected %s values, but found %s", n_values, length(x = raw_data)), call. = FALSE)
     }
   }, finally = {
     close(con)
@@ -42,11 +42,11 @@ read_imd_temperature <- function(file_path, var_type, year) {
   lons <- seq(grid_specs$lon_start, grid_specs$lon_end, by = grid_specs$resolution)
 
   if (length(x = lats) != grid_specs$nlat) {
-    warning(sprintf(fmt = "Latitude grid mismatch: expected %s, got %s", grid_specs$nlat, length(x = lats)), call. = FALSE)
+    warning(sprintf(fmt = "Latitude grid mismatch: expected %s, found %s", grid_specs$nlat, length(x = lats)), call. = FALSE)
     lats <- lats[1:grid_specs$nlat]
   }
   if (length(x = lons) != grid_specs$nlon) {
-    warning(sprintf(fmt = "Longitude grid mismatch: expected %s, got %s", grid_specs$nlon, length(x = lons)), call. = FALSE)
+    warning(sprintf(fmt = "Longitude grid mismatch: expected %s, found %s", grid_specs$nlon, length(x = lons)), call. = FALSE)
     lons <- lons[1:grid_specs$nlon]
   }
 
@@ -62,7 +62,7 @@ read_imd_temperature <- function(file_path, var_type, year) {
 
   grid$temperature <- as.vector(data_array)
 
-  # Filter missing values (99.9 for temperature)
+  # Remove missing values (99.9 for temperature)
   result_df <- grid[!is.na(grid$temperature) & grid$temperature < 99, c("date", "latitude", "longitude", "temperature")]
   rownames(result_df) <- NULL
 
@@ -72,20 +72,21 @@ read_imd_temperature <- function(file_path, var_type, year) {
 
 #' Read IMD NetCDF rainfall file
 #'
-#' Reads IMD NetCDF rainfall data and converts to data.frame.
+#' Reads IMD NetCDF rainfall data and converts the data to a data.frame.
 #'
-#' @param file_path Path to IMD NetCDF file (.nc).
+#' @param file_path Path to the IMD NetCDF file (.nc).
 #' @param resolution Spatial resolution: 0.25 or 1.0.
 #' @param year Year of the data.
-#' @param bbox Optional named list/vector (north, south, east, west). When set,
-#'   only that spatial slab is read off disk (fast path); NULL reads the full grid.
+#' @param bbox Optional named list or vector (north, south, east, west). If you
+#'   set it, the function reads only that spatial slab from the disk (fast path).
+#'   If NULL, the function reads the full grid.
 #' @return data.frame with columns: date, latitude, longitude, rainfall
 #' @export
 #' @examplesIf interactive()
 #' f <- download_imd_rainfall(2023, 2023, resolution = 0.25)
 #' rain_data <- read_imd_rainfall(f, 0.25, 2023)
 read_imd_rainfall <- function(file_path, resolution, year, bbox = NULL) {
-  if (!file.exists(file_path)) stop("File not found: ", file_path)
+  if (!file.exists(file_path)) stop("Cannot find the file: ", file_path)
 
   if (!is.null(bbox)) {
     return(read_imd_rainfall_cropped(file_path, year, bbox))
@@ -94,13 +95,13 @@ read_imd_rainfall <- function(file_path, resolution, year, bbox = NULL) {
   dataset_id <- paste0("rainfall_", format(resolution, nsmall = 1))
   grid_specs <- get_imd_grid_specs(dataset_id)
 
-  message(sprintf(fmt = "Reading IMD rainfall data for %s", year))
+  message(sprintf(fmt = "Read of IMD rainfall data for %s", year))
   message(sprintf(fmt = "Resolution: %s\u00b0", resolution))
 
   rainfall_data <- tryCatch(
     read_ncdf(file_path),
     error = function(e) {
-      warning(sprintf(fmt = "read_ncdf failed, trying ncdf4: %s", e$message), call. = FALSE)
+      warning(sprintf(fmt = "read_ncdf failed. The function will try ncdf4: %s", e$message), call. = FALSE)
       read_imd_rainfall_ncdf4(file_path, grid_specs, year)
     }
   )
@@ -139,11 +140,11 @@ read_imd_rainfall <- function(file_path, resolution, year, bbox = NULL) {
   df
 }
 
-#' Read IMD NetCDF using ncdf4
+#' Read IMD NetCDF with ncdf4
 #'
-#' @param file_path Path to NetCDF file
+#' @param file_path Path to the NetCDF file
 #' @param grid_specs Grid specifications
-#' @param year Year of data
+#' @param year Year of the data
 #' @return data.frame
 #' @keywords internal
 read_imd_rainfall_ncdf4 <- function(file_path, grid_specs, year) {
@@ -160,7 +161,7 @@ read_imd_rainfall_ncdf4 <- function(file_path, grid_specs, year) {
     lons <- as.vector(ncvar_get(nc, "lon"))
 
     rain_var <- c(intersect(.IMD_RAIN_VARS, vars), setdiff(vars, c("lat", "lon", "time")))[1]
-    if (is.na(rain_var)) stop("No rainfall variable found in NetCDF file")
+    if (is.na(rain_var)) stop("Cannot find a rainfall variable in the NetCDF file")
 
     rainfall <- ncvar_get(nc, rain_var)
 
@@ -186,16 +187,17 @@ read_imd_rainfall_ncdf4 <- function(file_path, grid_specs, year) {
   })
 }
 
-#' Read an IMD rainfall NetCDF, cropped to a bbox at read time (fast path)
+#' Read only the bbox area of an IMD rainfall NetCDF file (fast path)
 #'
-#' Reads only the spatial hyperslab covering \code{bbox} directly off disk with
-#' \code{ncvar_get(start, count)}, instead of materializing the whole national
-#' grid and filtering afterwards. For a small region over many years this is
-#' orders of magnitude faster and lighter (GB -> MB, minutes -> seconds).
+#' Reads only the spatial hyperslab that contains \code{bbox} directly from the
+#' disk with \code{ncvar_get(start, count)}. The function does not read the full
+#' national grid into memory and then filter it. For a small region and many
+#' years, this method is orders of magnitude faster. It also uses much less
+#' memory (GB -> MB, minutes -> seconds).
 #'
-#' @param file_path Path to IMD NetCDF rainfall file.
+#' @param file_path Path to the IMD NetCDF rainfall file.
 #' @param year Year of the data (for the date axis).
-#' @param bbox Named numeric vector/list with north, south, east, west.
+#' @param bbox Named numeric vector or list with north, south, east, and west.
 #' @return data.frame with columns date, latitude, longitude, rainfall.
 #' @keywords internal
 read_imd_rainfall_cropped <- function(file_path, year, bbox) {
@@ -221,17 +223,18 @@ read_imd_rainfall_cropped <- function(file_path, year, bbox) {
   lats <- as.numeric(nc$dim[[latnm]]$vals)
   lons <- as.numeric(nc$dim[[lonnm]]$vals)
 
-  # IMD lon/lat are ascending, so min:max of the matches is a contiguous slab.
+  # IMD lon/lat values increase. Thus, min:max of the matches is a contiguous slab.
   li <- which(lats >= south & lats <= north)
   lj <- which(lons >= west & lons <= east)
-  if (length(li) == 0L) li <- which.min(abs(lats - (south + north) / 2)) # bbox finer than grid
+  if (length(li) == 0L) li <- which.min(abs(lats - (south + north) / 2)) # bbox is smaller than one grid cell
   if (length(lj) == 0L) lj <- which.min(abs(lons - (west + east) / 2))
   i0 <- min(li)
   ni <- max(li) - i0 + 1L
   j0 <- min(lj)
   nj <- max(lj) - j0 + 1L
 
-  # dims are [LON, LAT, TIME]; collapse_degen=FALSE keeps single-cell axes so as.vector aligns.
+  # dims are [LON, LAT, TIME]. collapse_degen=FALSE keeps the single-cell axes.
+  # Thus, as.vector gives the correct alignment.
   slab <- ncvar_get(nc, rainnm,
     start = c(j0, i0, 1L), count = c(nj, ni, -1L),
     collapse_degen = FALSE
@@ -259,21 +262,22 @@ read_imd_rainfall_cropped <- function(file_path, year, bbox) {
 #' @param file_paths Character vector of file paths.
 #' @param var_type Variable type: "rain", "tmax", or "tmin".
 #' @param resolution Resolution (for rainfall): 0.25 or 1.0.
-#' @param years Integer vector. Years corresponding to each file.
-#' @param bbox Optional named list/vector (north, south, east, west) passed to the
-#'   rainfall reader to crop at read time; NULL reads the full grid (default).
+#' @param years Integer vector. The year of each file.
+#' @param bbox Optional named list or vector (north, south, east, west). The
+#'   function sends it to the rainfall reader, which crops the grid at read time.
+#'   If NULL, the function reads the full grid (default).
 #' @return A data.frame with columns `date`, `latitude`, `longitude` and the value column (`rainfall` or `temperature`), combining all files.
 #' @export
 #' @examplesIf interactive()
 #' files <- download_imd_temperature(2023, 2024, var_type = "tmax")
 #' data <- process_imd_files(files, "tmax", years = c(2023, 2024))
 process_imd_files <- function(file_paths, var_type, resolution = NULL, years = NULL, bbox = NULL) {
-  if (length(x = file_paths) == 0) stop("No files provided")
+  if (length(x = file_paths) == 0) stop("The file list is empty")
 
   years <- years %||% extract_years_from_filenames(file_paths)
-  if (length(x = years) != length(x = file_paths)) stop("Number of years must match number of files")
+  if (length(x = years) != length(x = file_paths)) stop("The number of years must be equal to the number of files")
 
-  message(sprintf(fmt = "Processing %s IMD files", length(x = file_paths)))
+  message(sprintf(fmt = "IMD files to process: %s", length(x = file_paths)))
 
   all_data <- lapply(seq_along(along.with = file_paths), function(i) {
     tryCatch(
@@ -288,14 +292,14 @@ process_imd_files <- function(file_paths, var_type, resolution = NULL, years = N
         }
       },
       error = function(e) {
-        stop(sprintf(fmt = "Error processing %s: %s", basename(path = file_paths[i]), e$message))
+        stop(sprintf(fmt = "Cannot process %s: %s", basename(path = file_paths[i]), e$message))
         NULL
       }
     )
   })
 
   all_data <- Filter(Negate(is.null), all_data)
-  if (length(x = all_data) == 0) stop("No files were successfully processed")
+  if (length(x = all_data) == 0) stop("The process failed for all files")
 
   combined_df <- as.data.frame(data.table::rbindlist(all_data))
   combined_df <- combined_df[order(combined_df$date, combined_df$latitude, combined_df$longitude), ]
@@ -308,10 +312,10 @@ process_imd_files <- function(file_paths, var_type, resolution = NULL, years = N
 #' Filter IMD data by spatial boundaries
 #'
 #' @param data data.frame with IMD data
-#' @param north Northern latitude boundary
-#' @param south Southern latitude boundary
-#' @param east Eastern longitude boundary
-#' @param west Western longitude boundary
+#' @param north Latitude of the north boundary
+#' @param south Latitude of the south boundary
+#' @param east Longitude of the east boundary
+#' @param west Longitude of the west boundary
 #' @return The input data.frame restricted to rows whose `latitude`/`longitude` fall inside the region; columns are unchanged.
 #' @export
 #' @examples
@@ -329,14 +333,14 @@ filter_imd_by_bbox <- function(data, north, south, east, west) {
   filtered <- data[data$latitude >= south & data$latitude <= north &
     data$longitude >= west & data$longitude <= east, ]
 
-  message(sprintf(fmt = "Filtered %s points to %s within bounding box", nrow(x = data), nrow(x = filtered)))
+  message(sprintf(fmt = "Filtered %s points to %s in the bounding box", nrow(x = data), nrow(x = filtered)))
   filtered
 }
 
 #' Filter IMD data by GeoJSON polygon
 #'
 #' @param data data.frame with IMD data
-#' @param geojson_file Path to GeoJSON file
+#' @param geojson_file Path to the GeoJSON file
 #' @return The input data.frame restricted to rows whose `latitude`/`longitude` fall inside the region; columns are unchanged.
 #' @export
 #' @examples
@@ -372,14 +376,14 @@ filter_imd_by_geojson <- function(data, geojson_file) {
 #' )
 #' aggregate_imd_by_frequency(imd, "monthly")
 aggregate_imd_by_frequency <- function(data, frequency = "daily") {
-  if (!"date" %in% names(data)) stop("Data must contain 'date' column")
+  if (!"date" %in% names(data)) stop("Data must contain a 'date' column")
   freq <- tolower(x = frequency)
   if (freq == "daily") {
     return(data)
   }
 
   value_col <- setdiff(x = names(x = data), y = c("date", "latitude", "longitude"))[1]
-  if (is.na(value_col)) stop("No value column found in data")
+  if (is.na(value_col)) stop("Cannot find a value column in the data")
 
   agg_fun <- if (value_col == "rainfall") sum else mean
   DT <- as.data.table(data)
@@ -404,6 +408,6 @@ extract_years_from_filenames <- function(filenames) {
     if (length(x = matches) > 0) as.integer(x = matches[length(x = matches)]) else NA_integer_
   }, integer(1))
 
-  if (any(is.na(years))) stop("Could not extract years from all filenames")
+  if (any(is.na(years))) stop("Cannot extract the years from all the filenames")
   years
 }

@@ -10,9 +10,9 @@ GetCacheDir(...)
 get_cache_dir(create = TRUE)
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments for the main function (for use by aliases).}
 
-\item{create}{Create directory if it doesn't exist (default: TRUE)}
+\item{create}{Create the directory when it does not exist (default: TRUE)}
 }
 \value{
 Character string with cache directory path

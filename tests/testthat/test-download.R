@@ -99,7 +99,7 @@ test_that("signal_if_too_large signals only for size-related errors", {
   )
   expect_error(
     signal_if_too_large("exceeds cost limits", "2023-01-01", "2023-01-02"),
-    "CDS request too large: exceeds cost limits"
+    "The CDS request is too large: exceeds cost limits"
   )
   # Generic failure only counts as size-related for long ranges
   expect_error(
@@ -131,7 +131,7 @@ test_that("setup_cds_credentials uses the explicit key, env var, or cdsapirc", {
   expect_equal(keys[3], "file-key")
 
   local_mocked_bindings(read_cdsapirc = function(...) NULL)
-  expect_error(suppressMessages(setup_cds_credentials()), "Could not find CDS credentials")
+  expect_error(suppressMessages(setup_cds_credentials()), "Cannot find the CDS credentials")
   expect_length(keys, 3)
 })
 
@@ -237,7 +237,7 @@ test_that("download_era5_single errors without credentials", {
   )
   expect_error(
     do.call(download_era5_single, era5_dl_args(d)),
-    "CDS credentials not found"
+    "Cannot find the CDS credentials"
   )
 })
 
@@ -286,7 +286,7 @@ test_that("download_era5_single signals too-large and generic failures", {
       suppressMessages(do.call(download_era5_single, era5_dl_args(d, retry_attempts = 0))),
       "Download failed after 1 attempts"
     ),
-    "Request timed out on attempt 1"
+    "Timeout on attempt 1"
   )
 
   local_mocked_bindings(wf_request = era5_failing_wf_request("server busy, queued"))
@@ -316,7 +316,7 @@ test_that("download_era5_single saves to and reuses the cache", {
   args$output_file <- file.path(d, "second.nc")
   suppressMessages(expect_message(
     res <- do.call(download_era5_single, args),
-    "Using cached data"
+    "The package uses cached data"
   ))
   expect_length(log$requests, 1)
   expect_true(file.exists(file.path(d, "second.nc")))
@@ -345,7 +345,7 @@ test_that("download_era5_pressure builds the request and caches the result", {
 
   args$output_file <- file.path(d, "again.nc")
   msgs <- testthat::capture_messages(do.call(download_era5_pressure, args))
-  expect_true(any(grepl("Using cached data", msgs)))
+  expect_true(any(grepl("The package uses cached data", msgs)))
   expect_length(log$requests, 1)
 
   # hourly and monthly time selections
@@ -370,12 +370,12 @@ test_that("download_era5_pressure maps errors to informative messages", {
   }
   expect_error(run("401 Client Error"), "Authentication failed")
   expect_error(run("cost limits exceeded"), class = "cds_request_too_large")
-  expect_error(run("Operation timed out"), "Request timed out")
-  expect_error(run("server is busy"), "CDS server is busy")
+  expect_error(run("Operation timed out"), "Timeout of the request")
+  expect_error(run("server is busy"), "The CDS server is busy")
   expect_error(run("weird failure"), "Download failed: weird failure")
 
   local_mocked_bindings(get_cds_credentials = function(...) FALSE)
-  expect_error(do.call(download_era5_pressure, args), "CDS credentials not found")
+  expect_error(do.call(download_era5_pressure, args), "Cannot find the CDS credentials")
 })
 
 test_that("extract_zip_to_nc handles single, multiple and empty archives", {
@@ -394,14 +394,14 @@ test_that("extract_zip_to_nc handles single, multiple and empty archives", {
   expect_false(dir.exists(file.path(out, "extracted")))
 
   z2 <- era5_make_zip(file.path(src, "two.zip"), file.path(src, c("a.nc", "b.nc")))
-  suppressMessages(expect_message(res2 <- extract_zip_to_nc(z2, out), "Merging 2 NetCDF files"))
+  suppressMessages(expect_message(res2 <- extract_zip_to_nc(z2, out), "The package merges 2 NetCDF files"))
   expect_equal(basename(res2), "merged_a.nc")
   df <- suppressMessages(process_netcdf_to_dataframe(res2))
   expect_setequal(unique(df$variable), c("t2m", "tp"))
   expect_equal(sort(unique(df$value[df$variable == "tp"])), c(1, 2))
 
   z3 <- era5_make_zip(file.path(src, "none.zip"), file.path(src, "readme.txt"))
-  expect_error(suppressMessages(extract_zip_to_nc(z3, out)), "No NetCDF files found in ZIP")
+  expect_error(suppressMessages(extract_zip_to_nc(z3, out)), "The ZIP archive does not contain NetCDF files")
 })
 
 test_that("merge_nc_files combines variables and preserves dimensions", {
@@ -427,7 +427,7 @@ test_that("merge_nc_files combines variables and preserves dimensions", {
   nc2 <- ncdf4::nc_create(e, list(ncdf4::ncvar_def("expver", "1", list(dlon))))
   ncdf4::ncvar_put(nc2, "expver", 1)
   ncdf4::nc_close(nc2)
-  expect_error(merge_nc_files(e, d), "No climate variables found")
+  expect_error(merge_nc_files(e, d), "The NetCDF files do not contain climate variables")
 })
 
 test_that("find_and_extract_download finds output, zip or target files", {
@@ -435,7 +435,7 @@ test_that("find_and_extract_download finds output, zip or target files", {
   on.exit(unlink(d, recursive = TRUE), add = TRUE)
   out <- file.path(d, "req.nc")
 
-  expect_error(find_and_extract_download(out, "target.nc"), "Downloaded file not found")
+  expect_error(find_and_extract_download(out, "target.nc"), "Cannot find the downloaded file")
 
   era5_make_nc(file.path(d, "target.nc"))
   expect_same_path(find_and_extract_download(out, "target.nc"), file.path(d, "target.nc"))

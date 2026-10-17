@@ -2,18 +2,18 @@
 % Please edit documentation in R/utils.R
 \name{cleanup_temp_files}
 \alias{cleanup_temp_files}
-\title{Clean up temporary files matching pattern}
+\title{Delete temporary files that match a pattern}
 \usage{
 cleanup_temp_files(pattern = "varunayan_.*", directory = tempdir())
 }
 \arguments{
 \item{pattern}{Regular expression pattern to match files}
 
-\item{directory}{Directory to search (default: tempdir())}
+\item{directory}{Directory for the search (default: tempdir())}
 }
 \value{
 Number of files removed
 }
 \description{
-Clean up temporary files matching pattern
+Delete temporary files that match a pattern
 }

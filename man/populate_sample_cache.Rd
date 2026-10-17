@@ -3,22 +3,22 @@
 \name{PopulateSampleCache}
 \alias{PopulateSampleCache}
 \alias{populate_sample_cache}
-\title{Populate cache with sample IMD data}
+\title{Fill the cache with sample IMD data}
 \usage{
 PopulateSampleCache(...)
 
 populate_sample_cache(force = FALSE)
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments for the main function (for use by aliases).}
 
-\item{force}{Overwrite existing cached files (default: FALSE)}
+\item{force}{If TRUE, overwrite the cached files that exist (default: FALSE)}
 }
 \value{
 Invisibly, a named list of paths to the cached sample files, or \code{NULL} if no sample directory exists.
 }
 \description{
-Copies sample IMD data files to cache for offline testing.
+Copies sample IMD data files to the cache for offline tests.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

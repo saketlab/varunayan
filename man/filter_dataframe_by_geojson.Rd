@@ -15,6 +15,7 @@ filter_dataframe_by_geojson(df, geojson_file)
 data.frame with spatially filtered data
 }
 \description{
-Tests only unique (lat, lon) coordinates against the polygon, then joins
-back to full dataset via data.table keyed semi-join.
+This function does a test of only the unique (lat, lon) coordinates against
+the polygon. Then it joins the result to the full dataset with a data.table
+keyed semi-join.
 }

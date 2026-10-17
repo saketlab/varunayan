@@ -2,18 +2,18 @@
 % Please edit documentation in R/variable_lists.R
 \name{is_sum_var}
 \alias{is_sum_var}
-\title{Check if a variable should be summed}
+\title{Find if a variable uses sum aggregation}
 \usage{
 is_sum_var(var_name)
 }
 \arguments{
-\item{var_name}{Character string variable name}
+\item{var_name}{Variable name as a character string}
 }
 \value{
-Logical indicating if variable should be summed
+Logical. TRUE if the variable uses sum aggregation
 }
 \description{
-Check if a variable should be summed
+Find if a variable uses sum aggregation
 }
 \examples{
 is_sum_var("total_precipitation")

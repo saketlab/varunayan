@@ -158,7 +158,7 @@ test_that(".read_hadex3_nc reads monthly file", {
 test_that(".read_hadex3_nc errors when expected variable missing", {
   f <- tempfile(fileext = ".nc")
   hadex_fx_write_nc(f, "TXx", "monthly", times = c(0, 1))
-  expect_error(varunayan:::.read_hadex3_nc(f, "TXx", "annual"), "Variable 'Ann' not found in NetCDF. Available: TXx")
+  expect_error(varunayan:::.read_hadex3_nc(f, "TXx", "annual"), "Variable 'Ann' is not in the NetCDF file. Available variables: TXx")
 })
 
 test_that(".parse_hadex3_years / months cover remaining branches", {
@@ -167,7 +167,7 @@ test_that(".parse_hadex3_years / months cover remaining branches", {
   ym <- varunayan:::.parse_hadex3_months(c(0, 31), "days since 2000-01-01")
   expect_equal(ym$year, c(2000L, 2000L))
   expect_equal(ym$month, c(1L, 2L))
-  expect_error(varunayan:::.parse_hadex3_months(1, "years"), "Unrecognised time units")
+  expect_error(varunayan:::.parse_hadex3_months(1, "years"), "The time units in the monthly HadEX3 file are not known")
 })
 
 test_that(".expand_hadex3_annual and _monthly honour fill values", {
@@ -211,12 +211,12 @@ test_that(".download_hadex3_file error branches", {
   hadex_fx_mock_get(tempfile(), status = 404L)
   expect_error(
     suppressMessages(varunayan:::.download_hadex3_file("TXx", "monthly", "61-90", out_dir)),
-    "HTTP 404 downloading HadEX3 TXx"
+    "HTTP 404 for the download of HadEX3 TXx"
   )
   hadex_fx_mock_get(tempfile(), empty = TRUE)
   expect_error(
     suppressMessages(varunayan:::.download_hadex3_file("TXx", "monthly", "61-90", out_dir)),
-    "Downloaded file is empty or missing"
+    "The downloaded file is empty or missing"
   )
   local_mocked_bindings(GET = function(...) stop("dns"), .package = "httr")
   expect_error(

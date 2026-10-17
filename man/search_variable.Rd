@@ -10,13 +10,13 @@ SearchVariable(...)
 search_variable(keyword, dataset_type = "all", exact_match = FALSE)
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
-\item{keyword}{Character string to search for in variable names and descriptions}
+\item{keyword}{Character string to find in variable names and descriptions}
 
-\item{dataset_type}{Character string indicating dataset type ("single", "pressure", or "all")}
+\item{dataset_type}{Character string that gives the dataset type ("single", "pressure", or "all")}
 
-\item{exact_match}{Logical indicating whether to use exact matching}
+\item{exact_match}{Logical. If TRUE, use an exact match}
 }
 \value{
 A data.frame with columns \code{variable_name}, \code{description}, \code{units}, \code{dataset_type} and \code{category}, one row per matching variable.
@@ -28,6 +28,6 @@ Search for ERA5 variables by keyword
 # Search for temperature variables
 temp_vars <- search_variable("temperature")
 
-# Search in pressure level data only
+# Search only in pressure level data
 pressure_temp <- search_variable("temperature", dataset_type = "pressure")
 }

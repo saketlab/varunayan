@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{ensure_output_dir}
 \alias{ensure_output_dir}
-\title{Create output directory if it doesn't exist}
+\title{Create the output directory if it does not exist}
 \usage{
 ensure_output_dir(output_dir)
 }
@@ -10,8 +10,8 @@ ensure_output_dir(output_dir)
 \item{output_dir}{Path to output directory}
 }
 \value{
-Character string path to created/existing directory
+Character string. The path to the directory that the function made or found
 }
 \description{
-Create output directory if it doesn't exist
+Create the output directory if it does not exist
 }

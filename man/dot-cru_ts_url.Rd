@@ -2,7 +2,7 @@
 % Please edit documentation in R/cru_ts.R
 \name{.cru_ts_url}
 \alias{.cru_ts_url}
-\title{Build CRU TS download URL for a specific decade file}
+\title{Make the CRU TS download URL for a specific decade file}
 \usage{
 .cru_ts_url(variable, decade_start, decade_end)
 }
@@ -17,6 +17,6 @@
 Character URL.
 }
 \description{
-Build CRU TS download URL for a specific decade file
+Make the CRU TS download URL for a specific decade file
 }
 \keyword{internal}

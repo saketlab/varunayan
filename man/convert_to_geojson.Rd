@@ -10,7 +10,7 @@ convert_to_geojson(data)
 \item{data}{Data to convert (must be data.frame with lon/lat columns)}
 }
 \value{
-GeoJSON formatted data
+Data in GeoJSON format
 }
 \description{
 Convert data to GeoJSON format

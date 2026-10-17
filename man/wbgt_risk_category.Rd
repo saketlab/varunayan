@@ -2,7 +2,7 @@
 % Please edit documentation in R/heat_stress.R
 \name{wbgt_risk_category}
 \alias{wbgt_risk_category}
-\title{heat stress risk categories}
+\title{Heat stress risk categories}
 \usage{
 wbgt_risk_category(wbgt)
 }
@@ -10,7 +10,7 @@ wbgt_risk_category(wbgt)
 \item{wbgt}{WBGT value in Celsius}
 }
 \value{
-A factor of risk categories, the same length as the input.
+Factor with the risk category
 }
 \description{
 Classify heat stress risk using the US National Weather Service WBGT flag

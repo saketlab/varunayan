@@ -21,7 +21,7 @@ cru_ts_bbox(
 )
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
 \item{variable}{CRU TS variable code. See \code{\link[=list_cru_ts_variables]{list_cru_ts_variables()}}.
 Common values: "tmp" (mean temperature), "pre" (precipitation),
@@ -31,37 +31,37 @@ Common values: "tmp" (mean temperature), "pre" (precipitation),
 
 \item{end_year}{End year (1901-2022).}
 
-\item{north}{Northern latitude boundary.}
+\item{north}{North boundary (latitude).}
 
-\item{south}{Southern latitude boundary.}
+\item{south}{South boundary (latitude).}
 
-\item{east}{Eastern longitude boundary.}
+\item{east}{East boundary (longitude).}
 
-\item{west}{Western longitude boundary.}
+\item{west}{West boundary (longitude).}
 
 \item{output_dir}{Directory for temporary files (default: \code{tempdir()}).}
 
-\item{use_cache}{Whether to use cached data (default: TRUE).}
+\item{use_cache}{If TRUE, use the data in the cache (default: TRUE).}
 }
 \value{
-data.frame with columns: year, month, latitude, longitude,
+A data.frame with the columns: year, month, latitude, longitude,
 value, variable.
 }
 \description{
-Downloads and filters CRU TS v4.07 monthly gridded climate data to a
-geographic bounding box. Data covers global land areas at 0.5 degree
-resolution, 1901-2022.
+Downloads CRU TS v4.07 monthly gridded climate data and filters the data to
+a geographic bounding box. The data is for the global land areas at a
+resolution of 0.5 degrees, for 1901-2022.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
-# Monthly mean temperature for India 2010-2020
+# Monthly mean temperature for India, 2010-2020
 data <- cru_ts_bbox(
   variable = "tmp",
   start_year = 2010, end_year = 2020,
   north = 35, south = 8, east = 97, west = 68
 )
 
-# Precipitation for Europe 1981-2010
+# Precipitation for Europe, 1981-2010
 data <- cru_ts_bbox(
   variable = "pre",
   start_year = 1981, end_year = 2010,

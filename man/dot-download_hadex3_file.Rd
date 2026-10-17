@@ -16,7 +16,7 @@
 \item{output_dir}{Directory for temporary files.}
 }
 \value{
-Path to decompressed .nc file.
+Path to the decompressed .nc file.
 }
 \description{
 Download and decompress a HadEX3 NetCDF file

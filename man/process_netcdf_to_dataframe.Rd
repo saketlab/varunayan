@@ -2,16 +2,16 @@
 % Please edit documentation in R/processing.R
 \name{process_netcdf_to_dataframe}
 \alias{process_netcdf_to_dataframe}
-\title{Process NetCDF file and extract data as data.frame}
+\title{Extract data from a NetCDF file into a data.frame}
 \usage{
 process_netcdf_to_dataframe(netcdf_file)
 }
 \arguments{
-\item{netcdf_file}{Character string path to NetCDF file}
+\item{netcdf_file}{Path to the NetCDF file, as a character string}
 }
 \value{
 data.frame with processed climate data
 }
 \description{
-Uses ncdf4 directly for fast reading, with stars as fallback.
+This function uses ncdf4 to read the file quickly. If ncdf4 fails, it uses stars.
 }

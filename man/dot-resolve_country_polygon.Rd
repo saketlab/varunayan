@@ -2,17 +2,17 @@
 % Please edit documentation in R/country.R
 \name{.resolve_country_polygon}
 \alias{.resolve_country_polygon}
-\title{Resolve a country specification to an sf polygon}
+\title{Convert a country specification to an sf polygon}
 \usage{
 .resolve_country_polygon(country)
 }
 \arguments{
-\item{country}{A country name (string), file path to GeoJSON, or sf object.}
+\item{country}{A country name (string), a file path to a GeoJSON file, or an sf object.}
 }
 \value{
 An sf object with the country polygon.
 }
 \description{
-Resolve a country specification to an sf polygon
+Convert a country specification to an sf polygon
 }
 \keyword{internal}

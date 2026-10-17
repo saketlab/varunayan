@@ -2,16 +2,16 @@
 % Please edit documentation in R/utils.R
 \name{get_time_values}
 \alias{get_time_values}
-\title{Get time values based on frequency}
+\title{Get time values for a frequency}
 \usage{
 get_time_values(frequency)
 }
 \arguments{
-\item{frequency}{Character string indicating temporal frequency}
+\item{frequency}{Character string that gives the temporal frequency}
 }
 \value{
 Character vector of time strings
 }
 \description{
-Get time values based on frequency
+Get time values for a frequency
 }

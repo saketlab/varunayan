@@ -27,20 +27,20 @@ classified per 1 degree cell.}
 
 \item{start_year, end_year}{Years to report (1951-2025).}
 
-\item{north}{Northern latitude boundary.}
+\item{north}{Latitude of the north boundary.}
 
-\item{south}{Southern latitude boundary.}
+\item{south}{Latitude of the south boundary.}
 
-\item{east}{Eastern longitude boundary.}
+\item{east}{Longitude of the east boundary.}
 
-\item{west}{Western longitude boundary.}
+\item{west}{Longitude of the west boundary.}
 
 \item{baseline}{Climatology years, \code{c(first, last)}, for normals and
 percentiles.}
 
-\item{output_dir}{Directory to save files (default: tempdir()).}
+\item{output_dir}{Directory for the output files (default: tempdir()).}
 
-\item{use_cache}{Whether to use cached data if available (default: TRUE).}
+\item{use_cache}{If TRUE, use the cached data when it is available (default: TRUE).}
 }
 \value{
 The data.frame of \code{\link[=exposure_indicators]{exposure_indicators()}} for \code{start_year} to

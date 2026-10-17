@@ -65,7 +65,7 @@ test_that("process_netcdf_to_dataframe drops rows with missing values", {
 test_that("process_netcdf_to_dataframe errors on missing file", {
   expect_error(
     process_netcdf_to_dataframe(file.path(tempdir(), "does_not_exist.nc")),
-    "NetCDF file not found"
+    "Cannot find the NetCDF file"
   )
 })
 
@@ -75,7 +75,7 @@ test_that(".read_ncdf4_fast errors without lat/lon dims or data variables", {
   nc <- ncdf4::nc_create(f, list(ncdf4::ncvar_def("v", "1", list(dx))))
   ncdf4::ncvar_put(nc, "v", 1:3)
   ncdf4::nc_close(nc)
-  expect_error(.read_ncdf4_fast(f), "No latitude/longitude dimensions")
+  expect_error(.read_ncdf4_fast(f), "Cannot find the latitude/longitude dimensions")
 
   f2 <- withr::local_tempfile(fileext = ".nc")
   dlon <- ncdf4::ncdim_def("longitude", "degrees_east", c(1, 2))
@@ -83,7 +83,7 @@ test_that(".read_ncdf4_fast errors without lat/lon dims or data variables", {
   nc <- ncdf4::nc_create(f2, list(ncdf4::ncvar_def("number", "1", list(dlon, dlat))))
   ncdf4::ncvar_put(nc, "number", 1:4)
   ncdf4::nc_close(nc)
-  expect_error(.read_ncdf4_fast(f2), "No data variables found")
+  expect_error(.read_ncdf4_fast(f2), "Cannot find data variables")
 })
 
 test_that(".read_ncdf4_fast without time dim uses a fixed timestamp", {
@@ -112,7 +112,7 @@ test_that("process_netcdf_to_dataframe falls back to stars reader", {
 
   suppressMessages(expect_message(
     df <- process_netcdf_to_dataframe(f),
-    "falling back to stars"
+    "The function will use stars"
   ))
   expect_equal(nrow(df), 24)
   expect_true(all(c("datetime", "latitude", "longitude", "variable", "value") %in% names(df)))
@@ -163,7 +163,7 @@ test_that(".parse_nc_time heuristics without units", {
 test_that(".parse_nc_time falls back to sequential dates with a warning", {
   expect_warning(
     res <- .parse_nc_time(c(5e12, 1e12, 5e12)),
-    "sequential dates fallback"
+    "sequential dates as a fallback"
   )
   expect_equal(
     res,
@@ -206,7 +206,7 @@ test_that("filter_dataframe_by_geojson warns when nothing in bbox", {
   on.exit(unlink(gj), add = TRUE)
   expect_warning(
     out <- suppressMessages(filter_dataframe_by_geojson(df, gj)),
-    "No points within bounding box"
+    "No points are in the bounding box"
   )
   expect_equal(nrow(out), 0)
 })
@@ -215,9 +215,9 @@ test_that("geojson filters error when the file is missing", {
   missing <- file.path(tempdir(), "no_such_region.geojson")
   expect_error(
     suppressMessages(filter_dataframe_by_geojson(data.frame(latitude = 1, longitude = 1), missing)),
-    "GeoJSON file not found"
+    "Cannot find the GeoJSON file"
   )
-  expect_error(filter_netcdf_by_geojson("x.nc", missing), "GeoJSON file not found")
+  expect_error(filter_netcdf_by_geojson("x.nc", missing), "Cannot find the GeoJSON file")
 })
 
 test_that("filter_netcdf_by_geojson composes reading and filtering", {
@@ -287,12 +287,12 @@ test_that("aggregate_by_frequency verbose path and passthroughs", {
   df <- era5_hourly_df()
   suppressMessages(expect_message(
     aggregate_by_frequency(df, "daily", verbose = TRUE),
-    "Temporal aggregation complete"
+    "The temporal aggregation is complete"
   ))
   expect_identical(aggregate_by_frequency(df, "hourly"), df)
 
   no_dt <- data.frame(a = 1)
-  expect_warning(res <- aggregate_by_frequency(no_dt, "daily"), "No datetime column")
+  expect_warning(res <- aggregate_by_frequency(no_dt, "daily"), "Cannot find a datetime column")
   expect_identical(res, no_dt)
 })
 
@@ -313,7 +313,7 @@ test_that("create_temporal_chunks returns a single chunk for short ranges", {
 test_that("create_temporal_chunks splits long ranges contiguously", {
   expect_message(
     ch <- create_temporal_chunks("2023-01-01", "2023-03-15", "daily", max_days_per_chunk = 30),
-    "Processing in 3 chunks"
+    "process the range in 3 chunks"
   )
   expect_length(ch, 3)
   starts <- do.call(c, lapply(ch, `[[`, "start"))
@@ -347,7 +347,7 @@ test_that("combine_netcdf_files merges, de-duplicates and orders", {
 test_that("combine_netcdf_files errors when no files exist", {
   expect_error(
     combine_netcdf_files(file.path(tempdir(), c("nope1.nc", "nope2.nc"))),
-    "No valid NetCDF files found"
+    "Cannot find valid NetCDF files"
   )
 })
 

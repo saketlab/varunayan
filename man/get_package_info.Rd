@@ -10,7 +10,7 @@ GetPackageInfo(...)
 get_package_info()
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments for the main function (for use by aliases).}
 }
 \value{
 The \code{\link[utils:sessionInfo]{utils::sessionInfo()}} object, invisibly. Called for its side effect of reporting the R version, platform and versions of key dependencies as messages.

@@ -2,11 +2,11 @@
 % Please edit documentation in R/hadex3.R
 \name{.parse_hadex3_months}
 \alias{.parse_hadex3_months}
-\title{Parse year+month from monthly HadEX3 time coordinate}
+\title{Parse the year and month from the monthly HadEX3 time coordinate}
 \usage{
 .parse_hadex3_months(time_var, time_units)
 }
 \description{
-Parse year+month from monthly HadEX3 time coordinate
+Parse the year and month from the monthly HadEX3 time coordinate
 }
 \keyword{internal}

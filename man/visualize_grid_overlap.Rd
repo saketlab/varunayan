@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial.R
 \name{visualize_grid_overlap}
 \alias{visualize_grid_overlap}
-\title{Visualize grid-polygon overlap}
+\title{Show the overlap of grid points and polygons}
 \usage{
 visualize_grid_overlap(
   grid_data,
@@ -16,11 +16,11 @@ visualize_grid_overlap(
 )
 }
 \arguments{
-\item{grid_data}{Data frame with longitude and latitude columns, or path to NetCDF/CSV}
+\item{grid_data}{Data frame with longitude and latitude columns, or the path to a NetCDF or CSV file}
 
-\item{polygons}{sf object or path to GeoJSON file}
+\item{polygons}{sf object, or the path to a GeoJSON file}
 
-\item{show_centroids}{Logical, whether to show polygon centroids}
+\item{show_centroids}{Logical. If TRUE, show the polygon centroids}
 
 \item{grid_color}{Color for grid points}
 
@@ -36,7 +36,7 @@ visualize_grid_overlap(
 ggplot object
 }
 \description{
-Visualize grid-polygon overlap
+Show the overlap of grid points and polygons
 }
 \examples{
 \dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}

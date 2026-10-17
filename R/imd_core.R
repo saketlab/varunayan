@@ -1,20 +1,20 @@
 #' Download and process IMD rainfall data for a bounding box
 #'
-#' Downloads IMD gridded rainfall data and filters it to a specified bounding box.
+#' Downloads IMD gridded rainfall data and keeps only the data in the specified bounding box.
 #'
 #' @param request_id Unique identifier for the request.
 #' @param start_year Start year.
 #' @param end_year End year.
-#' @param north Northern latitude boundary.
-#' @param south Southern latitude boundary.
-#' @param east Eastern longitude boundary.
-#' @param west Western longitude boundary.
+#' @param north Latitude of the north boundary.
+#' @param south Latitude of the south boundary.
+#' @param east Longitude of the east boundary.
+#' @param west Longitude of the west boundary.
 #' @param resolution Spatial resolution: 0.25 or 1.0 degrees (default: 0.25).
 #' @param frequency Temporal frequency: "daily", "monthly", "yearly" (default: "daily").
-#' @param save_raw Whether to save raw downloaded files (default: FALSE).
-#' @param output_dir Directory to save files (default: tempdir()).
-#' @param use_cache Whether to use cached data if available (default: TRUE).
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param save_raw If TRUE, keep the raw downloaded files (default: FALSE).
+#' @param output_dir Directory for the output files (default: tempdir()).
+#' @param use_cache If TRUE, use the cached data when it is available (default: TRUE).
+#' @param ... Arguments that the aliases send to the primary function.
 #' @return A data.frame with columns `date`, `latitude`, `longitude` and `rainfall` (mm), restricted to the requested region and aggregated to `frequency`.
 #' @export
 #' @examplesIf interactive()
@@ -32,7 +32,7 @@ imd_rainfall_bbox <- function(request_id, start_year, end_year,
                               resolution = 0.25, frequency = "daily",
                               save_raw = FALSE, output_dir = tempdir(),
                               use_cache = TRUE) {
-  message("=== IMD Rainfall Download and Processing ===")
+  message("=== IMD Rainfall: Download and Process ===")
   message(sprintf(fmt = "Request ID: %s", request_id))
   message(sprintf(fmt = "Years: %s to %s", start_year, end_year))
   message(sprintf(fmt = "Resolution: %s\u00b0", resolution))
@@ -50,7 +50,7 @@ imd_rainfall_bbox <- function(request_id, start_year, end_year,
     use_cache = use_cache
   )
 
-  if (length(x = downloaded_files) == 0) stop("No files were successfully downloaded")
+  if (length(x = downloaded_files) == 0) stop("All file downloads failed")
 
   years <- start_year:end_year
   processed_data <- process_imd_files(
@@ -82,10 +82,10 @@ imd_rainfall_bbox <- function(request_id, start_year, end_year,
 
   if (!save_raw) {
     unlink(downloaded_files)
-    message("Cleaned up raw downloaded files")
+    message("Deleted the raw downloaded files")
   }
 
-  message("Processing completed!")
+  message("Process completed!")
   message(sprintf(fmt = "Final dataset: %s data points", nrow(x = filtered_data)))
 
   filtered_data
@@ -93,22 +93,23 @@ imd_rainfall_bbox <- function(request_id, start_year, end_year,
 
 #' Download and process IMD rainfall for a single point (nearest grid cell)
 #'
-#' Extracts the daily rainfall series for the IMD grid cell nearest to a
-#' (lat, lon). Reads only that one cell off disk per year, so it is the cheapest
-#' way to get a long series for a location.
+#' Extracts the daily rainfall series for the IMD grid cell that is nearest to
+#' a (lat, lon) point. For each year, the function reads only that one cell from
+#' the disk. Thus, this function is the method with the lowest cost to get a long
+#' series for one location.
 #'
 #' @param request_id Unique identifier for the request.
 #' @param start_year Start year (1901-2024).
 #' @param end_year End year (1901-2024).
-#' @param latitude Point latitude.
-#' @param longitude Point longitude.
+#' @param latitude Latitude of the point.
+#' @param longitude Longitude of the point.
 #' @param resolution Spatial resolution: 0.25 or 1.0 degrees (default: 0.25).
 #' @param frequency Temporal frequency: "daily", "monthly", "yearly" (default: "daily").
-#' @param save_raw Whether to save raw downloaded files (default: FALSE).
-#' @param output_dir Directory to save files (default: tempdir()).
-#' @param use_cache Whether to use cached data if available (default: TRUE).
-#' @param ... Arguments passed to the main function (used by aliases).
-#' @return data.frame with the nearest cell's rainfall series.
+#' @param save_raw If TRUE, keep the raw downloaded files (default: FALSE).
+#' @param output_dir Directory for the output files (default: tempdir()).
+#' @param use_cache If TRUE, use the cached data when it is available (default: TRUE).
+#' @param ... Arguments that the aliases send to the primary function.
+#' @return data.frame with the rainfall series of the nearest cell.
 #' @export
 #' @examples
 #' \dontrun{
@@ -119,7 +120,7 @@ imd_rainfall_point <- function(request_id, start_year, end_year,
                                resolution = 0.25, frequency = "daily",
                                save_raw = FALSE, output_dir = tempdir(),
                                use_cache = TRUE) {
-  message("=== IMD Rainfall Download and Processing (point) ===")
+  message("=== IMD Rainfall: Download and Process (point) ===")
   message(sprintf(fmt = "Request ID: %s", request_id))
   message(sprintf(fmt = "Point: lat %.4f, lon %.4f", latitude, longitude))
 
@@ -127,7 +128,7 @@ imd_rainfall_point <- function(request_id, start_year, end_year,
     start_year = start_year, end_year = end_year,
     resolution = resolution, output_dir = output_dir, use_cache = use_cache
   )
-  if (length(x = downloaded_files) == 0) stop("No files were successfully downloaded")
+  if (length(x = downloaded_files) == 0) stop("All file downloads failed")
 
   pt_bbox <- list(north = latitude, south = latitude, east = longitude, west = longitude)
   data <- process_imd_files(
@@ -150,7 +151,7 @@ imd_rainfall_point <- function(request_id, start_year, end_year,
 
   if (!save_raw) {
     unlink(downloaded_files)
-    message("Cleaned up raw downloaded files")
+    message("Deleted the raw downloaded files")
   }
   message(sprintf(fmt = "Final dataset: %s data points", nrow(x = data)))
   data
@@ -161,13 +162,13 @@ imd_rainfall_point <- function(request_id, start_year, end_year,
 #' @param request_id Unique identifier for the request.
 #' @param start_year Start year (1901-2025).
 #' @param end_year End year (1901-2025).
-#' @param geojson_file Path to GeoJSON file.
+#' @param geojson_file Path to the GeoJSON file.
 #' @param resolution Spatial resolution: 0.25 or 1.0 degrees (default: 0.25).
 #' @param frequency Temporal frequency (default: "daily").
-#' @param save_raw Whether to save raw files (default: FALSE).
-#' @param output_dir Directory to save files (default: tempdir()).
-#' @param use_cache Whether to use cached data if available (default: TRUE).
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param save_raw If TRUE, keep the raw files (default: FALSE).
+#' @param output_dir Directory for the output files (default: tempdir()).
+#' @param use_cache If TRUE, use the cached data when it is available (default: TRUE).
+#' @param ... Arguments that the aliases send to the primary function.
 #' @return A data.frame with columns `date`, `latitude`, `longitude` and `rainfall` (mm), restricted to the requested region and aggregated to `frequency`.
 #' @export
 #' @examplesIf interactive()
@@ -180,12 +181,12 @@ imd_rainfall_geojson <- function(request_id, start_year, end_year, geojson_file,
                                  resolution = 0.25, frequency = "daily",
                                  save_raw = FALSE, output_dir = tempdir(),
                                  use_cache = TRUE) {
-  message("=== IMD Rainfall Download and Processing ===")
+  message("=== IMD Rainfall: Download and Process ===")
   message(sprintf(fmt = "Request ID: %s", request_id))
   message(sprintf(fmt = "GeoJSON: %s", basename(path = geojson_file)))
 
   if (!file.exists(geojson_file)) {
-    stop("GeoJSON file not found: ", geojson_file)
+    stop("Cannot find the GeoJSON file: ", geojson_file)
   }
 
   geojson_sf <- st_read(geojson_file, quiet = TRUE)
@@ -206,7 +207,7 @@ imd_rainfall_geojson <- function(request_id, start_year, end_year, geojson_file,
     use_cache = use_cache
   )
 
-  if (length(x = downloaded_files) == 0) stop("No files were successfully downloaded")
+  if (length(x = downloaded_files) == 0) stop("All file downloads failed")
 
   years <- start_year:end_year
   processed_data <- process_imd_files(
@@ -237,10 +238,10 @@ imd_rainfall_geojson <- function(request_id, start_year, end_year, geojson_file,
 
   if (!save_raw) {
     unlink(downloaded_files)
-    message("Cleaned up raw downloaded files")
+    message("Deleted the raw downloaded files")
   }
 
-  message("Processing completed!")
+  message("Process completed!")
   message(sprintf(fmt = "Final dataset: %s data points", nrow(x = filtered_data)))
 
   filtered_data
@@ -251,16 +252,16 @@ imd_rainfall_geojson <- function(request_id, start_year, end_year, geojson_file,
 #' @param request_id Unique identifier for the request.
 #' @param start_year Start year (1951-2025).
 #' @param end_year End year (1951-2025).
-#' @param north Northern latitude boundary.
-#' @param south Southern latitude boundary.
-#' @param east Eastern longitude boundary.
-#' @param west Western longitude boundary.
+#' @param north Latitude of the north boundary.
+#' @param south Latitude of the south boundary.
+#' @param east Longitude of the east boundary.
+#' @param west Longitude of the west boundary.
 #' @param var_type Temperature type: "tmax" or "tmin".
 #' @param frequency Temporal frequency (default: "daily").
-#' @param save_raw Whether to save raw files (default: FALSE).
-#' @param output_dir Directory to save files (default: tempdir()).
-#' @param use_cache Whether to use cached data if available (default: TRUE).
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param save_raw If TRUE, keep the raw files (default: FALSE).
+#' @param output_dir Directory for the output files (default: tempdir()).
+#' @param use_cache If TRUE, use the cached data when it is available (default: TRUE).
+#' @param ... Arguments that the aliases send to the primary function.
 #' @return A data.frame with columns `date`, `latitude`, `longitude` and `temperature` (degrees Celsius), restricted to the requested region and aggregated to `frequency`.
 #' @export
 #' @examplesIf interactive()
@@ -277,7 +278,7 @@ imd_temperature_bbox <- function(request_id, start_year, end_year,
                                  var_type = "tmax", frequency = "daily",
                                  save_raw = FALSE, output_dir = tempdir(),
                                  use_cache = TRUE) {
-  message("=== IMD Temperature Download and Processing ===")
+  message("=== IMD Temperature: Download and Process ===")
   message(sprintf(fmt = "Request ID: %s", request_id))
   message(sprintf(fmt = "Variable: %s", var_type))
   message(sprintf(fmt = "Years: %s to %s", start_year, end_year))
@@ -294,7 +295,7 @@ imd_temperature_bbox <- function(request_id, start_year, end_year,
     use_cache = use_cache
   )
 
-  if (length(x = downloaded_files) == 0) stop("No files were successfully downloaded")
+  if (length(x = downloaded_files) == 0) stop("All file downloads failed")
 
   years <- start_year:end_year
   processed_data <- process_imd_files(
@@ -324,10 +325,10 @@ imd_temperature_bbox <- function(request_id, start_year, end_year,
 
   if (!save_raw) {
     unlink(downloaded_files)
-    message("Cleaned up raw downloaded files")
+    message("Deleted the raw downloaded files")
   }
 
-  message("Processing completed!")
+  message("Process completed!")
   message(sprintf(fmt = "Final dataset: %s data points", nrow(x = filtered_data)))
 
   filtered_data
@@ -335,16 +336,16 @@ imd_temperature_bbox <- function(request_id, start_year, end_year,
 
 #' Download and process IMD temperature data for a GeoJSON region
 #'
-#' @param request_id Unique identifier.
+#' @param request_id Unique identifier for the request.
 #' @param start_year Start year (1951-2025).
 #' @param end_year End year (1951-2025).
-#' @param geojson_file Path to GeoJSON file.
+#' @param geojson_file Path to the GeoJSON file.
 #' @param var_type Temperature type: "tmax" or "tmin".
 #' @param frequency Temporal frequency (default: "daily").
-#' @param save_raw Whether to save raw files (default: FALSE).
-#' @param output_dir Directory for output (default: tempdir()).
-#' @param use_cache Whether to use cached data if available (default: TRUE).
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param save_raw If TRUE, keep the raw files (default: FALSE).
+#' @param output_dir Directory for the output files (default: tempdir()).
+#' @param use_cache If TRUE, use the cached data when it is available (default: TRUE).
+#' @param ... Arguments that the aliases send to the primary function.
 #' @return A data.frame with columns `date`, `latitude`, `longitude` and `temperature` (degrees Celsius), restricted to the requested region and aggregated to `frequency`.
 #' @export
 #' @examplesIf interactive()
@@ -357,13 +358,13 @@ imd_temperature_geojson <- function(request_id, start_year, end_year, geojson_fi
                                     var_type = "tmax", frequency = "daily",
                                     save_raw = FALSE, output_dir = tempdir(),
                                     use_cache = TRUE) {
-  message("=== IMD Temperature Download and Processing ===")
+  message("=== IMD Temperature: Download and Process ===")
   message(sprintf(fmt = "Request ID: %s", request_id))
   message(sprintf(fmt = "Variable: %s", var_type))
   message(sprintf(fmt = "GeoJSON: %s", basename(path = geojson_file)))
 
   if (!file.exists(geojson_file)) {
-    stop("GeoJSON file not found: ", geojson_file)
+    stop("Cannot find the GeoJSON file: ", geojson_file)
   }
 
   downloaded_files <- download_imd_temperature(
@@ -374,7 +375,7 @@ imd_temperature_geojson <- function(request_id, start_year, end_year, geojson_fi
     use_cache = use_cache
   )
 
-  if (length(x = downloaded_files) == 0) stop("No files were successfully downloaded")
+  if (length(x = downloaded_files) == 0) stop("All file downloads failed")
 
   years <- start_year:end_year
   processed_data <- process_imd_files(
@@ -403,10 +404,10 @@ imd_temperature_geojson <- function(request_id, start_year, end_year, geojson_fi
 
   if (!save_raw) {
     unlink(downloaded_files)
-    message("Cleaned up raw downloaded files")
+    message("Deleted the raw downloaded files")
   }
 
-  message("Processing completed!")
+  message("Process completed!")
   message(sprintf(fmt = "Final dataset: %s data points", nrow(x = filtered_data)))
 
   filtered_data
@@ -414,7 +415,7 @@ imd_temperature_geojson <- function(request_id, start_year, end_year, geojson_fi
 
 #' Save IMD results to CSV
 #'
-#' @param data data.frame with processed data
+#' @param data data.frame with the processed data
 #' @param request_id Request identifier
 #' @param var_type Variable type
 #' @param resolution Resolution
@@ -460,23 +461,25 @@ save_imd_results <- function(data, request_id, var_type, resolution, frequency, 
   invisible(output_file)
 }
 
-#' Download IMD temperature aggregated per GeoJSON feature (region x time)
+#' Download IMD temperature aggregated for each GeoJSON feature (region x time)
 #'
-#' Unlike [imd_temperature_geojson()], which returns grid points clipped to
-#' the GeoJSON boundary, this returns one row per feature (e.g. per state)
-#' per time period, with the region-mean temperature.
+#' [imd_temperature_geojson()] returns the grid points in the GeoJSON boundary.
+#' This function is different. It returns one row for each feature (for example,
+#' each state) and each time period. Each row contains the mean temperature of
+#' the region.
 #'
 #' @param request_id Unique identifier for the request.
 #' @param start_year Start year (>= 1951).
 #' @param end_year End year (<= 2024).
-#' @param geojson_file Path to a GeoJSON whose features are the regions.
-#' @param feature_col Name of the GeoJSON property to group by (e.g.
-#'   `"state_name"`). If NULL, the first non-geometry column is used.
-#' @param var_type `"tmax"`, `"tmin"`, or `"tmean"` (mean of tmax & tmin).
-#'   Default `"tmean"`.
+#' @param geojson_file Path to a GeoJSON file. Each feature in the file is one region.
+#' @param feature_col Name of the GeoJSON property that sets the groups (for
+#'   example, `"state_name"`). If NULL, the function uses the first column that
+#'   is not the geometry column.
+#' @param var_type `"tmax"`, `"tmin"`, or `"tmean"` (mean of tmax and tmin).
+#'   The default is `"tmean"`.
 #' @param frequency `"monthly"` (default), `"yearly"`, or `"daily"`.
-#' @param use_cache Use cached IMD downloads if available (default TRUE).
-#' @return A data.frame: `region`, `year`, `month` (if monthly), `temperature`.
+#' @param use_cache If TRUE, use the cached IMD downloads when they are available (default TRUE).
+#' @return A data.frame with the columns `region`, `year`, `month` (only for monthly data), and `temperature`.
 #' @export
 #' @examples
 #' \dontrun{
@@ -492,9 +495,7 @@ imd_temperature_by_region <- function(request_id, start_year, end_year,
                                       var_type = "tmean", frequency = "monthly",
                                       use_cache = TRUE) {
   stopifnot(var_type %in% c("tmax", "tmin", "tmean"))
-  old_s2 <- sf::sf_use_s2()
-  sf::sf_use_s2(FALSE)
-  on.exit(sf::sf_use_s2(old_s2), add = TRUE)
+  local_s2_off()
 
   regions <- sf::st_make_valid(sf::st_read(geojson_file, quiet = TRUE))
   if (is.null(feature_col)) {
@@ -510,38 +511,6 @@ imd_temperature_by_region <- function(request_id, start_year, end_year,
     do.call(rbind, Map(function(f, y) read_imd_temperature(f, vt, y), files, yrs))
   }
 
-  # Join once on unique cells, not per-row, so multi-year pulls don't repeat
-  # the point-in-polygon match for every date.
-  build_key <- function(df) {
-    uc <- unique(df[, c("longitude", "latitude")])
-    s <- sf::st_join(
-      sf::st_as_sf(uc, coords = c("longitude", "latitude"), crs = 4326, remove = FALSE),
-      regions,
-      join = sf::st_within
-    )
-    k <- sf::st_drop_geometry(s)[, c("longitude", "latitude", feature_col)]
-    names(k)[3] <- "region"
-    k
-  }
-
-  agg <- function(df, key) {
-    d <- merge(df, key, by = c("longitude", "latitude"))
-    d <- d[!is.na(d$region), ]
-    d$year <- as.integer(format(as.Date(d$date), "%Y"))
-    if (frequency == "monthly") {
-      d$month <- as.integer(format(as.Date(d$date), "%m"))
-      grp <- c("region", "year", "month")
-    } else if (frequency == "yearly") {
-      grp <- c("region", "year")
-    } else {
-      d$date <- as.Date(d$date)
-      grp <- c("region", "date")
-    }
-    result <- stats::aggregate(d$temperature, by = d[grp], FUN = mean, na.rm = TRUE)
-    names(result)[ncol(result)] <- "temperature"
-    result
-  }
-
   if (var_type %in% c("tmax", "tmin")) {
     raw <- read_all(var_type)
   } else {
@@ -553,7 +522,24 @@ imd_temperature_by_region <- function(request_id, start_year, end_year,
     )
     raw$temperature <- (raw$temperature_max + raw$temperature_min) / 2
   }
-  key <- build_key(raw)
-  out <- agg(raw, key)
+  d <- as.Date(raw$date)
+  raw$year <- as.integer(format(d, "%Y"))
+  grp <- switch(frequency,
+    monthly = {
+      raw$month <- as.integer(format(d, "%m"))
+      c("year", "month")
+    },
+    yearly = "year",
+    {
+      raw$date <- d
+      "date"
+    }
+  )
+  out <- aggregate_to_polygons(raw, regions, "temperature",
+    method = "point_in_polygon", polygon_id_cols = feature_col, by = grp
+  )
+  names(out)[names(out) == feature_col] <- "region"
+  # A region with no grid cell has no row, as before.
+  out <- out[!is.na(out$temperature), ]
   out[order(out$region, out$year), ]
 }

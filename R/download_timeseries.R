@@ -1,28 +1,29 @@
-#' Download ERA5 data for a point via the CDS time-series endpoint
+#' Download ERA5 data for a point with the CDS time-series endpoint
 #'
-#' Retrieves `reanalysis-era5-single-levels-timeseries`, which serves a single
-#' location directly instead of returning gridded fields that must be subset.
-#' For long hourly requests at one point this is substantially faster than
-#' `download_era5_single()`, which pays field-retrieval cost per timestep.
+#' This function gets `reanalysis-era5-single-levels-timeseries`. This endpoint
+#' gives the data for one location directly. It does not return gridded fields
+#' that you must subset. For long hourly requests at one point, this function is
+#' much faster than `download_era5_single()`. That function has a field-retrieval
+#' cost for each timestep.
 #'
 #' @param variables Character vector of ERA5 variable names.
 #' @param start_date Start date (Date or "YYYY-MM-DD").
 #' @param end_date End date (Date or "YYYY-MM-DD").
 #' @param lat Latitude of the point location.
 #' @param lon Longitude of the point location.
-#' @param output_dir Directory to save files (default: tempdir()).
-#' @param timeout Seconds to wait for the request before giving up.
-#' @param verbose Whether to print detailed progress messages.
-#' @return data.frame with datetime, latitude, longitude, variable, and value
-#'   columns, in original ERA5 units.
+#' @param output_dir Directory for the saved files (default: tempdir()).
+#' @param timeout Number of seconds to wait for the request before the function stops.
+#' @param verbose If TRUE, print detailed progress messages.
+#' @return data.frame with the datetime, latitude, longitude, variable, and value
+#'   columns. The values are in the original ERA5 units.
 #' @keywords internal
 download_era5_timeseries <- function(variables, start_date, end_date, lat, lon,
                                      output_dir = tempdir(), timeout = 1800,
                                      verbose = FALSE) {
   if (!get_cds_credentials(silent = TRUE)) {
     stop(
-      "CDS credentials not found. Please either:\n",
-      "  1. Create ~/.cdsapirc file with your API key, or\n",
+      "Cannot find the CDS credentials. Do one of these steps:\n",
+      "  1. Create the ~/.cdsapirc file with your API key, or\n",
       "  2. Run setup_cds_credentials(key = 'your-api-key')"
     )
   }
@@ -49,7 +50,7 @@ download_era5_timeseries <- function(variables, start_date, end_date, lat, lon,
   ))
 
   if (verbose) {
-    message(sprintf(fmt = "Submitting time-series request for (%s, %s)", lat, lon))
+    message(sprintf(fmt = "The package sends a time-series request for (%s, %s)", lat, lon))
   }
 
   response <- httr::POST(
@@ -57,13 +58,13 @@ download_era5_timeseries <- function(variables, start_date, end_date, lat, lon,
     httr::add_headers("PRIVATE-TOKEN" = key, "Content-Type" = "application/json"),
     body = jsonlite::toJSON(x = request, auto_unbox = TRUE), encode = "raw"
   )
-  # A rejected request returns an HTML error page, which content() parses to an
-  # xml_node rather than a list; report the body instead of failing on the parse.
+  # If CDS rejects a request, it returns an HTML error page. content() parses this
+  # page to an xml_node, not to a list. Report the body. Do not stop on the parse.
   parsed <- tryCatch(httr::content(response, "parsed"), error = function(e) NULL)
   job_id <- if (is.list(x = parsed)) parsed$jobID else NULL
   if (is.null(x = job_id)) {
     stop(
-      "CDS time-series request failed (HTTP ", httr::status_code(response), "): ",
+      "The CDS time-series request failed (HTTP ", httr::status_code(response), "): ",
       substr(x = httr::content(response, "text", encoding = "UTF-8"), start = 1, stop = 200)
     )
   }
@@ -79,10 +80,10 @@ download_era5_timeseries <- function(variables, start_date, end_date, lat, lon,
     )
     if (identical(x = status, y = "successful")) break
     if (identical(x = status, y = "failed")) {
-      stop("CDS time-series request failed for job ", job_id)
+      stop("The CDS time-series request failed for job ", job_id)
     }
     if (as.numeric(x = difftime(Sys.time(), start_time, units = "secs")) > timeout) {
-      stop("Request timed out after ", timeout, " seconds")
+      stop("The request did not complete in ", timeout, " seconds")
     }
     Sys.sleep(5)
   }
@@ -93,7 +94,7 @@ download_era5_timeseries <- function(variables, start_date, end_date, lat, lon,
   ), "parsed")
   href <- result$asset$value$href
   if (is.null(x = href)) {
-    stop("CDS returned no download location for job ", job_id)
+    stop("CDS did not return a download location for job ", job_id)
   }
 
   zip_file <- file.path(output_dir, sprintf(fmt = "era5_ts_%s.zip", job_id))
@@ -103,7 +104,7 @@ download_era5_timeseries <- function(variables, start_date, end_date, lat, lon,
   utils::unzip(zip_file, exdir = extract_dir)
   csv_file <- list.files(path = extract_dir, pattern = "\\.csv$", full.names = TRUE)[1]
   if (is.na(x = csv_file)) {
-    stop("No CSV file found in the CDS time-series response")
+    stop("The CDS time-series response does not contain a CSV file")
   }
   raw <- utils::read.csv(csv_file, stringsAsFactors = FALSE)
   unlink(c(zip_file, extract_dir), recursive = TRUE)
@@ -122,6 +123,6 @@ download_era5_timeseries <- function(variables, start_date, end_date, lat, lon,
     )
   }))
 
-  # ERA5 begins 1940-01-01 07:00 UTC; earlier hours are returned as empty values.
+  # ERA5 starts at 1940-01-01 07:00 UTC. CDS returns empty values for earlier hours.
   processed[!is.na(x = processed$value), ]
 }

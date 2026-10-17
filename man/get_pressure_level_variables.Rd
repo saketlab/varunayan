@@ -2,13 +2,13 @@
 % Please edit documentation in R/search_and_desc.R
 \name{get_pressure_level_variables}
 \alias{get_pressure_level_variables}
-\title{Get pressure-level variables dataset}
+\title{Get the dataset of pressure-level variables}
 \usage{
 get_pressure_level_variables()
 }
 \value{
-List containing pressure-level variable categories
+List that contains the pressure-level variable categories
 }
 \description{
-Get pressure-level variables dataset
+Get the dataset of pressure-level variables
 }

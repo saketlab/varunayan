@@ -22,12 +22,12 @@ download_imd_year(
 
 \item{base_url}{Base URL.}
 
-\item{output_file}{Path to save the downloaded file.}
+\item{output_file}{Path for the downloaded file.}
 
 \item{max_retries}{Maximum number of attempts.}
 }
 \value{
-Character string path to downloaded file
+Character string. The path to the downloaded file.
 }
 \description{
 Connection failures and server errors are retried; a response without data

@@ -16,7 +16,7 @@ create_geojson_from_bbox(north, south, east, west)
 \item{west}{Western longitude}
 }
 \value{
-GeoJSON object representing the bounding box
+GeoJSON object that shows the bounding box
 }
 \description{
 Create GeoJSON from bounding box coordinates

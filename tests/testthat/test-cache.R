@@ -118,7 +118,7 @@ test_that("list_cache handles missing dir, empty dir, and filtering", {
   expect_named(res, c("file", "source", "size_mb", "modified"))
 
   dir.create(d)
-  expect_message(res <- list_cache(), "No cached files found")
+  expect_message(res <- list_cache(), "The cache has no files")
   expect_equal(nrow(res), 0)
 
   era5_touch(d, "era5_a.nc", bytes = 1024^2)
@@ -126,7 +126,7 @@ test_that("list_cache handles missing dir, empty dir, and filtering", {
   era5_touch(d, "other_c.nc")
   era5_touch(d, "ignored.txt")
 
-  expect_message(res <- list_cache(), "Found 3 cached file\\(s\\)")
+  expect_message(res <- list_cache(), "The cache has 3 file\\(s\\)")
   expect_equal(nrow(res), 3)
   expect_equal(res$source[res$file == "era5_a.nc"], "era5")
   expect_equal(res$source[res$file == "imd_b.grd"], "imd")
@@ -177,7 +177,7 @@ test_that("show_cache_info prints a per-source summary", {
   era5_touch(d, "era5_1.nc", bytes = 1024^2)
   era5_touch(d, "imd_1.grd", bytes = 1024^2)
   msgs <- testthat::capture_messages(res <- show_cache_info())
-  expect_true(any(grepl("Found 2 file", msgs)))
+  expect_true(any(grepl("The cache has 2 file", msgs)))
   expect_true(any(grepl("IMD: 1 files", msgs)))
   expect_true(any(grepl("ERA5: 1 files", msgs)))
   expect_named(res, c("name", "size_mb", "mtime"))
@@ -223,15 +223,15 @@ test_that("clear_cache with confirmation cancels on a non-'yes' answer", {
     msgs <- testthat::capture_messages(n <- clear_cache(confirm = TRUE))
   )
   expect_equal(n, 0)
-  expect_true(any(grepl("About to delete 1 file", msgs)))
-  expect_true(any(grepl("Cancelled", msgs)))
+  expect_true(any(grepl("The function will delete 1 file", msgs)))
+  expect_true(any(grepl("Canceled", msgs)))
   expect_true(file.exists(file.path(d, "era5_a.nc")))
 })
 
 test_that("populate_sample_cache warns when no sample directory exists", {
   era5_local_cache()
   withr::local_dir(withr::local_tempdir())
-  expect_warning(res <- populate_sample_cache(), "Sample data directory not found")
+  expect_warning(res <- populate_sample_cache(), "Cannot find the sample data directory")
   expect_null(res)
 })
 
@@ -249,7 +249,7 @@ test_that("populate_sample_cache caches available samples once", {
   expect_true(all(startsWith(unlist(res), d)))
 
   msgs <- testthat::capture_messages(res2 <- populate_sample_cache())
-  expect_true(any(grepl("already cached", msgs)))
+  expect_true(any(grepl("already in the cache", msgs)))
   expect_equal(unname(unlist(res2)), unname(unlist(res)))
 
   res3 <- suppressMessages(populate_sample_cache(force = TRUE))

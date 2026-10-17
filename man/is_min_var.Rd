@@ -2,18 +2,18 @@
 % Please edit documentation in R/variable_lists.R
 \name{is_min_var}
 \alias{is_min_var}
-\title{Check if a variable should use minimum}
+\title{Find if a variable uses minimum aggregation}
 \usage{
 is_min_var(var_name)
 }
 \arguments{
-\item{var_name}{Character string variable name}
+\item{var_name}{Variable name as a character string}
 }
 \value{
-Logical indicating if variable should use min
+Logical. TRUE if the variable uses minimum aggregation
 }
 \description{
-Check if a variable should use minimum
+Find if a variable uses minimum aggregation
 }
 \examples{
 is_min_var("2m_temperature")

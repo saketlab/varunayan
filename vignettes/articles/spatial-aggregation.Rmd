@@ -10,7 +10,7 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-# ponytail: eval=FALSE — no pre-built .rds; needs live CDS + IMD
+# ponytail: eval=FALSE. No pre-built .rds file exists. The code must have live CDS and IMD access.
 knitr::opts_chunk$set(
   collapse = TRUE, comment = "#>", eval = FALSE,
   fig.width = 7, fig.height = 5, warning = FALSE, message = FALSE
@@ -27,9 +27,10 @@ library(patchwork)
 
 ## The problem
 
-ERA5 and IMD give us data on regular grids (for example 0.25° × 0.25°).
-When we aggregate to administrative boundaries like districts, the smaller districts may
-contain no grid points at all, which leaves them with missing data.
+ERA5 and IMD give data on regular grids (for example, 0.25° × 0.25°).
+We aggregate these data to administrative boundaries, for example districts.
+Some small districts contain no grid points.
+As a result, these districts have missing data.
 
 ```{r download_data}
 districts_url <- "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-districts.geojson"
@@ -66,9 +67,9 @@ era5_spatial <- era5_temp %>%
   summarise(temp = mean(value, na.rm = TRUE), .groups = "drop")
 ```
 
-## Visualizing grid coverage
+## Show the grid coverage
 
-We use `compare_grids()` to see how the grid points align with polygon boundaries.
+We use `compare_grids()` to show how the grid points align with the polygon boundaries.
 
 ```{r viz_imd, fig.width=10, fig.height=7}
 compare_grids(
@@ -99,8 +100,9 @@ compare_grids(
 )
 ```
 
-Red circles are IMD grid points, blue circles are ERA5 grid points.
-Many small districts have no grid points within their boundaries.
+Red circles are IMD grid points.
+Blue circles are ERA5 grid points.
+Many small districts have no grid points in their boundaries.
 
 ## Coverage statistics
 
@@ -130,11 +132,11 @@ cat("  Coverage:", era5_coverage$coverage_percent, "%\n")
 
 ### Point-in-polygon
 
-We use a spatial join to find the grid points that fall within each polygon:
+We use a spatial join to find the grid points in each polygon:
 
 ```{r pip}
 result_pip <- aggregate_to_polygons(
-  imd_spatial, districts_sf, "temp",
+  imd_spatial, districts_sf, c(value = "temp"),
   method = "point_in_polygon",
   polygon_id_cols = c("state_name", "district_name")
 )
@@ -144,10 +146,10 @@ cat("Districts with data:", sum(!is.na(result_pip$value)), "/", nrow(result_pip)
 
 ### Nearest centroid
 
-Here we assign each polygon the grid point nearest its centroid:
+This method gives each polygon the grid point that is nearest to a point on the surface of the polygon:
 ```{r nearest}
 result_nearest <- aggregate_to_polygons(
-  imd_spatial, districts_sf, "temp",
+  imd_spatial, districts_sf, c(value = "temp"),
   method = "nearest_centroid",
   polygon_id_cols = c("state_name", "district_name")
 )
@@ -155,7 +157,7 @@ result_nearest <- aggregate_to_polygons(
 cat("Districts with data:", sum(!is.na(result_nearest$value)), "/", nrow(result_nearest), "\n")
 ```
 
-## Comparing results
+## Compare the results
 
 ```{r compare_maps, fig.width=10, fig.height=5}
 make_map <- function(data, title) {
@@ -178,7 +180,7 @@ p1 + p2 + plot_layout(guides = "collect")
 
 ## Value comparison
 
-For districts that have data in both methods:
+This comparison uses only the districts that have data from the two methods:
 
 ```{r scatter, fig.width=6, fig.height=6}
 comparison <- result_pip %>%

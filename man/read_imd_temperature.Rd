@@ -7,7 +7,7 @@
 read_imd_temperature(file_path, var_type, year)
 }
 \arguments{
-\item{file_path}{Path to IMD binary file (.grd).}
+\item{file_path}{Path to the IMD binary file (.grd).}
 
 \item{var_type}{Variable type: "tmax" or "tmin".}
 
@@ -17,7 +17,7 @@ read_imd_temperature(file_path, var_type, year)
 data.frame with columns: date, latitude, longitude, temperature
 }
 \description{
-Reads IMD binary temperature data (max or min) and converts to data.frame.
+Reads IMD binary temperature data (maximum or minimum) and converts the data to a data.frame.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

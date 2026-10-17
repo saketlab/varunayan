@@ -2,20 +2,20 @@
 % Please edit documentation in R/processing.R
 \name{extract_point_data}
 \alias{extract_point_data}
-\title{Extract data for specific point location (nearest neighbor)}
+\title{Extract data for a specified point location (nearest neighbor)}
 \usage{
 extract_point_data(netcdf_file, target_lat, target_lon)
 }
 \arguments{
-\item{netcdf_file}{Character string path to NetCDF file}
+\item{netcdf_file}{Path to the NetCDF file, as a character string}
 
 \item{target_lat}{Target latitude}
 
 \item{target_lon}{Target longitude}
 }
 \value{
-data.frame with data for nearest point
+data.frame with data for the nearest point
 }
 \description{
-Extract data for specific point location (nearest neighbor)
+Extract data for a specified point location (nearest neighbor)
 }

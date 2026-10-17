@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{validate_bbox}
 \alias{validate_bbox}
-\title{Validate bounding box coordinates}
+\title{Make sure that bounding box coordinates are valid}
 \usage{
 validate_bbox(north, south, east, west)
 }
@@ -16,8 +16,8 @@ validate_bbox(north, south, east, west)
 \item{west}{Western boundary}
 }
 \value{
-Logical indicating if bounding box is valid
+Logical. TRUE if the bounding box is valid
 }
 \description{
-Validate bounding box coordinates
+Make sure that bounding box coordinates are valid
 }

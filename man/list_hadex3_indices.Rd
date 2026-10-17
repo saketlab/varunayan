@@ -3,25 +3,25 @@
 \name{ListHadEX3Indices}
 \alias{ListHadEX3Indices}
 \alias{list_hadex3_indices}
-\title{List available HadEX3 ETCCDI indices}
+\title{List the available HadEX3 ETCCDI indices}
 \usage{
 ListHadEX3Indices(...)
 
 list_hadex3_indices(frequency = "all")
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
 \item{frequency}{Filter by frequency: "annual", "monthly", or "all" (default).}
 }
 \value{
-data.frame with columns: index, category, description, unit,
+A data.frame with the columns: index, category, description, unit,
 annual, monthly.
 }
 \description{
-Returns a data.frame describing all ETCCDI climate extremes indices
-available in the HadEX3 dataset, including their temporal availability
-and physical interpretation.
+Returns a data.frame that describes all the ETCCDI indices of climate
+extremes in the HadEX3 dataset. The data.frame shows the temporal
+availability and the physical quantity of each index.
 }
 \examples{
 list_hadex3_indices()

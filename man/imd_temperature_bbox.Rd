@@ -23,7 +23,7 @@ imd_temperature_bbox(
 )
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
 \item{request_id}{Unique identifier for the request.}
 
@@ -31,23 +31,23 @@ imd_temperature_bbox(
 
 \item{end_year}{End year (1951-2025).}
 
-\item{north}{Northern latitude boundary.}
+\item{north}{Latitude of the north boundary.}
 
-\item{south}{Southern latitude boundary.}
+\item{south}{Latitude of the south boundary.}
 
-\item{east}{Eastern longitude boundary.}
+\item{east}{Longitude of the east boundary.}
 
-\item{west}{Western longitude boundary.}
+\item{west}{Longitude of the west boundary.}
 
 \item{var_type}{Temperature type: "tmax" or "tmin".}
 
 \item{frequency}{Temporal frequency (default: "daily").}
 
-\item{save_raw}{Whether to save raw files (default: FALSE).}
+\item{save_raw}{If TRUE, keep the raw files (default: FALSE).}
 
-\item{output_dir}{Directory to save files (default: tempdir()).}
+\item{output_dir}{Directory for the output files (default: tempdir()).}
 
-\item{use_cache}{Whether to use cached data if available (default: TRUE).}
+\item{use_cache}{If TRUE, use the cached data when it is available (default: TRUE).}
 }
 \value{
 A data.frame with columns \code{date}, \code{latitude}, \code{longitude} and \code{temperature} (degrees Celsius), restricted to the requested region and aggregated to \code{frequency}.

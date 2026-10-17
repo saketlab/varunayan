@@ -2,17 +2,17 @@
 % Please edit documentation in R/cache.R
 \name{check_cache}
 \alias{check_cache}
-\title{Check if data exists in cache}
+\title{Find if data is in the cache}
 \usage{
 check_cache(cache_key)
 }
 \arguments{
-\item{cache_key}{Cache key to check}
+\item{cache_key}{Cache key to examine}
 }
 \value{
-Path to cached file if exists, NULL otherwise
+Path to the cached file if the file exists. If not, NULL.
 }
 \description{
-Check if data exists in cache
+Find if data is in the cache
 }
 \keyword{internal}

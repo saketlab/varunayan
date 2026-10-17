@@ -1,16 +1,16 @@
 #' Search for ERA5 variables by keyword
 #'
-#' @param keyword Character string to search for in variable names and descriptions
-#' @param dataset_type Character string indicating dataset type ("single", "pressure", or "all")
-#' @param exact_match Logical indicating whether to use exact matching
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param keyword Character string to find in variable names and descriptions
+#' @param dataset_type Character string that gives the dataset type ("single", "pressure", or "all")
+#' @param exact_match Logical. If TRUE, use an exact match
+#' @param ... Arguments that the aliases send to the primary function.
 #' @return A data.frame with columns `variable_name`, `description`, `units`, `dataset_type` and `category`, one row per matching variable.
 #' @export
 #' @examples
 #' # Search for temperature variables
 #' temp_vars <- search_variable("temperature")
 #'
-#' # Search in pressure level data only
+#' # Search only in pressure level data
 #' pressure_temp <- search_variable("temperature", dataset_type = "pressure")
 search_variable <- function(keyword, dataset_type = "all", exact_match = FALSE) {
   dataset_type <- tolower(x = dataset_type)
@@ -86,8 +86,8 @@ search_variable <- function(keyword, dataset_type = "all", exact_match = FALSE) 
 #' Describe ERA5 variables in detail
 #'
 #' @param variables Character vector of variable names to describe
-#' @param dataset_type Character string indicating dataset type ("single", "pressure", or "all")
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param dataset_type Character string that gives the dataset type ("single", "pressure", or "all")
+#' @param ... Arguments that the aliases send to the primary function.
 #' @return A data.frame with columns `variable_name`, `description`, `units`, `dataset_type` and `category`, one row per matched variable.
 #' @export
 #' @examples
@@ -183,8 +183,8 @@ get_available_datasets <- function() {
 
 #' List all available variables for a dataset type
 #'
-#' @param dataset_type Character string indicating dataset type
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param dataset_type Character string that gives the dataset type
+#' @param ... Arguments that the aliases send to the primary function.
 #' @return Character vector of variable names
 #' @export
 #' @examples
@@ -214,9 +214,9 @@ list_available_variables <- function(dataset_type = "all") {
   return(sort(x = unique(x = all_variables)))
 }
 
-#' Get single-level variables dataset
+#' Get the dataset of single-level variables
 #'
-#' @return List containing single-level variable categories
+#' @return List that contains the single-level variable categories
 get_single_level_variables <- function() {
   list(
     temperature_and_pressure = list(
@@ -358,9 +358,9 @@ get_single_level_variables <- function() {
   )
 }
 
-#' Get pressure-level variables dataset
+#' Get the dataset of pressure-level variables
 #'
-#' @return List containing pressure-level variable categories
+#' @return List that contains the pressure-level variable categories
 get_pressure_level_variables <- function() {
   list(
     atmospheric_variables = list(
@@ -404,9 +404,9 @@ get_pressure_level_variables <- function() {
   )
 }
 
-#' Get standard pressure levels available in ERA5
+#' Get the standard pressure levels that are available in ERA5
 #'
-#' @param ... Arguments passed to the main function (used by aliases).
+#' @param ... Arguments that the aliases send to the primary function.
 #' @return Character vector of pressure levels in hPa
 #' @export
 #' @examples

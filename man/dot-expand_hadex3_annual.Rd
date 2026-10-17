@@ -2,11 +2,11 @@
 % Please edit documentation in R/hadex3.R
 \name{.expand_hadex3_annual}
 \alias{.expand_hadex3_annual}
-\title{Expand annual NetCDF array to data.frame}
+\title{Expand the annual NetCDF array to a data.frame}
 \usage{
 .expand_hadex3_annual(vals, lat, lon, years, fill_val)
 }
 \description{
-Expand annual NetCDF array to data.frame
+Expand the annual NetCDF array to a data.frame
 }
 \keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/processing.R
 \name{create_temporal_chunks}
 \alias{create_temporal_chunks}
-\title{Apply temporal chunking for large date ranges}
+\title{Divide large date ranges into temporal chunks}
 \usage{
 create_temporal_chunks(
   start_date,
@@ -21,14 +21,14 @@ create_temporal_chunks(
 
 \item{n_variables}{Number of variables in the request (fields = vars x steps)}
 
-\item{max_days_per_chunk}{Maximum days per chunk. NA (default) -> derive from
-frequency via \code{compute_optimal_chunk_size}.}
+\item{max_days_per_chunk}{Maximum days per chunk. If NA (default), the function
+calculates the value from frequency with \code{compute_optimal_chunk_size}.}
 }
 \value{
-List of date pairs for chunked processing
+List of date pairs, with one pair for each chunk
 }
 \description{
-Chunk size defaults to \code{compute_optimal_chunk_size(frequency)}, which
-scales with the CDS field limit (hourly: 24 fields/day, daily: 1/day,
-monthly: 12/year) so each chunk fills one CDS job.
+The default chunk size is \code{compute_optimal_chunk_size(frequency)}. This size
+changes with the CDS field limit (hourly: 24 fields/day, daily: 1/day,
+monthly: 12/year). Thus, each chunk fills one CDS job.
 }

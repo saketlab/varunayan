@@ -2,11 +2,11 @@
 % Please edit documentation in R/hadex3.R
 \name{.expand_hadex3_monthly}
 \alias{.expand_hadex3_monthly}
-\title{Expand monthly NetCDF array to data.frame}
+\title{Expand the monthly NetCDF array to a data.frame}
 \usage{
 .expand_hadex3_monthly(vals, lat, lon, year_months, fill_val)
 }
 \description{
-Expand monthly NetCDF array to data.frame
+Expand the monthly NetCDF array to a data.frame
 }
 \keyword{internal}

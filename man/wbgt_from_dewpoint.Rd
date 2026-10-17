@@ -15,8 +15,8 @@ wbgt_from_dewpoint(temp_c, dewpoint_c)
 WBGT in Celsius
 }
 \description{
-Alias for \code{wbgt_simple()} (BoM closed-form WBGT from temperature and
-dewpoint).
+This function is an alias for \code{wbgt_simple()}. It calculates the BoM
+closed-form WBGT from temperature and dewpoint.
 }
 \examples{
 wbgt_from_dewpoint(35, 25)

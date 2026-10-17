@@ -36,7 +36,7 @@ era5ify_geojson(
 
 \item{end_date}{End date in "YYYY-MM-DD" format}
 
-\item{json_file}{Path to GeoJSON file defining the region}
+\item{json_file}{Path to the GeoJSON file that defines the region}
 
 \item{dataset_type}{Type of dataset ("single" or "pressure")}
 
@@ -46,17 +46,17 @@ era5ify_geojson(
 
 \item{resolution}{Spatial resolution in degrees (default: 0.25)}
 
-\item{save_raw}{Whether to save raw downloaded files}
+\item{save_raw}{If TRUE, save the raw downloaded files}
 
-\item{output_dir}{Directory to save files (default: tempdir())}
+\item{output_dir}{Directory for the saved files (default: tempdir())}
 
-\item{use_cache}{Whether to use cached data if available (default: TRUE)}
+\item{use_cache}{If TRUE, use cached data when it is available (default: TRUE)}
 
-\item{convert_units}{Whether to convert units to user-friendly formats (default: TRUE).
-When TRUE, temperature variables are returned in Celsius (converted from Kelvin)
-and precipitation variables are returned in mm (converted from meters).}
+\item{convert_units}{If TRUE, convert units to user-friendly formats (default: TRUE).
+When TRUE, the function returns temperature variables in Celsius (converted from Kelvin).
+It returns precipitation variables in mm (converted from meters).}
 
-\item{verbose}{Whether to print detailed progress messages}
+\item{verbose}{If TRUE, print detailed progress messages}
 }
 \value{
 data.frame with processed climate data. When \code{convert_units = TRUE}:
@@ -67,7 +67,8 @@ data.frame with processed climate data. When \code{convert_units = TRUE}:
 }
 }
 \description{
-PascalCase aliases for all exported functions for backward compatibility.
+PascalCase aliases for all exported functions. The aliases keep backward
+compatibility.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
@@ -81,6 +82,6 @@ data <- era5ify_geojson(
   end_date = "2023-01-31",
   json_file = region
 )
-# Temperature is in Celsius, precipitation is in mm
+# Temperature is in Celsius. Precipitation is in mm.
 \dontshow{\}) # examplesIf}
 }

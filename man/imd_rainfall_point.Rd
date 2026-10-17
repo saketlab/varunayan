@@ -21,7 +21,7 @@ imd_rainfall_point(
 )
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
 \item{request_id}{Unique identifier for the request.}
 
@@ -29,27 +29,28 @@ imd_rainfall_point(
 
 \item{end_year}{End year (1901-2024).}
 
-\item{latitude}{Point latitude.}
+\item{latitude}{Latitude of the point.}
 
-\item{longitude}{Point longitude.}
+\item{longitude}{Longitude of the point.}
 
 \item{resolution}{Spatial resolution: 0.25 or 1.0 degrees (default: 0.25).}
 
 \item{frequency}{Temporal frequency: "daily", "monthly", "yearly" (default: "daily").}
 
-\item{save_raw}{Whether to save raw downloaded files (default: FALSE).}
+\item{save_raw}{If TRUE, keep the raw downloaded files (default: FALSE).}
 
-\item{output_dir}{Directory to save files (default: tempdir()).}
+\item{output_dir}{Directory for the output files (default: tempdir()).}
 
-\item{use_cache}{Whether to use cached data if available (default: TRUE).}
+\item{use_cache}{If TRUE, use the cached data when it is available (default: TRUE).}
 }
 \value{
-data.frame with the nearest cell's rainfall series.
+data.frame with the rainfall series of the nearest cell.
 }
 \description{
-Extracts the daily rainfall series for the IMD grid cell nearest to a
-(lat, lon). Reads only that one cell off disk per year, so it is the cheapest
-way to get a long series for a location.
+Extracts the daily rainfall series for the IMD grid cell that is nearest to
+a (lat, lon) point. For each year, the function reads only that one cell from
+the disk. Thus, this function is the method with the lowest cost to get a long
+series for one location.
 }
 \examples{
 \dontrun{

@@ -33,14 +33,14 @@
 
 #' Download IMD gridded rainfall data
 #'
-#' Downloads daily gridded rainfall data from IMD at specified resolution.
+#' Downloads daily gridded rainfall data from IMD at the specified resolution.
 #'
 #' @param start_year Start year.
 #' @param end_year End year.
 #' @param resolution Spatial resolution: 0.25 or 1.0 degrees.
-#' @param output_dir Directory to save downloaded files.
-#' @param use_cache Whether to use cached data if available (default: TRUE).
-#' @return Character vector of downloaded file paths
+#' @param output_dir Directory for the downloaded files.
+#' @param use_cache If TRUE, use the cached data when it is available (default: TRUE).
+#' @return Character vector of the paths to the downloaded files.
 #' @export
 #' @examplesIf interactive()
 #' # Download 0.25 degree rainfall for 2023-2025
@@ -51,7 +51,7 @@
 #' )
 download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, output_dir = tempdir(), use_cache = TRUE) {
   if (start_year < .IMD_RAIN_YEARS[1] || end_year > .IMD_RAIN_YEARS[2]) {
-    stop(sprintf("Rainfall data available for years %d-%d", .IMD_RAIN_YEARS[1], .IMD_RAIN_YEARS[2]))
+    stop(sprintf("Rainfall data is available only for the years %d-%d", .IMD_RAIN_YEARS[1], .IMD_RAIN_YEARS[2]))
   }
   if (start_year > end_year) stop("Start year must be <= end year")
   if (!resolution %in% c(0.25, 1.0)) stop("Resolution must be 0.25 or 1.0 degrees")
@@ -59,7 +59,7 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
 
   endpoint <- .imd_endpoint(paste0("rainfall_", format(resolution, nsmall = 1)))
 
-  message(sprintf(fmt = "Downloading IMD rainfall data (resolution: %s\u00B0)", resolution))
+  message(sprintf(fmt = "IMD rainfall data download started (resolution: %s\u00B0)", resolution))
   message(sprintf(fmt = "Years: %s to %s", start_year, end_year))
 
   ensure_output_dir(output_dir)
@@ -70,7 +70,7 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
   missing_years <- c()
 
   if (use_cache) {
-    message("Checking cache for existing data...")
+    message("Check of the cache for available data...")
     for (year in years) {
       cache_key <- generate_cache_key(
         source = "imd",
@@ -91,43 +91,43 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
       message(sprintf(fmt = "Found %s year(s) in cache: %s", length(x = cached_years), paste(cached_years, collapse = ", ")))
     }
     if (length(x = missing_years) > 0) {
-      message(sprintf(fmt = "Need to download %s year(s): %s", length(x = missing_years), paste(missing_years, collapse = ", ")))
+      message(sprintf(fmt = "Download is necessary for %s year(s): %s", length(x = missing_years), paste(missing_years, collapse = ", ")))
     }
   } else {
     missing_years <- years
-    message(sprintf(fmt = "Cache disabled. Will download all %s years.", length(x = missing_years)))
+    message(sprintf(fmt = "Cache is disabled. The function will download all %s years.", length(x = missing_years)))
   }
 
 
   if (length(x = missing_years) > 0) {
-    message("Checking IMD server connectivity...")
+    message("Check of the connection to the IMD server...")
     if (!check_imd_server()) {
-      warning("IMD server (", .IMD_BASE_URL, ") is not responding", call. = FALSE)
+      warning("IMD server (", .IMD_BASE_URL, ") does not respond", call. = FALSE)
 
       if (length(x = cached_years) == length(x = years)) {
-        message("All requested data is cached. Proceeding with cached data only.")
+        message("All the requested data is in the cache. The function will use only the cached data.")
       } else {
-        stop(sprintf(fmt = "Server unreachable and %s year(s) not in cache", length(x = missing_years)))
-        message("This could be due to:")
+        stop(sprintf(fmt = "Cannot connect to the server, and %s year(s) are not in the cache", length(x = missing_years)))
+        message("Possible causes:")
         message(paste("  -", c(
-          "Server is temporarily down",
-          "Network connectivity issues",
-          "Firewall/proxy blocking the connection",
-          "Server is under maintenance"
+          "The server is temporarily not in operation",
+          "Problems with the network connection",
+          "A firewall or proxy stops the connection",
+          "The server is in maintenance"
         ), collapse = "\n"))
         message("Options:")
         message(paste("  -", c(
-          "Try again later when server is available",
-          sprintf(fmt = "Request only cached years: %s", paste(cached_years, collapse = ", ")),
-          "Use ERA5 data as alternative"
+          "Try again later, when the server is available",
+          sprintf(fmt = "Request only the cached years: %s", paste(cached_years, collapse = ", ")),
+          "Use ERA5 data as an alternative"
         ), collapse = "\n"))
-        stop("Cannot connect to IMD server and some data is not cached")
+        stop("Cannot connect to the IMD server, and some data is not in the cache")
       }
     } else {
-      message("IMD server is reachable")
+      message("The IMD server is available")
     }
   } else {
-    message("All requested data available in cache. No download needed!")
+    message("All the requested data is in the cache. No download is necessary.")
   }
 
 
@@ -146,7 +146,7 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
 
       cached_file <- check_cache(cache_key)
       if (!is.null(cached_file)) {
-        message(sprintf(fmt = "Using cached data for %s: %s", year, basename(path = cached_file)))
+        message(sprintf(fmt = "Use of cached data for %s: %s", year, basename(path = cached_file)))
         file.copy(cached_file, output_file, overwrite = TRUE)
         return(output_file)
       }
@@ -154,7 +154,7 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
 
     tryCatch(
       {
-        message(sprintf(fmt = "Downloading year %s...", year))
+        message(sprintf(fmt = "Download of year %s...", year))
         result <- download_imd_year(
           year, endpoint$php, endpoint$param, .IMD_GRID_URL, output_file
         )
@@ -167,7 +167,7 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
               save_to_cache(result, cache_key)
             },
             error = function(e) {
-              warning(sprintf(fmt = "Could not save to cache: %s", e$message), call. = FALSE)
+              warning(sprintf(fmt = "Cannot save to the cache: %s", e$message), call. = FALSE)
             }
           )
         }
@@ -175,7 +175,7 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
         result
       },
       error = function(e) {
-        stop(sprintf(fmt = "Failed to download %s: %s", year, e$message))
+        stop(sprintf(fmt = "Download failed for %s: %s", year, e$message))
         NA_character_
       }
     )
@@ -188,18 +188,18 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
 
 #' Download IMD gridded temperature data
 #'
-#' Downloads daily gridded temperature data (max or min) from IMD.
-#' Temperature data is at 1.0 degree resolution only.
+#' Downloads daily gridded temperature data (maximum or minimum) from IMD.
+#' Temperature data is available only at 1.0 degree resolution.
 #'
 #' @param start_year Start year.
 #' @param end_year End year.
 #' @param var_type Type of temperature: "tmax" or "tmin".
-#' @param output_dir Directory to save downloaded files.
-#' @param use_cache Whether to use cached data if available (default: TRUE).
-#' @return Character vector of downloaded file paths
+#' @param output_dir Directory for the downloaded files.
+#' @param use_cache If TRUE, use the cached data when it is available (default: TRUE).
+#' @return Character vector of the paths to the downloaded files.
 #' @export
 #' @examplesIf interactive()
-#' # Download max temperature for 2023-2025
+#' # Download maximum temperature for 2023-2025
 #' files <- download_imd_temperature(
 #'   start_year = 2023,
 #'   end_year = 2025,
@@ -207,7 +207,7 @@ download_imd_rainfall <- function(start_year, end_year, resolution = 0.25, outpu
 #' )
 download_imd_temperature <- function(start_year, end_year, var_type = "tmax", output_dir = tempdir(), use_cache = TRUE) {
   if (start_year < .IMD_TEMP_YEARS[1] || end_year > .IMD_TEMP_YEARS[2]) {
-    stop(sprintf("Temperature data available for years %d-%d", .IMD_TEMP_YEARS[1], .IMD_TEMP_YEARS[2]))
+    stop(sprintf("Temperature data is available only for the years %d-%d", .IMD_TEMP_YEARS[1], .IMD_TEMP_YEARS[2]))
   }
   if (start_year > end_year) stop("Start year must be <= end year")
   if (!var_type %in% c("tmax", "tmin")) stop("var_type must be 'tmax' or 'tmin'")
@@ -215,7 +215,7 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
 
   endpoint <- .imd_endpoint(paste0(var_type, "_1.0"))
 
-  message(sprintf(fmt = "Downloading IMD %s data (resolution: 1.0\u00B0)", var_type))
+  message(sprintf(fmt = "IMD %s data download started (resolution: 1.0\u00B0)", var_type))
   message(sprintf(fmt = "Years: %s to %s", start_year, end_year))
 
   ensure_output_dir(output_dir)
@@ -226,7 +226,7 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
   missing_years <- c()
 
   if (use_cache) {
-    message("Checking cache for existing data...")
+    message("Check of the cache for available data...")
     for (year in years) {
       cache_key <- generate_cache_key(
         source = "imd",
@@ -247,43 +247,43 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
       message(sprintf(fmt = "Found %s year(s) in cache: %s", length(x = cached_years), paste(cached_years, collapse = ", ")))
     }
     if (length(x = missing_years) > 0) {
-      message(sprintf(fmt = "Need to download %s year(s): %s", length(x = missing_years), paste(missing_years, collapse = ", ")))
+      message(sprintf(fmt = "Download is necessary for %s year(s): %s", length(x = missing_years), paste(missing_years, collapse = ", ")))
     }
   } else {
     missing_years <- years
-    message(sprintf(fmt = "Cache disabled. Will download all %s years.", length(x = missing_years)))
+    message(sprintf(fmt = "Cache is disabled. The function will download all %s years.", length(x = missing_years)))
   }
 
 
   if (length(x = missing_years) > 0) {
-    message("Checking IMD server connectivity...")
+    message("Check of the connection to the IMD server...")
     if (!check_imd_server()) {
-      warning("IMD server (", .IMD_BASE_URL, ") is not responding", call. = FALSE)
+      warning("IMD server (", .IMD_BASE_URL, ") does not respond", call. = FALSE)
 
       if (length(x = cached_years) == length(x = years)) {
-        message("All requested data is cached. Proceeding with cached data only.")
+        message("All the requested data is in the cache. The function will use only the cached data.")
       } else {
-        stop(sprintf(fmt = "Server unreachable and %s year(s) not in cache", length(x = missing_years)))
-        message("This could be due to:")
+        stop(sprintf(fmt = "Cannot connect to the server, and %s year(s) are not in the cache", length(x = missing_years)))
+        message("Possible causes:")
         message(paste("  -", c(
-          "Server is temporarily down",
-          "Network connectivity issues",
-          "Firewall/proxy blocking the connection",
-          "Server is under maintenance"
+          "The server is temporarily not in operation",
+          "Problems with the network connection",
+          "A firewall or proxy stops the connection",
+          "The server is in maintenance"
         ), collapse = "\n"))
         message("Options:")
         message(paste("  -", c(
-          "Try again later when server is available",
-          sprintf(fmt = "Request only cached years: %s", paste(cached_years, collapse = ", ")),
-          "Use ERA5 data as alternative"
+          "Try again later, when the server is available",
+          sprintf(fmt = "Request only the cached years: %s", paste(cached_years, collapse = ", ")),
+          "Use ERA5 data as an alternative"
         ), collapse = "\n"))
-        stop("Cannot connect to IMD server and some data is not cached")
+        stop("Cannot connect to the IMD server, and some data is not in the cache")
       }
     } else {
-      message("IMD server is reachable")
+      message("The IMD server is available")
     }
   } else {
-    message("All requested data available in cache. No download needed!")
+    message("All the requested data is in the cache. No download is necessary.")
   }
 
 
@@ -302,7 +302,7 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
 
       cached_file <- check_cache(cache_key)
       if (!is.null(cached_file)) {
-        message(sprintf(fmt = "Using cached data for %s: %s", year, basename(path = cached_file)))
+        message(sprintf(fmt = "Use of cached data for %s: %s", year, basename(path = cached_file)))
         file.copy(cached_file, output_file, overwrite = TRUE)
         return(output_file)
       }
@@ -310,7 +310,7 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
 
     tryCatch(
       {
-        message(sprintf(fmt = "Downloading year %s...", year))
+        message(sprintf(fmt = "Download of year %s...", year))
         result <- download_imd_year(
           year, endpoint$php, endpoint$param, .IMD_GRID_URL, output_file
         )
@@ -323,7 +323,7 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
               save_to_cache(result, cache_key)
             },
             error = function(e) {
-              warning(sprintf(fmt = "Could not save to cache: %s", e$message), call. = FALSE)
+              warning(sprintf(fmt = "Cannot save to the cache: %s", e$message), call. = FALSE)
             }
           )
         }
@@ -331,7 +331,7 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
         result
       },
       error = function(e) {
-        stop(sprintf(fmt = "Failed to download %s: %s", year, e$message))
+        stop(sprintf(fmt = "Download failed for %s: %s", year, e$message))
         NA_character_
       }
     )
@@ -342,12 +342,12 @@ download_imd_temperature <- function(start_year, end_year, var_type = "tmax", ou
   files
 }
 
-#' Check IMD server connectivity
+#' Check the connection to the IMD server
 #'
-#' @param base_url Base URL to test.
+#' @param base_url Base URL for the test.
 #' @param timeout Request timeout in seconds.
 #' @param retries Attempts before giving up.
-#' @return Logical indicating if server is reachable
+#' @return Logical. TRUE if the server is available.
 #' @keywords internal
 check_imd_server <- function(base_url = .IMD_BASE_URL, timeout = 60, retries = .IMD_RETRIES) {
   tryCatch(
@@ -368,9 +368,9 @@ check_imd_server <- function(base_url = .IMD_BASE_URL, timeout = 60, retries = .
 #' @param php_file PHP endpoint file.
 #' @param param_name POST parameter name.
 #' @param base_url Base URL.
-#' @param output_file Path to save the downloaded file.
+#' @param output_file Path for the downloaded file.
 #' @param max_retries Maximum number of attempts.
-#' @return Character string path to downloaded file
+#' @return Character string. The path to the downloaded file.
 #' @keywords internal
 download_imd_year <- function(year, php_file, param_name, base_url, output_file, max_retries = .IMD_RETRIES) {
   response <- .imd_request(POST, paste0(base_url, php_file),
@@ -382,13 +382,13 @@ download_imd_year <- function(year, php_file, param_name, base_url, output_file,
     stop("Server returned HTML instead of data for ", year)
   }
   writeBin(content(response, "raw"), output_file)
-  if (!file.exists(output_file) || file.size(output_file) == 0) stop("Downloaded file is empty or was not created")
+  if (!file.exists(output_file) || file.size(output_file) == 0) stop("Downloaded file is empty or does not exist")
   output_file
 }
 
 #' Get IMD grid specifications
 #'
-#' Returns grid specifications for different IMD datasets.
+#' Returns the grid specifications for an IMD dataset.
 #'
 #' @param dataset Dataset identifier: "rainfall_0.25",
 #'   "rainfall_1.0", "tmax_1.0", "tmin_1.0".
@@ -399,8 +399,8 @@ download_imd_year <- function(year, php_file, param_name, base_url, output_file,
 get_imd_grid_specs <- function(dataset) {
   specs <- list(
     "rainfall_0.25" = list(
-      nlat = 129, # Actual from NetCDF
-      nlon = 135, # Actual from NetCDF
+      nlat = 129, # Value from the NetCDF file
+      nlon = 135, # Value from the NetCDF file
       lat_start = 6.5,
       lat_end = 38.5,
       lon_start = 66.5,
@@ -456,7 +456,7 @@ get_imd_grid_specs <- function(dataset) {
 
   if (!dataset %in% names(specs)) {
     stop(
-      "Invalid dataset. Must be one of: ",
+      "Invalid dataset. The dataset must be one of: ",
       paste(names(specs), collapse = ", ")
     )
   }
@@ -466,7 +466,7 @@ get_imd_grid_specs <- function(dataset) {
 
 #' List available IMD datasets
 #'
-#' @return data.frame with available IMD datasets and their characteristics
+#' @return data.frame with the available IMD datasets and their properties.
 #' @export
 #' @examples
 #' list_imd_datasets()

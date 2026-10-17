@@ -2,24 +2,25 @@
 % Please edit documentation in R/imd_processing.R
 \name{read_imd_rainfall_cropped}
 \alias{read_imd_rainfall_cropped}
-\title{Read an IMD rainfall NetCDF, cropped to a bbox at read time (fast path)}
+\title{Read only the bbox area of an IMD rainfall NetCDF file (fast path)}
 \usage{
 read_imd_rainfall_cropped(file_path, year, bbox)
 }
 \arguments{
-\item{file_path}{Path to IMD NetCDF rainfall file.}
+\item{file_path}{Path to the IMD NetCDF rainfall file.}
 
 \item{year}{Year of the data (for the date axis).}
 
-\item{bbox}{Named numeric vector/list with north, south, east, west.}
+\item{bbox}{Named numeric vector or list with north, south, east, and west.}
 }
 \value{
 data.frame with columns date, latitude, longitude, rainfall.
 }
 \description{
-Reads only the spatial hyperslab covering \code{bbox} directly off disk with
-\code{ncvar_get(start, count)}, instead of materializing the whole national
-grid and filtering afterwards. For a small region over many years this is
-orders of magnitude faster and lighter (GB -> MB, minutes -> seconds).
+Reads only the spatial hyperslab that contains \code{bbox} directly from the
+disk with \code{ncvar_get(start, count)}. The function does not read the full
+national grid into memory and then filter it. For a small region and many
+years, this method is orders of magnitude faster. It also uses much less
+memory (GB -> MB, minutes -> seconds).
 }
 \keyword{internal}

@@ -2,11 +2,11 @@
 % Please edit documentation in R/hadex3.R
 \name{.fetch_hadex3}
 \alias{.fetch_hadex3}
-\title{Fetch HadEX3 index data (with caching)}
+\title{Get HadEX3 index data and use the cache}
 \usage{
 .fetch_hadex3(index, frequency, baseline, use_cache, output_dir)
 }
 \description{
-Fetch HadEX3 index data (with caching)
+Get HadEX3 index data and use the cache
 }
 \keyword{internal}

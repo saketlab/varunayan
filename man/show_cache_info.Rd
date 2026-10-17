@@ -10,7 +10,7 @@ ShowCacheInfo(...)
 show_cache_info()
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments for the main function (for use by aliases).}
 }
 \value{
 Invisibly, a data.frame with columns \code{name}, \code{size_mb} and \code{mtime} describing cached files, or \code{NULL} if the cache is empty. Called mainly for its side effect of printing a summary as messages.

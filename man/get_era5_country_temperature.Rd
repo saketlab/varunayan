@@ -3,7 +3,7 @@
 \name{GetERA5CountryTemperature}
 \alias{GetERA5CountryTemperature}
 \alias{get_era5_country_temperature}
-\title{Get ERA5 country-level temperature data}
+\title{Get ERA5 temperature data for a country}
 \usage{
 GetERA5CountryTemperature(...)
 
@@ -19,11 +19,11 @@ get_era5_country_temperature(
 )
 }
 \arguments{
-\item{...}{Additional arguments passed to \code{\link[=era5ify_geojson]{era5ify_geojson()}}.}
+\item{...}{More arguments that the function sends to \code{\link[=era5ify_geojson]{era5ify_geojson()}}.}
 
-\item{country}{One of: a country name string (resolved via
-\code{maps::map()}), a path to a GeoJSON file, or an \code{sf} object.
-Common aliases like \code{"USA"} and \code{"UK"} are handled automatically.}
+\item{country}{One of: a country name string (the function uses
+\code{maps::map()} to find it), a path to a GeoJSON file, or an \code{sf} object.
+The function automatically accepts common aliases, for example \code{"USA"} and \code{"UK"}.}
 
 \item{start_date}{Start date in \code{"YYYY-MM-DD"} format.}
 
@@ -34,35 +34,35 @@ variable names. Shorthands: \code{"mean"} (2m_temperature), \code{"max"}
 (maximum_2m_temperature_since_previous_post_processing), \code{"min"}
 (minimum_2m_temperature_since_previous_post_processing). Default: \code{"mean"}.}
 
-\item{request_id}{Optional request identifier. Auto-generated from the
-country name if not provided.}
+\item{request_id}{Optional request identifier. If you do not supply it, the
+function makes it from the country name.}
 
 \item{resolution}{Spatial resolution in degrees (default: 0.25).}
 
-\item{verbose}{Whether to print detailed progress messages.}
+\item{verbose}{If TRUE, show detailed progress messages.}
 }
 \value{
-A data.frame with columns \code{year}, \code{month}, and one column per
-requested variable (e.g., \code{temperature_mean}, \code{temperature_max},
-\code{temperature_min}). Temperature values are in Celsius.
+A data.frame with the columns \code{year}, \code{month}, and one column for
+each requested variable (for example, \code{temperature_mean}, \code{temperature_max},
+\code{temperature_min}). The temperature values are in Celsius.
 }
 \description{
-Download and aggregate ERA5 temperature data for a country.
-Resolves the country boundary, downloads monthly data via
-\code{\link[=era5ify_geojson]{era5ify_geojson()}}, and returns area-weighted (cosine-latitude) country-level
-averages by year and month.
+Downloads ERA5 temperature data for a country and aggregates the data.
+The function finds the country boundary and downloads monthly data with
+\code{\link[=era5ify_geojson]{era5ify_geojson()}}. It returns country-level averages for each year and
+month, with area weights (cosine of latitude).
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 # Monthly mean temperature for India
 get_era5_country_temperature("India", "2023-06-01", "2023-06-30")
 
-# Mean and max temperature for USA
+# Mean and max temperature for the USA
 get_era5_country_temperature("USA", "2023-01-01", "2023-12-31",
   variables = c("mean", "max")
 )
 
-# Using an sf object directly
+# Use an sf object directly
 library(sf)
 poly <- st_read("my_country.geojson")
 get_era5_country_temperature(poly, "2023-01-01", "2023-06-30")

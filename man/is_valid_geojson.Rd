@@ -2,16 +2,16 @@
 % Please edit documentation in R/utils.R
 \name{is_valid_geojson}
 \alias{is_valid_geojson}
-\title{Check if data is valid GeoJSON}
+\title{Find if data is valid GeoJSON}
 \usage{
 is_valid_geojson(data)
 }
 \arguments{
-\item{data}{List or data structure to check}
+\item{data}{List or data structure to examine}
 }
 \value{
-Logical indicating if data is valid GeoJSON
+Logical. TRUE if the data is valid GeoJSON
 }
 \description{
-Check if data is valid GeoJSON
+Find if data is valid GeoJSON
 }

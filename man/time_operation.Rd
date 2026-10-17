@@ -2,22 +2,22 @@
 % Please edit documentation in R/utils.R
 \name{time_operation}
 \alias{time_operation}
-\title{Time an operation and log the duration}
+\title{Measure the time of an operation and record the duration}
 \usage{
 time_operation(expr, label, verbose = TRUE)
 }
 \arguments{
-\item{expr}{Expression to time}
+\item{expr}{Expression to measure}
 
 \item{label}{Label for the operation}
 
-\item{verbose}{Whether to print timing info (default: TRUE)}
+\item{verbose}{If TRUE, print the time information (default: TRUE)}
 }
 \value{
 The value of \code{expr}. The elapsed time is recorded and can be retrieved with \code{\link[=get_timings]{get_timings()}}.
 }
 \description{
-Time an operation and log the duration
+Measure the time of an operation and record the duration
 }
 \examples{
 x <- time_operation(sum(1:10), "sum")

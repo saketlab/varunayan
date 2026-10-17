@@ -2,18 +2,18 @@
 % Please edit documentation in R/variable_lists.R
 \name{is_max_var}
 \alias{is_max_var}
-\title{Check if a variable should use maximum}
+\title{Find if a variable uses maximum aggregation}
 \usage{
 is_max_var(var_name)
 }
 \arguments{
-\item{var_name}{Character string variable name}
+\item{var_name}{Variable name as a character string}
 }
 \value{
-Logical indicating if variable should use max
+Logical. TRUE if the variable uses maximum aggregation
 }
 \description{
-Check if a variable should use maximum
+Find if a variable uses maximum aggregation
 }
 \examples{
 is_max_var("2m_temperature")

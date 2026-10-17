@@ -209,7 +209,7 @@ test_that("cleanup_temp_files removes only matching files", {
   dir.create(d)
   on.exit(unlink(d, recursive = TRUE), add = TRUE)
   file.create(file.path(d, c("varunayan_a.nc", "varunayan_b.csv", "keep.txt")))
-  expect_message(n <- cleanup_temp_files(directory = d), "Cleaned up 2 temporary files")
+  expect_message(n <- cleanup_temp_files(directory = d), "Deleted 2 temporary files")
   expect_equal(n, 2)
   expect_equal(list.files(d), "keep.txt")
   expect_silent(n0 <- cleanup_temp_files(directory = d))
@@ -230,7 +230,7 @@ test_that("time_operation returns the value and records timing", {
   ns_env$timings <- list()
   msgs <- capture_messages(res <- time_operation(sum(1:10), "sum op"))
   expect_equal(res, 55)
-  expect_true(any(grepl("\\[TIMER\\] Starting: sum op", msgs)))
+  expect_true(any(grepl("\\[TIMER\\] Start: sum op", msgs)))
   expect_true(any(grepl("\\[TIMER\\] sum op: .* ms", msgs)))
   expect_silent(time_operation(1 + 1, "quiet", verbose = FALSE))
   expect_length(ns_env$timings, 2)
@@ -243,7 +243,7 @@ test_that("get_timings formats durations across ms, seconds and minutes", {
   old_timings <- ns_env$timings
   on.exit(ns_env$timings <- old_timings, add = TRUE)
   ns_env$timings <- list()
-  expect_message(empty <- get_timings(), "No timing data recorded")
+  expect_message(empty <- get_timings(), "There is no recorded time data")
   expect_equal(nrow(empty), 0)
   expect_named(empty, c("label", "elapsed_seconds", "timestamp"))
 
@@ -265,7 +265,7 @@ test_that("print_timing_summary orders slowest first and reports shares", {
   on.exit(ns_env$timings <- old_timings, add = TRUE)
   ns_env$timings <- list()
   msgs <- capture_messages(res <- print_timing_summary())
-  expect_true(any(grepl("No timing data to display", msgs)))
+  expect_true(any(grepl("No time data to show", msgs)))
   expect_null(res)
 
   now <- Sys.time()
@@ -285,7 +285,7 @@ test_that("clear_timings empties the timing store", {
   old_timings <- ns_env$timings
   on.exit(ns_env$timings <- old_timings, add = TRUE)
   ns_env$timings <- list(list(label = "x", elapsed = 1, timestamp = Sys.time()))
-  expect_message(clear_timings(), "Timing data cleared")
+  expect_message(clear_timings(), "The function cleared the time data")
   expect_length(ns_env$timings, 0)
 })
 
@@ -328,7 +328,7 @@ test_that("get_cds_credentials prefers the CDS_API_KEY environment variable", {
   )
   msgs <- capture_messages(ok <- get_cds_credentials())
   expect_true(any(grepl("CDS_API_KEY", msgs)))
-  expect_true(any(grepl("CDS credentials configured", msgs)))
+  expect_true(any(grepl("CDS credentials are configured", msgs)))
   expect_true(ok)
   expect_equal(seen$key, "env-key-123")
   expect_silent(get_cds_credentials(silent = TRUE))
@@ -343,7 +343,7 @@ test_that("get_cds_credentials falls back to the keyring", {
     wf_get_key = function(...) "stored-key",
     read_cdsapirc = function(...) stop("file must not be read")
   )
-  expect_message(ok <- get_cds_credentials(), "CDS credentials found")
+  expect_message(ok <- get_cds_credentials(), "The package found the CDS credentials")
   expect_true(ok)
 })
 
@@ -375,7 +375,7 @@ test_that("get_cds_credentials returns FALSE when nothing is configured", {
   )
   expect_warning(
     msgs <- capture_messages(ok <- get_cds_credentials()),
-    "No CDS credentials found"
+    "Cannot find CDS credentials"
   )
   expect_false(ok)
   expect_true(any(grepl("setup_cds_credentials", msgs)))

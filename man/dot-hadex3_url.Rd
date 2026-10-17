@@ -2,7 +2,7 @@
 % Please edit documentation in R/hadex3.R
 \name{.hadex3_url}
 \alias{.hadex3_url}
-\title{Build HadEX3 download URL}
+\title{Make the HadEX3 download URL}
 \usage{
 .hadex3_url(index, frequency, baseline = "61-90")
 }
@@ -17,6 +17,6 @@
 Character URL.
 }
 \description{
-Build HadEX3 download URL
+Make the HadEX3 download URL
 }
 \keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/processing.R
 \name{.read_ncdf4_fast}
 \alias{.read_ncdf4_fast}
-\title{Fast NetCDF reader using ncdf4 + data.table}
+\title{Fast NetCDF reader with ncdf4 + data.table}
 \usage{
 .read_ncdf4_fast(netcdf_file)
 }
@@ -13,6 +13,6 @@
 data.frame in long format (datetime, latitude, longitude, variable, value)
 }
 \description{
-Fast NetCDF reader using ncdf4 + data.table
+Fast NetCDF reader with ncdf4 + data.table
 }
 \keyword{internal}

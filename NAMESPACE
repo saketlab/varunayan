@@ -187,7 +187,10 @@ importFrom(ncdf4,
   nc_open,
   ncvar_get
 )
-importFrom(rlang,.data)
+importFrom(rlang,
+  "%||%",
+  .data
+)
 importFrom(stats,
   aggregate,
   as.formula,

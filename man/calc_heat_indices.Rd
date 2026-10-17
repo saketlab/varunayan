@@ -16,7 +16,8 @@ Data frame with columns: temp_c, dewpoint_c, rh, wet_bulb, heat_index,
 wbgt, humidex
 }
 \description{
-Calculate all heat stress indices from temperature and dewpoint.
+This function calculates all heat stress indices from temperature and
+dewpoint.
 }
 \examples{
 calc_heat_indices(35, 25)

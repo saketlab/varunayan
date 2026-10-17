@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{clear_timings}
 \alias{clear_timings}
-\title{Clear all timing data}
+\title{Clear all time data}
 \usage{
 clear_timings()
 }
@@ -10,7 +10,7 @@ clear_timings()
 \code{NULL}, invisibly. Called for its side effect.
 }
 \description{
-Clear all timing data
+Clear all time data
 }
 \examples{
 clear_timings()

@@ -9,14 +9,15 @@ wet_bulb_temperature(temp_c, rh)
 \arguments{
 \item{temp_c}{Air temperature in Celsius}
 
-\item{rh}{Relative humidity as percentage (0-100)}
+\item{rh}{Relative humidity as a percentage (0-100)}
 }
 \value{
 Wet bulb temperature in Celsius
 }
 \description{
-Calculates wet bulb temperature using the Stull (2011) empirical formula.
-Valid for temperatures between -20C and 50C and RH between 5\% and 99\%.
+This function uses the Stull (2011) empirical formula to calculate the wet bulb
+temperature. The formula is applicable to temperatures between -20C and 50C
+and to RH between 5\% and 99\%.
 }
 \examples{
 wet_bulb_temperature(30, 60)

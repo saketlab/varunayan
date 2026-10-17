@@ -40,21 +40,22 @@ get_era5_daily_wind(
 
 \item{end_date}{End date in "YYYY-MM-DD" format}
 
-\item{json_file}{Path to GeoJSON file defining the region}
+\item{json_file}{Path to the GeoJSON file that defines the region}
 
 \item{north, south, east, west}{Bounding box coordinates (alternative to json_file)}
 
 \item{resolution}{Spatial resolution in degrees (default: 0.25)}
 
-\item{use_cache}{Whether to use cached data (default: TRUE)}
+\item{use_cache}{If TRUE, the function uses cached data (default: TRUE)}
 
-\item{verbose}{Whether to print progress messages (default: FALSE)}
+\item{verbose}{If TRUE, the function prints progress messages (default: FALSE)}
 }
 \value{
 data.frame with date, latitude, longitude, wind_speed
 }
 \description{
-Downloads 10m wind components and calculates wind speed.
+This function downloads the 10m wind components. Then it calculates the wind
+speed.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

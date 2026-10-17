@@ -2,7 +2,7 @@
 % Please edit documentation in R/cache.R
 \name{generate_cache_key}
 \alias{generate_cache_key}
-\title{Generate cache key for download parameters}
+\title{Make a cache key for download parameters}
 \usage{
 generate_cache_key(
   source,
@@ -39,6 +39,6 @@ generate_cache_key(
 Character string with cache key
 }
 \description{
-Generate cache key for download parameters
+Make a cache key for download parameters
 }
 \keyword{internal}

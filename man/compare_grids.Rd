@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial.R
 \name{compare_grids}
 \alias{compare_grids}
-\title{Compare multiple grids}
+\title{Compare two or more grids}
 \usage{
 compare_grids(
   ...,
@@ -33,7 +33,7 @@ compare_grids(
 ggplot object
 }
 \description{
-Compare multiple grids
+Compare two or more grids
 }
 \examples{
 \dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}

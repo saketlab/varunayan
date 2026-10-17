@@ -2,7 +2,7 @@
 % Please edit documentation in R/imd_download.R
 \name{check_imd_server}
 \alias{check_imd_server}
-\title{Check IMD server connectivity}
+\title{Check the connection to the IMD server}
 \usage{
 check_imd_server(
   base_url = .IMD_BASE_URL,
@@ -11,16 +11,16 @@ check_imd_server(
 )
 }
 \arguments{
-\item{base_url}{Base URL to test.}
+\item{base_url}{Base URL for the test.}
 
 \item{timeout}{Request timeout in seconds.}
 
 \item{retries}{Attempts before giving up.}
 }
 \value{
-Logical indicating if server is reachable
+Logical. TRUE if the server is available.
 }
 \description{
-Check IMD server connectivity
+Check the connection to the IMD server
 }
 \keyword{internal}

@@ -1,4 +1,4 @@
-# ERA5 data download and processing for custom regions
+# Download and process ERA5 data for custom regions
 
 # CDS API field limits (from https://forum.ecmwf.int/t/cdsapi-limitations-and-restrictions/1639)
 # A "field" = 1 variable x 1 time step (x 1 pressure level if applicable)
@@ -7,11 +7,11 @@ CDS_FIELD_LIMIT_MONTHLY <- 10000L # monthly-means product
 
 #' Estimate the number of CDS "fields" in a request
 #'
-#' The CDS API limits requests to 120,000 fields for hourly/daily reanalysis
-#' and 10,000 fields for monthly means. A field is one variable x one time step
-#' x one pressure level.
+#' The CDS API has a limit of 120,000 fields for each hourly or daily reanalysis
+#' request. The limit for monthly means is 10,000 fields. A field is one
+#' variable x one time step x one pressure level.
 #'
-#' @param n_variables Number of variables requested
+#' @param n_variables Number of requested variables
 #' @param start_date Start date
 #' @param end_date End date
 #' @param frequency "hourly", "daily", or "monthly"
@@ -35,15 +35,16 @@ estimate_cds_fields <- function(n_variables, start_date, end_date, frequency,
   as.integer(n_variables) * n_timesteps * as.integer(n_pressure_levels)
 }
 
-#' Compute optimal chunk size to stay within CDS field limits
+#' Calculate the optimal chunk size for the CDS field limits
 #'
-#' Uses 90% of the CDS limit as headroom. Returns max years for monthly
-#' frequency, max days for hourly/daily.
+#' The function uses 90% of the CDS limit to keep a margin. For monthly
+#' frequency, it returns the maximum number of years. For hourly or daily
+#' frequency, it returns the maximum number of days.
 #'
 #' @param n_variables Number of variables
 #' @param frequency "hourly", "daily", or "monthly"
 #' @param n_pressure_levels Number of pressure levels (1 for single-level)
-#' @return Integer: max years (monthly) or max days (hourly/daily) per chunk
+#' @return Integer: maximum years (monthly) or maximum days (hourly/daily) for each chunk
 #' @keywords internal
 compute_optimal_chunk_size <- function(n_variables, frequency,
                                        n_pressure_levels = 1L) {
@@ -51,7 +52,7 @@ compute_optimal_chunk_size <- function(n_variables, frequency,
 
   if (frequency == "monthly") {
     # CDS monthly-means: field = n_vars * 12_months_per_year * n_years
-    # Limit is 10,000 fields. Use 90% headroom.
+    # The limit is 10,000 fields. Use 90% of the limit.
     max_years <- (CDS_FIELD_LIMIT_MONTHLY * 0.9) %/% (n_vars * 12L)
     return(as.integer(max(min(max_years, 30L), 1L)))
   }
@@ -61,7 +62,7 @@ compute_optimal_chunk_size <- function(n_variables, frequency,
   as.integer(min(max(max_days, 1L), 3650L))
 }
 
-# Temperature variables that need Kelvin to Celsius conversion
+# Temperature variables for conversion from Kelvin to Celsius
 TEMP_VARS <- c(
   "2m_temperature", "2m_dewpoint_temperature", "skin_temperature",
   "sea_surface_temperature", "soil_temperature_level_1",
@@ -73,7 +74,7 @@ TEMP_VARS <- c(
   "mx2t", "mn2t"
 )
 
-# Precipitation/accumulation variables that need meters to mm conversion
+# Precipitation/accumulation variables for conversion from meters to mm
 PRECIP_VARS <- c(
   "total_precipitation", "convective_precipitation",
   "large_scale_precipitation", "snowfall",
@@ -83,9 +84,9 @@ PRECIP_VARS <- c(
 
 #' Convert ERA5 units to user-friendly units
 #'
-#' Converts temperature from Kelvin to Celsius and precipitation from meters to mm.
+#' This function converts temperature from Kelvin to Celsius. It converts precipitation from meters to mm.
 #'
-#' @param data data.frame with ERA5 data containing 'variable' and 'value' columns
+#' @param data data.frame of ERA5 data with 'variable' and 'value' columns
 #' @return data.frame with converted units
 #' @keywords internal
 convert_era5_units <- function(data) {
@@ -113,19 +114,19 @@ convert_era5_units <- function(data) {
 validate_era5_inputs <- function(dataset_type, variables, start_date, end_date) {
   dataset_type <- tolower(x = dataset_type)
   if (!dataset_type %in% c("single", "pressure")) {
-    stop("Invalid dataset_type: ", dataset_type, ". Must be 'single' or 'pressure'")
+    stop("Invalid dataset_type: ", dataset_type, ". It must be 'single' or 'pressure'")
   }
 
   valid_vars <- validate_era5_variables(variables, dataset_type)
   if (!all(valid_vars)) {
     stop(
-      "Invalid variables for ", dataset_type, " dataset: ",
+      "Incorrect variables for ", dataset_type, " dataset: ",
       paste(variables[!valid_vars], collapse = ", ")
     )
   }
 
   dates <- c(as.Date(x = start_date), as.Date(x = end_date))
-  if (dates[1] > dates[2]) stop("Start date must be before end date")
+  if (dates[1] > dates[2]) stop("The start date must be before the end date")
 
   list(dataset_type = dataset_type, start_dt = dates[1], end_dt = dates[2])
 }
@@ -137,7 +138,7 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
   n_vars <- length(variables)
   n_plevels <- if (!is.null(pressure_levels)) length(pressure_levels) else 1L
 
-  # Estimate total fields and compute optimal chunk size proactively
+  # Estimate the total fields. Calculate the optimal chunk size before the download.
   total_fields <- estimate_cds_fields(n_vars, start_dt, end_dt, frequency, n_plevels)
   field_limit <- if (frequency == "monthly") CDS_FIELD_LIMIT_MONTHLY else CDS_FIELD_LIMIT_HOURLY
 
@@ -154,13 +155,13 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
     end_year <- as.integer(format(as.Date(end_dt), "%Y"))
 
     if (max_years >= (end_year - start_year + 1L)) {
-      # Entire range fits in one request
+      # The full range fits in one request
       chunks <- list(list(
         start = paste0(start_year, "-01-01"),
         end = paste0(end_year, "-12-31")
       ))
     } else {
-      # Chunk into groups of max_years
+      # Divide the range into groups of max_years
       chunks <- list()
       yr <- start_year
       while (yr <= end_year) {
@@ -175,7 +176,7 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
 
     if (total_fields > field_limit && verbose) {
       message(sprintf(
-        "Request exceeds %s field limit. Auto-chunking into %d chunk(s) of up to %d year(s).",
+        "The request is more than the %s field limit. The package divides it into %d chunk(s) of a maximum of %d year(s).",
         format(field_limit, big.mark = ","), length(chunks), max_years
       ))
     }
@@ -184,7 +185,7 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
 
     if (total_fields > field_limit && verbose) {
       message(sprintf(
-        "Request exceeds %s field limit. Auto-chunking into %d-day chunks.",
+        "The request is more than the %s field limit. The package divides it into %d-day chunks.",
         format(field_limit, big.mark = ","), chunk_days
       ))
     }
@@ -192,7 +193,7 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
     chunks <- create_temporal_chunks(start_dt, end_dt, frequency, max_days_per_chunk = chunk_days)
   }
 
-  # Download a single chunk, splitting automatically if CDS says "too large"
+  # Download one chunk. If CDS reports "too large", divide the chunk automatically.
   download_chunk <- function(chunk_start, chunk_end, chunk_id, depth = 0) {
     chunk_file <- file.path(output_dir, sprintf(
       "%s_chunk%s_%s.nc",
@@ -238,8 +239,8 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
 
         if (span < 30 || depth > 6) {
           stop(
-            "Request still too large after splitting to ",
-            span, " days (depth ", depth, "). Reduce area or resolution."
+            "The request is still too large after the split to ",
+            span, " days (depth ", depth, "). Decrease the area or the resolution."
           )
         }
 
@@ -247,26 +248,26 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
         if (frequency == "monthly") {
           mid_year <- as.integer(format(mid, "%Y"))
           mid <- as.Date(paste0(mid_year, "-01-01"))
-          # Ensure mid is strictly between start and end
+          # Make sure that mid is between start and end, and not equal to either
           start_year <- as.integer(format(s, "%Y"))
           end_year <- as.integer(format(en, "%Y"))
           if (mid_year <= start_year) mid <- as.Date(paste0(start_year + 1, "-01-01"))
           if (mid >= en) {
-            # Can't split a single year for monthly. Fall back to daily-style split.
+            # You cannot divide a single year of monthly data. Use a daily-style split.
             mid <- s + floor(span / 2)
           }
         }
 
-        # Final guard: mid must be after start and before end
+        # Last check: mid must be after start and before end
         if (mid <= s || mid >= en) {
           stop(
-            "Cannot split range ", chunk_start, " to ", chunk_end,
-            " further. Reduce area or resolution."
+            "Cannot divide the range ", chunk_start, " to ", chunk_end,
+            " more. Decrease the area or the resolution."
           )
         }
 
         message(sprintf(
-          "Chunk too large (%s to %s). Splitting at %s (depth %d)...",
+          "The chunk is too large (%s to %s). The package divides it at %s (depth %d)...",
           chunk_start, chunk_end, mid, depth + 1
         ))
 
@@ -283,7 +284,7 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
     )
   }
 
-  message(sprintf(fmt = "Processing %d temporal chunks...", length(x = chunks)))
+  message(sprintf(fmt = "The package processes %d temporal chunks...", length(x = chunks)))
   if (length(chunks) > 1) {
     pb <- txtProgressBar(min = 0, max = length(x = chunks), style = 3)
   }
@@ -322,18 +323,18 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
 #' @param variables List of ERA5 variables to download
 #' @param start_date Start date in "YYYY-MM-DD" format
 #' @param end_date End date in "YYYY-MM-DD" format
-#' @param json_file Path to GeoJSON file defining the region
+#' @param json_file Path to the GeoJSON file that defines the region
 #' @param dataset_type Type of dataset ("single" or "pressure")
 #' @param pressure_levels Pressure levels for pressure dataset
 #' @param frequency Temporal frequency ("hourly", "daily", "monthly")
 #' @param resolution Spatial resolution in degrees (default: 0.25)
-#' @param save_raw Whether to save raw downloaded files
-#' @param output_dir Directory to save files (default: tempdir())
-#' @param use_cache Whether to use cached data if available (default: TRUE)
-#' @param convert_units Whether to convert units to user-friendly formats (default: TRUE).
-#'   When TRUE, temperature variables are returned in Celsius (converted from Kelvin)
-#'   and precipitation variables are returned in mm (converted from meters).
-#' @param verbose Whether to print detailed progress messages
+#' @param save_raw If TRUE, save the raw downloaded files
+#' @param output_dir Directory for the saved files (default: tempdir())
+#' @param use_cache If TRUE, use cached data when it is available (default: TRUE)
+#' @param convert_units If TRUE, convert units to user-friendly formats (default: TRUE).
+#'   When TRUE, the function returns temperature variables in Celsius (converted from Kelvin).
+#'   It returns precipitation variables in mm (converted from meters).
+#' @param verbose If TRUE, print detailed progress messages
 #' @param ... Arguments passed to the main function (used by aliases).
 #'
 #' @return data.frame with processed climate data. When `convert_units = TRUE`:
@@ -354,14 +355,14 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
 #'   end_date = "2023-01-31",
 #'   json_file = region
 #' )
-#' # Temperature is in Celsius, precipitation is in mm
+#' # Temperature is in Celsius. Precipitation is in mm.
 era5ify_geojson <- function(request_id, variables, start_date, end_date, json_file,
                             dataset_type = "single", pressure_levels = NULL,
                             frequency = "hourly", resolution = 0.25,
                             save_raw = FALSE, output_dir = tempdir(), use_cache = TRUE,
                             convert_units = TRUE, verbose = FALSE) {
   if (!grepl(pattern = "^https?://", json_file) && !file.exists(json_file)) {
-    stop("GeoJSON file not found: ", json_file)
+    stop("Cannot find the GeoJSON file: ", json_file)
   }
 
   validated <- validate_era5_inputs(dataset_type, variables, start_date, end_date)
@@ -370,7 +371,7 @@ era5ify_geojson <- function(request_id, variables, start_date, end_date, json_fi
   area <- c(bbox[["ymax"]], bbox[["xmin"]], bbox[["ymin"]], bbox[["xmax"]])
 
   if (verbose) {
-    message("Starting ERA5 data download for GeoJSON region")
+    message("The ERA5 data download for the GeoJSON region starts")
     message(sprintf(fmt = "Request ID: %s", request_id))
     message(sprintf(fmt = "Bounding box: N:%s, W:%s, S:%s, E:%s", round(area[1], 3), round(area[2], 3), round(area[3], 3), round(area[4], 3)))
   }
@@ -394,7 +395,7 @@ era5ify_geojson <- function(request_id, variables, start_date, end_date, json_fi
     processed_data <- convert_era5_units(processed_data)
   }
 
-  message("Processing completed successfully!")
+  message("The package processed all the data.")
   message(sprintf(fmt = "Final dataset: %s data points", nrow(x = processed_data)))
   processed_data
 }
@@ -413,13 +414,13 @@ era5ify_geojson <- function(request_id, variables, start_date, end_date, json_fi
 #' @param pressure_levels Pressure levels for pressure dataset.
 #' @param frequency Temporal frequency ("hourly", "daily", "monthly").
 #' @param resolution Spatial resolution in degrees (default: 0.25).
-#' @param save_raw Whether to save raw downloaded files.
-#' @param output_dir Directory to save files (default: tempdir()).
-#' @param use_cache Whether to use cached data if available (default: TRUE).
-#' @param convert_units Whether to convert units to user-friendly formats (default: TRUE).
-#'   When TRUE, temperature variables are returned in Celsius (converted from Kelvin)
-#'   and precipitation variables are returned in mm (converted from meters).
-#' @param verbose Whether to print detailed progress messages.
+#' @param save_raw If TRUE, save the raw downloaded files.
+#' @param output_dir Directory for the saved files (default: tempdir()).
+#' @param use_cache If TRUE, use cached data when it is available (default: TRUE).
+#' @param convert_units If TRUE, convert units to user-friendly formats (default: TRUE).
+#'   When TRUE, the function returns temperature variables in Celsius (converted from Kelvin).
+#'   It returns precipitation variables in mm (converted from meters).
+#' @param verbose If TRUE, print detailed progress messages.
 #' @param ... Arguments passed to the main function (used by aliases).
 #'
 #' @return data.frame with processed climate data. When `convert_units = TRUE`:
@@ -439,24 +440,24 @@ era5ify_geojson <- function(request_id, variables, start_date, end_date, json_fi
 #'   end_date = "2023-01-31",
 #'   north = 40, south = 35, east = -70, west = -75
 #' )
-#' # Temperature is in Celsius, precipitation is in mm
+#' # Temperature is in Celsius. Precipitation is in mm.
 era5ify_bbox <- function(request_id, variables, start_date, end_date,
                          north, south, east, west,
                          dataset_type = "single", pressure_levels = NULL,
                          frequency = "hourly", resolution = 0.25,
                          save_raw = FALSE, output_dir = tempdir(), use_cache = TRUE,
                          convert_units = TRUE, verbose = FALSE) {
-  if (north <= south) stop("North boundary must be greater than south boundary")
-  if (east <= west) stop("East boundary must be greater than west boundary")
+  if (north <= south) stop("The north boundary must be more than the south boundary")
+  if (east <= west) stop("The east boundary must be more than the west boundary")
   if (north > 90 || south < -90 || abs(east) > 180 || abs(west) > 180) {
-    stop("Invalid coordinates. Latitude must be between -90 and 90, longitude between -180 and 180")
+    stop("Incorrect coordinates. Latitude must be between -90 and 90. Longitude must be between -180 and 180.")
   }
 
   validated <- validate_era5_inputs(dataset_type, variables, start_date, end_date)
   area <- c(north, west, south, east)
 
   if (verbose) {
-    message("Starting ERA5 data download for bounding box")
+    message("The ERA5 data download for the bounding box starts")
     message(sprintf(fmt = "Request ID: %s", request_id))
     message(sprintf(fmt = "Bounding box: N:%s, S:%s, E:%s, W:%s", north, south, east, west))
   }
@@ -488,7 +489,7 @@ era5ify_bbox <- function(request_id, variables, start_date, end_date,
     processed_data <- convert_era5_units(processed_data)
   }
 
-  if (verbose) message("Processing completed successfully!")
+  if (verbose) message("The package processed all the data.")
   message(sprintf(fmt = "Downloaded %s data points", nrow(x = processed_data)))
   processed_data
 }
@@ -504,18 +505,19 @@ era5ify_bbox <- function(request_id, variables, start_date, end_date,
 #' @param dataset_type Type of dataset ("single" or "pressure").
 #' @param pressure_levels Pressure levels for pressure dataset.
 #' @param frequency Temporal frequency ("hourly", "daily", "monthly").
-#' @param save_raw Whether to save raw downloaded files.
-#' @param output_dir Directory to save files (default: tempdir()).
-#' @param use_cache Whether to use cached data if available (default: TRUE).
-#' @param convert_units Whether to convert units to user-friendly formats (default: TRUE).
-#'   When TRUE, temperature variables are returned in Celsius (converted from Kelvin)
-#'   and precipitation variables are returned in mm (converted from meters).
-#' @param verbose Whether to print detailed progress messages.
-#' @param use_timeseries_api Whether to use the CDS time-series endpoint, which
-#'   serves a point directly and is much faster than subsetting a gridded
-#'   download (default: NA, meaning use it for hourly single-level requests,
-#'   the only ones it supports). Set FALSE to force the gridded download. The
-#'   gridded download is used automatically if the endpoint is unavailable.
+#' @param save_raw If TRUE, save the raw downloaded files.
+#' @param output_dir Directory for the saved files (default: tempdir()).
+#' @param use_cache If TRUE, use cached data when it is available (default: TRUE).
+#' @param convert_units If TRUE, convert units to user-friendly formats (default: TRUE).
+#'   When TRUE, the function returns temperature variables in Celsius (converted from Kelvin).
+#'   It returns precipitation variables in mm (converted from meters).
+#' @param verbose If TRUE, print detailed progress messages.
+#' @param use_timeseries_api If TRUE, use the CDS time-series endpoint. This
+#'   endpoint gives the data for a point directly. It is much faster than a
+#'   subset of a gridded download. The default is NA: use the endpoint only for
+#'   hourly single-level requests, because the endpoint supports only these
+#'   requests. Set FALSE to always use the gridded download. If the endpoint is
+#'   not available, the function automatically uses the gridded download.
 #' @param ... Arguments passed to the main function (used by aliases).
 #'
 #' @return data.frame with processed climate data. When `convert_units = TRUE`:
@@ -536,7 +538,7 @@ era5ify_bbox <- function(request_id, variables, start_date, end_date,
 #'   lat = 40.7128,
 #'   lon = -74.0060
 #' )
-#' # Temperature is in Celsius, precipitation is in mm
+#' # Temperature is in Celsius. Precipitation is in mm.
 era5ify_point <- function(request_id, variables, start_date, end_date, lat, lon,
                           dataset_type = "single", pressure_levels = NULL,
                           frequency = "hourly", save_raw = FALSE, output_dir = tempdir(),
@@ -547,8 +549,8 @@ era5ify_point <- function(request_id, variables, start_date, end_date, lat, lon,
 
   validated <- validate_era5_inputs(dataset_type, variables, start_date, end_date)
 
-  # The time-series endpoint serves a point directly and only covers hourly
-  # single-level data; everything else uses the gridded path below.
+  # The time-series endpoint gives the data for a point directly. It supports
+  # only hourly single-level data. All other requests use the gridded path below.
   if (is.na(x = use_timeseries_api)) {
     use_timeseries_api <- identical(x = validated$dataset_type, y = "single") &&
       identical(x = frequency, y = "hourly")
@@ -556,9 +558,9 @@ era5ify_point <- function(request_id, variables, start_date, end_date, lat, lon,
   if (isTRUE(x = use_timeseries_api)) {
     if (!identical(x = validated$dataset_type, y = "single") ||
       !identical(x = frequency, y = "hourly")) {
-      stop("use_timeseries_api requires dataset_type = 'single' and frequency = 'hourly'")
+      stop("use_timeseries_api is applicable only with dataset_type = 'single' and frequency = 'hourly'")
     }
-    message("Using CDS time-series endpoint")
+    message("The package uses the CDS time-series endpoint")
     timeseries_data <- tryCatch(
       download_era5_timeseries(
         variables = variables,
@@ -570,7 +572,7 @@ era5ify_point <- function(request_id, variables, start_date, end_date, lat, lon,
       ),
       error = function(e) {
         message(sprintf(
-          fmt = "Time-series endpoint unavailable (%s); using gridded download",
+          fmt = "The time-series endpoint is not available (%s). The package uses the gridded download.",
           conditionMessage(e)
         ))
         NULL
@@ -588,7 +590,7 @@ era5ify_point <- function(request_id, variables, start_date, end_date, lat, lon,
     max(lat - buffer, -90), min(lon + buffer, 180)
   )
 
-  message("Starting ERA5 data download for point location")
+  message("The ERA5 data download for the point location starts")
   message(sprintf(fmt = "Request ID: %s", request_id))
   message(sprintf(fmt = "Target point: (%s, %s)", lat, lon))
 
@@ -653,7 +655,7 @@ era5ify_point <- function(request_id, variables, start_date, end_date, lat, lon,
     processed_data <- convert_era5_units(processed_data)
   }
 
-  message("Processing completed successfully!")
+  message("The package processed all the data.")
   message(sprintf(fmt = "Final dataset: %s data points", nrow(x = processed_data)))
   processed_data
 }

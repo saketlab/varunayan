@@ -63,11 +63,11 @@ test_that("validate_era5_inputs normalises and rejects bad inputs", {
   expect_error(validate_era5_inputs("surface", "x", "2023-01-01", "2023-01-02"), "Invalid dataset_type: surface")
   expect_error(
     validate_era5_inputs("single", c("2m_temperature", "bogus"), "2023-01-01", "2023-01-02"),
-    "Invalid variables for single dataset: bogus"
+    "Incorrect variables for single dataset: bogus"
   )
   expect_error(
     validate_era5_inputs("single", "2m_temperature", "2023-02-01", "2023-01-01"),
-    "Start date must be before end date"
+    "The start date must be before the end date"
   )
 })
 
@@ -78,10 +78,10 @@ test_that("era5ify_bbox validates coordinates before downloading", {
       north = n, south = s, east = e, west = w, use_cache = FALSE
     )
   }
-  expect_error(call_bbox(10, 20, 80, 70), "North boundary must be greater")
-  expect_error(call_bbox(20, 10, 70, 80), "East boundary must be greater")
-  expect_error(call_bbox(95, 10, 80, 70), "Invalid coordinates")
-  expect_error(call_bbox(20, 10, 190, 70), "Invalid coordinates")
+  expect_error(call_bbox(10, 20, 80, 70), "The north boundary must be more")
+  expect_error(call_bbox(20, 10, 70, 80), "The east boundary must be more")
+  expect_error(call_bbox(95, 10, 80, 70), "Incorrect coordinates")
+  expect_error(call_bbox(20, 10, 190, 70), "Incorrect coordinates")
 })
 
 test_that("era5ify_point validates coordinates", {
@@ -94,7 +94,7 @@ test_that("era5ify_geojson errors for a missing GeoJSON file", {
     era5ify_geojson("r", "2m_temperature", "2023-01-01", "2023-01-02",
       json_file = file.path(tempdir(), "missing.geojson")
     ),
-    "GeoJSON file not found"
+    "Cannot find the GeoJSON file"
   )
 })
 
@@ -215,7 +215,7 @@ test_that("download_era5_data gives up when splitting cannot help", {
       "single", "2m_temperature", as.Date("2023-01-01"), as.Date("2023-01-20"),
       NULL, 0.25, "hourly", d, "req"
     )),
-    "Request still too large after splitting to 19 days"
+    "The request is still too large after the split to 19 days"
   )
 })
 
@@ -477,7 +477,7 @@ test_that("download_era5_data reports auto-chunking when over the field limit", 
     NULL, 0.25, "hourly", d, "big",
     verbose = TRUE
   )))
-  expect_true(any(grepl("Auto-chunking into 3650-day chunks", msgs)))
+  expect_true(any(grepl("The package divides it into 3650-day chunks", msgs)))
   expect_length(log$calls, 2)
   expect_equal(log$calls[[2]]$start, as.Date("2010-01-01") + 3650)
 
@@ -487,7 +487,7 @@ test_that("download_era5_data reports auto-chunking when over the field limit", 
     NULL, 0.25, "monthly", d, "bigm",
     verbose = TRUE
   )))
-  expect_true(any(grepl("Auto-chunking into 3 chunk\\(s\\) of up to 30 year", msgs)))
+  expect_true(any(grepl("The package divides it into 3 chunk\\(s\\) of a maximum of 30 year", msgs)))
 })
 
 test_that("era5ify_point works for single-level data (default dataset_type)", {

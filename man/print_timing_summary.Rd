@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{print_timing_summary}
 \alias{print_timing_summary}
-\title{Print timing summary}
+\title{Print a summary of the time data}
 \usage{
 print_timing_summary()
 }
@@ -10,7 +10,7 @@ print_timing_summary()
 The timing data frame from \code{\link[=get_timings]{get_timings()}}, invisibly (\code{NULL} if empty).
 }
 \description{
-Print timing summary
+Print a summary of the time data
 }
 \examples{
 print_timing_summary()

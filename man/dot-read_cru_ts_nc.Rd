@@ -7,12 +7,12 @@
 .read_cru_ts_nc(nc_file, variable)
 }
 \arguments{
-\item{nc_file}{Path to decompressed .nc file.}
+\item{nc_file}{Path to the decompressed .nc file.}
 
 \item{variable}{CRU TS variable code.}
 }
 \value{
-data.frame with year, month, latitude, longitude, value, variable.
+A data.frame with the columns year, month, latitude, longitude, value, variable.
 }
 \description{
 Read a CRU TS NetCDF file into a data.frame

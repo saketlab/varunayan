@@ -2,7 +2,7 @@
 % Please edit documentation in R/download.R
 \name{download_era5_pressure}
 \alias{download_era5_pressure}
-\title{Download ERA5 pressure-level data using ecmwfr}
+\title{Download ERA5 pressure-level data with ecmwfr}
 \usage{
 download_era5_pressure(
   variables,
@@ -34,13 +34,13 @@ download_era5_pressure(
 
 \item{output_file}{Character string path for output NetCDF file}
 
-\item{use_cache}{Use cached data if available (default: TRUE)}
+\item{use_cache}{If TRUE, use cached data when it is available (default: TRUE)}
 
-\item{verbose}{Logical indicating whether to print progress messages}
+\item{verbose}{Logical. If TRUE, print progress messages}
 }
 \value{
 Character string path to downloaded file
 }
 \description{
-Download ERA5 pressure-level data using ecmwfr
+Download ERA5 pressure-level data with ecmwfr
 }

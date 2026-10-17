@@ -3,7 +3,7 @@
 \name{HadEX3Geojson}
 \alias{HadEX3Geojson}
 \alias{hadex3_geojson}
-\title{Download HadEX3 climate extremes data for a GeoJSON region}
+\title{Download HadEX3 data on climate extremes for a GeoJSON region}
 \usage{
 HadEX3Geojson(...)
 
@@ -19,7 +19,7 @@ hadex3_geojson(
 )
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 
 \item{index}{ETCCDI index name (e.g. "TXx", "Rx1day"). See \code{\link[=list_hadex3_indices]{list_hadex3_indices()}}.}
 
@@ -27,24 +27,24 @@ hadex3_geojson(
 
 \item{end_year}{End year (1901-2018).}
 
-\item{geojson_file}{Path to a GeoJSON file defining the region.}
+\item{geojson_file}{Path to a GeoJSON file that defines the region.}
 
 \item{frequency}{Temporal frequency: "annual" or "monthly" (default: "annual").}
 
-\item{baseline}{Reference period for percentile-based indices: "61-90" (default)
-or "81-10". Only applies to annual frequency.}
+\item{baseline}{Reference period for the indices that use percentiles: "61-90"
+(default) or "81-10". This argument applies only to the annual frequency.}
 
 \item{output_dir}{Directory for temporary files (default: \code{tempdir()}).}
 
-\item{use_cache}{Whether to use cached data (default: TRUE).}
+\item{use_cache}{If TRUE, use the data in the cache (default: TRUE).}
 }
 \value{
-data.frame with columns: year (+ month for monthly), latitude,
-longitude, value, index.
+A data.frame with the columns: year (and month for monthly data),
+latitude, longitude, value, index.
 }
 \description{
-Downloads and filters HadEX3 ETCCDI climate extremes data to a geographic
-region defined by a GeoJSON polygon.
+Downloads HadEX3 data on ETCCDI climate extremes and filters the data to a
+geographic region. A GeoJSON polygon defines the region.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

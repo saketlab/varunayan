@@ -17,8 +17,9 @@ mean_radiant_temperature(temp_c, solar_radiation = NULL, wind_speed = NULL)
 Mean radiant temperature in Celsius
 }
 \description{
-Estimates mean radiant temperature (Tmrt) from meteorological variables.
-Uses simplified approach when full radiation data unavailable.
+This function estimates the mean radiant temperature (Tmrt) from
+meteorological variables. If full radiation data is not available, the
+function uses a simplified method.
 }
 \examples{
 mean_radiant_temperature(30, solar_radiation = 800, wind_speed = 2)

@@ -10,7 +10,7 @@ exclude_cols
 A character vector of variable names.
 }
 \description{
-These are coordinate and metadata columns that should not be aggregated.
+Aggregation does not apply to these coordinate and metadata columns.
 }
 \examples{
 head(exclude_cols)

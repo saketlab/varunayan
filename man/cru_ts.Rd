@@ -8,10 +8,10 @@
 .CRU_TS_VERSION
 }
 \description{
-Functions to download and process the University of East Anglia Climatic
-Research Unit Time-Series (CRU TS) gridded monthly climate dataset.
-Covers global land areas (excl. Antarctica) at 0.5 degree resolution,
-1901-2022.
+Functions that download and process the gridded monthly climate dataset of
+the University of East Anglia Climatic Research Unit Time-Series (CRU TS).
+The dataset gives data for the global land areas (not Antarctica) at a
+resolution of 0.5 degrees, for 1901-2022.
 }
 \references{
 Harris et al. (2020) Version 4 of the CRU TS monthly high-resolution

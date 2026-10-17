@@ -9,13 +9,13 @@ filter_imd_by_bbox(data, north, south, east, west)
 \arguments{
 \item{data}{data.frame with IMD data}
 
-\item{north}{Northern latitude boundary}
+\item{north}{Latitude of the north boundary}
 
-\item{south}{Southern latitude boundary}
+\item{south}{Latitude of the south boundary}
 
-\item{east}{Eastern longitude boundary}
+\item{east}{Longitude of the east boundary}
 
-\item{west}{Western longitude boundary}
+\item{west}{Longitude of the west boundary}
 }
 \value{
 The input data.frame restricted to rows whose \code{latitude}/\code{longitude} fall inside the region; columns are unchanged.

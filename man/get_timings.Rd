@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{get_timings}
 \alias{get_timings}
-\title{Get all recorded timings}
+\title{Get all recorded time measurements}
 \usage{
 get_timings()
 }
@@ -10,7 +10,7 @@ get_timings()
 A data.frame with columns \code{label}, \code{elapsed_seconds}, \code{timestamp} and \code{duration} (formatted), one row per timed operation; zero rows if nothing has been timed.
 }
 \description{
-Get all recorded timings
+Get all recorded time measurements
 }
 \examples{
 get_timings()

@@ -3,8 +3,9 @@
 [![R-CMD-check](https://github.com/saketlab/varunayanR/workflows/R-CMD-check/badge.svg)](https://github.com/saketlab/varunayanR/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-`varunayan` is an R package for downloading and processing ERA5 reanalysis data from [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/) and IMD gridded climate data from the [Indian Meteorological Department](https://mausam.imd.gov.in/). 
-It provides an easy to use R interface for extracting temperature, precipitation, and other climate variables for any region using bounding boxes, GeoJSON polygons, or point coordinates.
+`varunayan` is an R package. It downloads and processes ERA5 reanalysis data from the [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/). It also downloads and processes IMD gridded climate data from the [Indian Meteorological Department](https://mausam.imd.gov.in/).
+The package gives an easy R interface to get temperature, precipitation, and other climate variables for a region.
+You can specify the region with a bounding box, a GeoJSON polygon, or point coordinates.
 
 ## Installation
 
@@ -21,11 +22,11 @@ devtools::install_github("saketlab/varunayanR")
 ```r
 library(varunayan)
 
-# Setup CDS credentials (one-time)
-# Get your API key from: https://cds.climate.copernicus.eu/how-to-api
+# Set the CDS credentials (one time only)
+# Get your API key from this site: https://cds.climate.copernicus.eu/how-to-api
 setup_cds_credentials(key = "your-cds-api-key")
 
-# Download ERA5 temperature and precipitation for Mumbai
+# Download the ERA5 temperature and precipitation for Mumbai
 temperature_data <- era5ify_bbox(
   request_id = "mumbai_temp",
   variables = c("2m_temperature", "total_precipitation"),
@@ -42,7 +43,7 @@ head(temperature_data)
 ### IMD rainfall data
 
 ```r
-# Download IMD gridded rainfall data for Maharashtra
+# Download the IMD gridded rainfall data for Maharashtra
 rainfall_data <- imd_rainfall_bbox(
   request_id = "maharashtra_rain",
   start_year = 2023,
@@ -57,7 +58,7 @@ rainfall_data <- imd_rainfall_bbox(
 ### GeoJSON regions
 
 ```r
-# Download data for regions defined by GeoJSON
+# Download data for the regions in a GeoJSON file
 data <- era5ify_geojson(
   request_id = "indian_states",
   variables = c("2m_temperature", "surface_pressure"),
@@ -73,7 +74,7 @@ data <- era5ify_geojson(
 ### Monsoon analysis
 
 ```r
-# Download 20 years of rainfall data for monsoon research
+# Download 20 years of rainfall data for a monsoon study
 rainfall <- imd_rainfall_bbox(
   request_id = "monsoon_study",
   start_year = 2000,
@@ -84,7 +85,7 @@ rainfall <- imd_rainfall_bbox(
   frequency = "monthly"
 )
 
-# Analyze monsoon patterns (June-September)
+# Analyze the monsoon rainfall (June to September)
 library(dplyr)
 monsoon <- rainfall %>%
   filter(month(date) %in% 6:9) %>%
@@ -95,7 +96,7 @@ monsoon <- rainfall %>%
 ### Atmospheric data at pressure levels
 
 ```r
-# Download ERA5 data at multiple atmospheric levels
+# Download ERA5 data at more than one atmospheric level
 atmos_data <- era5ify_bbox(
   request_id = "atmosphere",
   variables = c("temperature", "geopotential", "u_component_of_wind"),
@@ -111,12 +112,12 @@ atmos_data <- era5ify_bbox(
 ## Documentation
 
 - [Quickstart Guide](https://varunayan.saketlab.org/R/articles/quickstart.html)
-- [Visualising data grids](https://varunayan.saketlab.org/R/articles/spatial-aggregation.html)
+- [Show data grids](https://varunayan.saketlab.org/R/articles/spatial-aggregation.html)
 - [ERA5 vs IMD Comparison](https://varunayan.saketlab.org/R/articles/era5-vs-imd-comparison.html)
 - [Function Reference](https://varunayan.saketlab.org/R/reference/index.html)
 
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We accept contributions. To send a change, open a Pull Request.
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/variable_lists.R
 \name{categorize_variables}
 \alias{categorize_variables}
-\title{Categorize variables by aggregation method}
+\title{Sort variables by aggregation method}
 \usage{
 categorize_variables(var_names)
 }
@@ -10,10 +10,10 @@ categorize_variables(var_names)
 \item{var_names}{Character vector of variable names}
 }
 \value{
-Named list with variables categorized by aggregation method
+Named list of the variables, sorted by aggregation method
 }
 \description{
-Categorize variables by aggregation method
+Sort variables by aggregation method
 }
 \examples{
 categorize_variables(c("2m_temperature", "total_precipitation"))

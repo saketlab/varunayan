@@ -3,22 +3,22 @@
 \name{CheckSystemReadiness}
 \alias{CheckSystemReadiness}
 \alias{check_system_readiness}
-\title{Check system readiness for varunayan operations}
+\title{Make sure that the system is ready for varunayan operations}
 \usage{
 CheckSystemReadiness(...)
 
 check_system_readiness(verbose = TRUE)
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments for the main function (for use by aliases).}
 
-\item{verbose}{Whether to print detailed information}
+\item{verbose}{If TRUE, print detailed information}
 }
 \value{
 Invisibly, \code{TRUE} if all required packages, network access and CDS credentials are available, \code{FALSE} otherwise.
 }
 \description{
-Check system readiness for varunayan operations
+Make sure that the system is ready for varunayan operations
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

@@ -2,11 +2,11 @@
 % Please edit documentation in R/cru_ts.R
 \name{.cru_ts_needed_decades}
 \alias{.cru_ts_needed_decades}
-\title{Find which decade files overlap with a year range}
+\title{Find the decade files that overlap a range of years}
 \usage{
 .cru_ts_needed_decades(start_year, end_year)
 }
 \description{
-Find which decade files overlap with a year range
+Find the decade files that overlap a range of years
 }
 \keyword{internal}

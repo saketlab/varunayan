@@ -2,7 +2,7 @@
 % Please edit documentation in R/heat_stress.R
 \name{heat_stress}
 \alias{heat_stress}
-\title{heat stress index calculations}
+\title{Calculations for heat stress indices}
 \description{
-heat stress index calculations
+Calculations for heat stress indices
 }

@@ -1,13 +1,13 @@
-#' Process NetCDF file and extract data as data.frame
+#' Extract data from a NetCDF file into a data.frame
 #'
-#' Uses ncdf4 directly for fast reading, with stars as fallback.
+#' This function uses ncdf4 to read the file quickly. If ncdf4 fails, it uses stars.
 #'
-#' @param netcdf_file Character string path to NetCDF file
+#' @param netcdf_file Path to the NetCDF file, as a character string
 #' @return data.frame with processed climate data
 process_netcdf_to_dataframe <- function(netcdf_file) {
-  if (!file.exists(netcdf_file)) stop("NetCDF file not found: ", netcdf_file)
+  if (!file.exists(netcdf_file)) stop("Cannot find the NetCDF file: ", netcdf_file)
 
-  message(sprintf(fmt = "Processing NetCDF file: %s", basename(path = netcdf_file)))
+  message(sprintf(fmt = "NetCDF file in process: %s", basename(path = netcdf_file)))
 
   start_time_total <- Sys.time()
 
@@ -15,7 +15,7 @@ process_netcdf_to_dataframe <- function(netcdf_file) {
   df <- tryCatch(
     .read_ncdf4_fast(netcdf_file),
     error = function(e) {
-      message(sprintf(fmt = "Fast ncdf4 read failed (%s), falling back to stars", e$message))
+      message(sprintf(fmt = "The fast ncdf4 read failed (%s). The function will use stars.", e$message))
       .read_ncdf_stars_fallback(netcdf_file)
     }
   )
@@ -25,13 +25,13 @@ process_netcdf_to_dataframe <- function(netcdf_file) {
   df <- df[complete.cases(... = df), ]
 
   total_elapsed <- as.numeric(x = difftime(Sys.time(), start_time_total, units = "secs"))
-  message(sprintf(fmt = "NetCDF processing completed. %s data points extracted.", nrow(x = df)))
-  message(sprintf(fmt = "[TIMER] Total NetCDF processing: %ss", round(total_elapsed, 2)))
+  message(sprintf(fmt = "The NetCDF process is complete. The process extracted %s data points.", nrow(x = df)))
+  message(sprintf(fmt = "[TIMER] Total NetCDF process: %ss", round(total_elapsed, 2)))
 
   df
 }
 
-#' Fast NetCDF reader using ncdf4 + data.table
+#' Fast NetCDF reader with ncdf4 + data.table
 #' @param netcdf_file Path to NetCDF file
 #' @return data.frame in long format (datetime, latitude, longitude, variable, value)
 #' @keywords internal
@@ -45,7 +45,7 @@ process_netcdf_to_dataframe <- function(netcdf_file) {
   time_name <- intersect(c("valid_time", "time"), dim_names)[1]
 
   if (is.na(lat_name) || is.na(lon_name)) {
-    stop("No latitude/longitude dimensions found")
+    stop("Cannot find the latitude/longitude dimensions")
   }
 
   lats <- ncdf4::ncvar_get(nc, lat_name)
@@ -59,9 +59,10 @@ process_netcdf_to_dataframe <- function(netcdf_file) {
   }
 
   data_vars <- setdiff(names(nc$var), c(.NC_METADATA_VARS, lat_name, lon_name, time_name))
-  if (length(data_vars) == 0) stop("No data variables found in NetCDF")
+  if (length(data_vars) == 0) stop("Cannot find data variables in the NetCDF file")
 
-  # expand.grid (not CJ) to match ncvar_get's column-major dimension order
+  # Use expand.grid (not CJ). expand.grid agrees with the column-major
+  # dimension order of ncvar_get.
   if (!is.null(times)) {
     grid_dt <- data.table::as.data.table(expand.grid(
       longitude = lons,
@@ -103,10 +104,10 @@ process_netcdf_to_dataframe <- function(netcdf_file) {
   as.data.frame(df)
 }
 
-#' Parse numeric time values from NetCDF
+#' Parse numeric time values from a NetCDF file
 #' @param time_vals Numeric time values
-#' @param time_units Character string from the NetCDF time dimension units attribute
-#'   (e.g. "seconds since 1970-01-01", "hours since 1900-01-01")
+#' @param time_units Character string from the units attribute of the NetCDF time
+#'   dimension (for example, "seconds since 1970-01-01", "hours since 1900-01-01")
 #' @return POSIXct vector
 #' @keywords internal
 .parse_nc_time <- function(time_vals, time_units = NULL) {
@@ -153,7 +154,7 @@ process_netcdf_to_dataframe <- function(netcdf_file) {
     }
   }
 
-  warning("Using sequential dates fallback", call. = FALSE)
+  warning("The function uses sequential dates as a fallback", call. = FALSE)
   n_times <- length(unique(time_vals))
   seq(as.POSIXct("2023-01-01", tz = "UTC"),
     by = "day",
@@ -161,7 +162,7 @@ process_netcdf_to_dataframe <- function(netcdf_file) {
   )[as.numeric(as.factor(time_vals))]
 }
 
-#' Stars-based NetCDF reader (fallback for non-standard files)
+#' NetCDF reader with stars (fallback for non-standard files)
 #' @param netcdf_file Path to NetCDF file
 #' @return data.frame in long format
 #' @keywords internal
@@ -245,7 +246,7 @@ process_netcdf_to_dataframe <- function(netcdf_file) {
 
 #' Filter NetCDF data by spatial boundaries (bounding box)
 #'
-#' @param netcdf_file Character string path to NetCDF file
+#' @param netcdf_file Path to the NetCDF file, as a character string
 #' @param north Northern latitude boundary
 #' @param south Southern latitude boundary
 #' @param east Eastern longitude boundary
@@ -257,18 +258,18 @@ filter_netcdf_by_bbox <- function(netcdf_file, north, south, east, west) {
     df$latitude >= south & df$latitude <= north &
       df$longitude >= west & df$longitude <= east,
   ]
-  message(sprintf(fmt = "Spatial filtering applied: %s points within bounding box", nrow(x = filtered_df)))
+  message(sprintf(fmt = "The spatial filter kept %s points in the bounding box", nrow(x = filtered_df)))
   filtered_df
 }
 
 #' Filter NetCDF data by GeoJSON polygon
 #'
-#' @param netcdf_file Character string path to NetCDF file
+#' @param netcdf_file Path to the NetCDF file, as a character string
 #' @param geojson_file Character string path to GeoJSON file
 #' @return data.frame with spatially filtered data
 filter_netcdf_by_geojson <- function(netcdf_file, geojson_file) {
   if (!grepl(pattern = "^https?://", geojson_file) && !file.exists(geojson_file)) {
-    stop("GeoJSON file not found: ", geojson_file)
+    stop("Cannot find the GeoJSON file: ", geojson_file)
   }
   df <- process_netcdf_to_dataframe(netcdf_file)
   filter_dataframe_by_geojson(df, geojson_file)
@@ -276,8 +277,9 @@ filter_netcdf_by_geojson <- function(netcdf_file, geojson_file) {
 
 #' Filter data.frame by GeoJSON polygon
 #'
-#' Tests only unique (lat, lon) coordinates against the polygon, then joins
-#' back to full dataset via data.table keyed semi-join.
+#' This function does a test of only the unique (lat, lon) coordinates against
+#' the polygon. Then it joins the result to the full dataset with a data.table
+#' keyed semi-join.
 #'
 #' @param df data.frame with latitude and longitude columns
 #' @param geojson_file Character string path to GeoJSON file
@@ -285,10 +287,10 @@ filter_netcdf_by_geojson <- function(netcdf_file, geojson_file) {
 filter_dataframe_by_geojson <- function(df, geojson_file) {
   start_time <- Sys.time()
   n_before <- nrow(x = df)
-  message(sprintf(fmt = "Starting spatial filtering (%s points)...", n_before))
+  message(sprintf(fmt = "The spatial filter starts (%s points)...", n_before))
 
   if (!grepl(pattern = "^https?://", geojson_file) && !file.exists(geojson_file)) {
-    stop("GeoJSON file not found: ", geojson_file)
+    stop("Cannot find the GeoJSON file: ", geojson_file)
   }
 
   step_start <- Sys.time()
@@ -302,9 +304,7 @@ filter_dataframe_by_geojson <- function(df, geojson_file) {
   }
   geojson_sf <- st_transform(geojson_sf, 4326)
 
-  old_use_s2 <- sf_use_s2()
-  sf_use_s2(FALSE)
-  on.exit(sf_use_s2(old_use_s2), add = TRUE)
+  local_s2_off()
 
   geojson_sf <- st_make_valid(geojson_sf)
 
@@ -324,7 +324,7 @@ filter_dataframe_by_geojson <- function(df, geojson_file) {
   )
 
   if (n_coords > 10000) {
-    message(sprintf(fmt = "Simplifying complex geometry (%s vertices)...", n_coords))
+    message(sprintf(fmt = "Simplification of the complex geometry (%s vertices)...", n_coords))
     geojson_union <- st_simplify(geojson_union, preserveTopology = TRUE, dTolerance = 0.01)
     n_coords_after <- tryCatch(
       {
@@ -333,7 +333,7 @@ filter_dataframe_by_geojson <- function(df, geojson_file) {
       },
       error = function(e) n_coords
     )
-    message(sprintf(fmt = "Simplified to %s vertices (%s%% of original)", n_coords_after, round(100 * n_coords_after / n_coords, 1)))
+    message(sprintf(fmt = "The simplified geometry has %s vertices (%s%% of the original)", n_coords_after, round(100 * n_coords_after / n_coords, 1)))
   }
 
   elapsed <- as.numeric(x = difftime(Sys.time(), step_start, units = "secs"))
@@ -348,14 +348,14 @@ filter_dataframe_by_geojson <- function(df, geojson_file) {
   message(sprintf(fmt = "[TIMER] Bbox filter: %ss", round(elapsed, 3)))
 
   if (nrow(x = df) == 0) {
-    warning("No points within bounding box!", call. = FALSE)
+    warning("No points are in the bounding box", call. = FALSE)
     return(df)
   }
 
   step_start <- Sys.time()
   unique_coords <- unique(df[, c("latitude", "longitude")])
   n_unique <- nrow(unique_coords)
-  message(sprintf(fmt = "Testing %s unique coordinates (from %s rows)...", n_unique, nrow(x = df)))
+  message(sprintf(fmt = "Test of %s unique coordinates (from %s rows)...", n_unique, nrow(x = df)))
 
   points_sf <- st_as_sf(unique_coords, coords = c("longitude", "latitude"), crs = 4326)
 
@@ -376,17 +376,17 @@ filter_dataframe_by_geojson <- function(df, geojson_file) {
   message(sprintf(fmt = "[TIMER] Semi-join back: %ss", round(join_elapsed, 3)))
 
   elapsed_time <- as.numeric(x = difftime(Sys.time(), start_time, units = "secs"))
-  message(sprintf(fmt = "Spatial filtering complete in %ss: %s of %s points retained (%s%%)", round(elapsed_time, 1), nrow(x = filtered_df), n_before, round(100 * nrow(x = filtered_df) / n_before, 1)))
+  message(sprintf(fmt = "The spatial filter is complete in %ss: it kept %s of %s points (%s%%)", round(elapsed_time, 1), nrow(x = filtered_df), n_before, round(100 * nrow(x = filtered_df) / n_before, 1)))
 
   filtered_df
 }
 
-#' Extract data for specific point location (nearest neighbor)
+#' Extract data for a specified point location (nearest neighbor)
 #'
-#' @param netcdf_file Character string path to NetCDF file
+#' @param netcdf_file Path to the NetCDF file, as a character string
 #' @param target_lat Target latitude
 #' @param target_lon Target longitude
-#' @return data.frame with data for nearest point
+#' @return data.frame with data for the nearest point
 extract_point_data <- function(netcdf_file, target_lat, target_lon) {
   df <- process_netcdf_to_dataframe(netcdf_file)
 
@@ -411,11 +411,11 @@ extract_point_data <- function(netcdf_file, target_lat, target_lon) {
 #'
 #' @param data data.frame with datetime column
 #' @param frequency Character string: "daily", "monthly", "yearly"
-#' @param verbose Logical indicating whether to print progress messages
+#' @param verbose Logical. If TRUE, the function prints progress messages
 #' @return data.frame with temporally aggregated data
 aggregate_by_frequency <- function(data, frequency, verbose = FALSE) {
   if (!"datetime" %in% names(data)) {
-    warning("No datetime column found, returning original data", call. = FALSE)
+    warning("Cannot find a datetime column. The function returns the original data", call. = FALSE)
     return(data)
   }
 
@@ -424,7 +424,7 @@ aggregate_by_frequency <- function(data, frequency, verbose = FALSE) {
   }
 
   if (verbose) {
-    message("Starting temporal aggregation...")
+    message("The temporal aggregation starts...")
     message(sprintf(fmt = "Input: %s data points", nrow(x = data)))
   }
 
@@ -470,33 +470,33 @@ aggregate_by_frequency <- function(data, frequency, verbose = FALSE) {
   step_start <- Sys.time()
   setorder(aggregated, datetime, latitude, longitude, variable)
   elapsed <- as.numeric(x = difftime(Sys.time(), step_start, units = "secs"))
-  if (verbose) message(sprintf(fmt = "[TIMER] Sorting: %ss", round(elapsed, 3)))
+  if (verbose) message(sprintf(fmt = "[TIMER] Sort: %ss", round(elapsed, 3)))
 
   aggregated <- as.data.frame(aggregated)
 
   total_agg_time <- as.numeric(x = difftime(Sys.time(), start_time_agg, units = "secs"))
   if (verbose) {
-    message("Temporal aggregation complete!")
-    message(sprintf(fmt = "Output: %s data points (reduced by %s%%)", nrow(x = aggregated), round(100 * (1 - nrow(x = aggregated) / nrow(x = data)), 1)))
+    message("The temporal aggregation is complete")
+    message(sprintf(fmt = "Output: %s data points (decrease of %s%%)", nrow(x = aggregated), round(100 * (1 - nrow(x = aggregated) / nrow(x = data)), 1)))
     message(sprintf(fmt = "[TIMER] Total aggregation time: %ss", round(total_agg_time, 2)))
   }
 
   aggregated
 }
 
-#' Apply temporal chunking for large date ranges
+#' Divide large date ranges into temporal chunks
 #'
-#' Chunk size defaults to `compute_optimal_chunk_size(frequency)`, which
-#' scales with the CDS field limit (hourly: 24 fields/day, daily: 1/day,
-#' monthly: 12/year) so each chunk fills one CDS job.
+#' The default chunk size is `compute_optimal_chunk_size(frequency)`. This size
+#' changes with the CDS field limit (hourly: 24 fields/day, daily: 1/day,
+#' monthly: 12/year). Thus, each chunk fills one CDS job.
 #'
 #' @param start_date Start date
 #' @param end_date End date
 #' @param frequency Temporal frequency ("hourly", "daily", "monthly")
 #' @param n_variables Number of variables in the request (fields = vars x steps)
-#' @param max_days_per_chunk Maximum days per chunk. NA (default) -> derive from
-#'   frequency via `compute_optimal_chunk_size`.
-#' @return List of date pairs for chunked processing
+#' @param max_days_per_chunk Maximum days per chunk. If NA (default), the function
+#'   calculates the value from frequency with `compute_optimal_chunk_size`.
+#' @return List of date pairs, with one pair for each chunk
 create_temporal_chunks <- function(start_date, end_date, frequency,
                                    n_variables = 1L, max_days_per_chunk = NA) {
   start_dt <- as.Date(x = start_date)
@@ -504,11 +504,11 @@ create_temporal_chunks <- function(start_date, end_date, frequency,
   total_days <- as.numeric(x = end_dt - start_dt) + 1
 
   is_monthly <- identical(x = frequency, y = "monthly")
-  span <- compute_optimal_chunk_size(n_variables, frequency) # years for monthly, days otherwise
+  span <- compute_optimal_chunk_size(n_variables, frequency) # years for monthly, days for other frequencies
 
   if (is.na(x = max_days_per_chunk)) {
     max_days_per_chunk <- if (is_monthly) {
-      span * 366L # years -> an upper bound in days; leap-safe, one job either way
+      span * 366L # Maximum days for the years. 366 is safe for leap years. Each chunk is one job.
     } else {
       span
     }
@@ -518,8 +518,9 @@ create_temporal_chunks <- function(start_date, end_date, frequency,
     return(list(list(start = start_dt, end = end_dt)))
   }
 
-  # The monthly-means product is addressed by whole months, so split on YEAR
-  # boundaries. A mid-month cut would drop or duplicate the boundary month.
+  # The monthly-means product uses only whole months. Thus, divide the range
+  # at YEAR boundaries. A cut in the middle of a month can remove or duplicate
+  # the boundary month.
   if (is_monthly) {
     max_years <- max(span, 1L)
     start_year <- as.integer(format(start_dt, "%Y"))
@@ -534,7 +535,7 @@ create_temporal_chunks <- function(start_date, end_date, frequency,
       )
       yr <- yr_end + 1L
     }
-    message(sprintf(fmt = "Large date range detected. Processing in %s chunks.", length(x = chunks)))
+    message(sprintf(fmt = "The date range is large. The function will process the range in %s chunks.", length(x = chunks)))
     return(chunks)
   }
 
@@ -547,24 +548,24 @@ create_temporal_chunks <- function(start_date, end_date, frequency,
     current_start <- current_end + 1
   }
 
-  message(sprintf(fmt = "Large date range detected. Processing in %s chunks.", length(x = chunks)))
+  message(sprintf(fmt = "The date range is large. The function will process the range in %s chunks.", length(x = chunks)))
   chunks
 }
 
-#' Combine multiple NetCDF files into single data.frame
+#' Combine NetCDF files into one data.frame
 #'
 #' @param netcdf_files Character vector of NetCDF file paths
-#' @param verbose Logical indicating whether to print progress messages
+#' @param verbose Logical. If TRUE, the function prints progress messages
 #' @return data.frame with combined data from all files
 combine_netcdf_files <- function(netcdf_files, verbose = FALSE) {
   valid_files <- netcdf_files[file.exists(netcdf_files)]
-  if (length(x = valid_files) == 0) stop("No valid NetCDF files found")
+  if (length(x = valid_files) == 0) stop("Cannot find valid NetCDF files")
 
-  if (verbose) message(sprintf(fmt = "Combining %s NetCDF files...", length(x = valid_files)))
+  if (verbose) message(sprintf(fmt = "Combination of %s NetCDF files...", length(x = valid_files)))
 
   all_data <- list()
   for (i in seq_along(along.with = valid_files)) {
-    if (verbose) message(sprintf(fmt = "Processing file %s/%s: %s", i, length(x = valid_files), basename(path = valid_files[i])))
+    if (verbose) message(sprintf(fmt = "File %s/%s in process: %s", i, length(x = valid_files), basename(path = valid_files[i])))
     all_data[[i]] <- process_netcdf_to_dataframe(valid_files[i])
   }
 

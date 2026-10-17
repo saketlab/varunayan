@@ -10,14 +10,14 @@ ListCRUTSVariables(...)
 list_cru_ts_variables(...)
 }
 \arguments{
-\item{...}{Arguments passed to the main function (used by aliases).}
+\item{...}{Arguments that the aliases send to the primary function.}
 }
 \value{
-data.frame with columns: variable, name, description, unit,
+A data.frame with the columns: variable, name, description, unit,
 era5_equivalent, hadex3_equivalent.
 }
 \description{
-Maps CRU TS variable codes to common names, units, and ERA5 equivalents.
+Gives the common names, units, and ERA5 equivalents of the CRU TS variable codes.
 }
 \examples{
 list_cru_ts_variables()

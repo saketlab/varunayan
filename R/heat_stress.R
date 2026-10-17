@@ -1,16 +1,16 @@
-#' heat stress index calculations
+#' Calculations for heat stress indices
 #'
 #' @name heat_stress
 NULL
 
 #' Calculate relative humidity from temperature and dewpoint
 #'
-#' Uses the Magnus-Tetens approximation to calculate relative humidity
-#' from air temperature and dewpoint temperature.
+#' This function uses the Magnus-Tetens approximation to calculate the relative
+#' humidity from the air temperature and the dewpoint temperature.
 #'
 #' @param temp_c Air temperature in Celsius
 #' @param dewpoint_c Dewpoint temperature in Celsius
-#' @return Relative humidity as percentage (0-100)
+#' @return Relative humidity as a percentage (0-100)
 #' @export
 #' @examples
 #' relative_humidity_from_dewpoint(25, 18)
@@ -27,11 +27,12 @@ relative_humidity_from_dewpoint <- function(temp_c, dewpoint_c) {
 
 #' Calculate wet bulb temperature
 #'
-#' Calculates wet bulb temperature using the Stull (2011) empirical formula.
-#' Valid for temperatures between -20C and 50C and RH between 5% and 99%.
+#' This function uses the Stull (2011) empirical formula to calculate the wet bulb
+#' temperature. The formula is applicable to temperatures between -20C and 50C
+#' and to RH between 5% and 99%.
 #'
 #' @param temp_c Air temperature in Celsius
-#' @param rh Relative humidity as percentage (0-100)
+#' @param rh Relative humidity as a percentage (0-100)
 #' @return Wet bulb temperature in Celsius
 #' @references Stull, R. (2011). Wet-Bulb Temperature from Relative Humidity
 #'   and Air Temperature. Journal of Applied Meteorology and Climatology,
@@ -40,7 +41,8 @@ relative_humidity_from_dewpoint <- function(temp_c, dewpoint_c) {
 #' @examples
 #' wet_bulb_temperature(30, 60)
 wet_bulb_temperature <- function(temp_c, rh) {
-  # Clamp to Stull's stated validity window (RH 5-99%) to avoid extrapolation.
+  # Keep RH in the validity range that Stull gives (RH 5-99%). This prevents
+  # extrapolation.
   rh <- pmin(pmax(rh, 5), 99)
   temp_c * atan(0.151977 * sqrt(rh + 8.313659)) +
     atan(temp_c + rh) -
@@ -69,7 +71,7 @@ wet_bulb_from_dewpoint <- function(temp_c, dewpoint_c) {
 #' adjustments once the simple value averaged with temperature reaches 80F.
 #'
 #' @param temp_c Air temperature in Celsius
-#' @param rh Relative humidity as percentage (0-100)
+#' @param rh Relative humidity as a percentage (0-100)
 #' @return Heat index in Celsius
 #' @references Rothfusz, L.P. (1990). The Heat Index Equation.
 #'   NWS Southern Region Technical Attachment, SR/SSD 90-23.
@@ -97,6 +99,7 @@ heat_index <- function(temp_c, rh) {
 
       adj <- ifelse(
         rh < 13 & temp_f >= 80 & temp_f <= 112,
+        # ifelse() computes this for all values. pmax() stops a NaN warning outside 78-112 degF, where it is not used
         -((13 - rh) / 4) * sqrt(pmax(0, 17 - abs(temp_f - 95)) / 17),
         ifelse(
           rh > 85 & temp_f >= 80 & temp_f <= 87,
@@ -158,8 +161,8 @@ wbgt_simple <- function(temp_c, dewpoint_c) {
 
 #' Calculate shade/indoor Wet Bulb Globe Temperature (ISO 7243)
 #'
-#' Uses the indoor formula 0.7*Tw + 0.3*Ta. For a closed-form estimate from
-#' temperature and humidity alone, use \code{wbgt_simple()}.
+#' This function uses the indoor formula 0.7*Tw + 0.3*Ta. To get a closed-form
+#' estimate from only temperature and humidity, use \code{wbgt_simple()}.
 #'
 #' @param temp_c Air temperature in Celsius
 #' @param wet_bulb_c Wet bulb temperature in Celsius
@@ -173,8 +176,8 @@ wbgt_shade <- function(temp_c, wet_bulb_c) {
 
 #' Calculate WBGT from dewpoint
 #'
-#' Alias for \code{wbgt_simple()} (BoM closed-form WBGT from temperature and
-#' dewpoint).
+#' This function is an alias for \code{wbgt_simple()}. It calculates the BoM
+#' closed-form WBGT from temperature and dewpoint.
 #'
 #' @param temp_c Air temperature in Celsius
 #' @param dewpoint_c Dewpoint temperature in Celsius
@@ -218,8 +221,9 @@ vapor_pressure_from_dewpoint <- function(dewpoint_c) {
 
 #' Estimate mean radiant temperature
 #'
-#' Estimates mean radiant temperature (Tmrt) from meteorological variables.
-#' Uses simplified approach when full radiation data unavailable.
+#' This function estimates the mean radiant temperature (Tmrt) from
+#' meteorological variables. If full radiation data is not available, the
+#' function uses a simplified method.
 #'
 #' @param temp_c Air temperature in Celsius
 #' @param solar_radiation Solar radiation in W/m2 (optional)
@@ -236,13 +240,14 @@ mean_radiant_temperature <- function(temp_c, solar_radiation = NULL, wind_speed 
   sigma <- 5.670374419e-8 # Stefan-Boltzmann, W m^-2 K^-4 (CODATA 2018)
   eps_p <- 0.97 # longwave emissivity of a standard person
   a_k <- 0.7 # shortwave absorption coefficient of a standard person
-  fa <- 0.25 # rotationally-averaged projected area factor
+  fa <- 0.25 # projected area factor, averaged over all rotations
   ta_k <- temp_c + 273.15
   ((ta_k^4) + (a_k * fa * solar_radiation) / (eps_p * sigma))^0.25 - 273.15
 }
 
-# Saturation vapor pressure (kPa) using the UTCI reference es() routine
-# (Broede 2012 operational code). Shared by utci() for cross-language parity.
+# Saturation vapor pressure (kPa) from the UTCI reference es() routine
+# (Broede 2012 operational code). utci() uses this function. Thus, the results
+# are the same as the results of the code in other languages.
 .utci_saturation_kpa <- function(temp_c) {
   g <- c(
     -2836.5744, -6028.076559, 19.54263612, -0.02737830188,
@@ -253,19 +258,20 @@ mean_radiant_temperature <- function(temp_c, solar_radiation = NULL, wind_speed 
   for (i in seq_along(g)) {
     es <- es + g[i] * tk^(i - 3)
   }
-  # exp(es) is in Pa; the UTCI polynomial expects vapor pressure in kPa.
+  # exp(es) is in Pa. The UTCI polynomial must have vapor pressure in kPa.
   exp(es) * 0.001
 }
 
 #' Calculate UTCI (Universal Thermal Climate Index)
 #'
-#' Calculates UTCI using the polynomial approximation from Bröde et al. (2012),
-#' based on a multi-node model of human thermoregulation.
+#' This function uses the polynomial approximation of Bröde et al. (2012) to
+#' calculate UTCI. The approximation uses a multi-node model of human
+#' thermoregulation.
 #'
 #' @param temp_c Air temperature in Celsius (-50 to 50)
 #' @param wind_speed Wind speed at 10m height in m/s (0.5 to 17)
 #' @param dewpoint_c Dewpoint temperature in Celsius (to calculate vapor pressure)
-#' @param tmrt Mean radiant temperature in Celsius (optional, defaults to temp_c)
+#' @param tmrt Mean radiant temperature in Celsius (optional, the default is temp_c)
 #' @return UTCI in Celsius
 #' @references Bröde, P., et al. (2012). Deriving the operational procedure for
 #'   the Universal Thermal Climate Index (UTCI). International Journal of
@@ -277,11 +283,12 @@ mean_radiant_temperature <- function(temp_c, solar_radiation = NULL, wind_speed 
 utci <- function(temp_c, wind_speed, dewpoint_c, tmrt = NULL) {
   Ta <- temp_c
   va <- pmax(pmin(wind_speed, 17), 0.5)
-  # Water-vapor pressure in kPa via the UTCI reference saturation routine,
-  # scaled by relative humidity. Matches the Python implementation exactly.
+  # Water-vapor pressure in kPa from the UTCI reference saturation routine,
+  # multiplied by the relative humidity. The result is the same as the result
+  # of the Python implementation.
   rh <- relative_humidity_from_dewpoint(temp_c, dewpoint_c)
   Pa <- (rh / 100) * .utci_saturation_kpa(temp_c)
-  # Broede (2012) is defined for delta-MRT in [-30, 70] K.
+  # Broede (2012) gives the definition for delta-MRT in [-30, 70] K.
   D_Tmrt <- if (is.null(tmrt)) 0 else pmin(pmax(tmrt - temp_c, -30), 70)
 
   utci_val <- Ta +
@@ -499,17 +506,17 @@ utci <- function(temp_c, wind_speed, dewpoint_c, tmrt = NULL) {
   utci_val
 }
 
-#' Calculate UTCI using sparse regression approximation
+#' Calculate UTCI with a sparse regression approximation
 #'
-#' Calculates UTCI using the sparse regression approximation with Legendre
-#' polynomials from Roman et al. (2025). This is a more accurate approximation
-#' than the original Bröde et al. (2012) polynomial, with fewer terms and
-#' better numerical stability.
+#' This function uses the sparse regression approximation of Roman et al. (2025)
+#' to calculate UTCI. This approximation uses Legendre polynomials. It is more
+#' accurate than the original polynomial of Bröde et al. (2012). It has fewer
+#' terms and better numerical stability.
 #'
 #' @param temp_c Air temperature in Celsius (-50 to 50)
 #' @param tmrt Mean radiant temperature in Celsius
 #' @param wind_speed Wind speed at 10m height in m/s (0.5 to 30.3)
-#' @param rh Relative humidity as percentage (5 to 100)
+#' @param rh Relative humidity as a percentage (5 to 100)
 #' @return UTCI in Celsius
 #' @references Roman, S., Todorovski, L., Dzeroski, S., & Skok, G. (2025).
 #'   Approximating the universal thermal climate index using sparse regression
@@ -789,10 +796,10 @@ utci_sparse <- function(temp_c, tmrt, wind_speed, rh) {
 
 #' UTCI thermal stress categories
 #'
-#' Classify thermal stress based on UTCI values.
+#' This function puts UTCI values into thermal stress categories.
 #'
 #' @param utci_val UTCI value in Celsius
-#' @return A factor of thermal stress categories, the same length as the input.
+#' @return Factor with the thermal stress category
 #' @export
 #' @examples
 #' utci_category(c(-20, 0, 20, 30, 40))
@@ -809,7 +816,8 @@ utci_category <- function(utci_val) {
 
 #' Calculate all heat stress indices
 #'
-#' Calculate all heat stress indices from temperature and dewpoint.
+#' This function calculates all heat stress indices from temperature and
+#' dewpoint.
 #'
 #' @param temp_c Air temperature in Celsius
 #' @param dewpoint_c Dewpoint temperature in Celsius
@@ -837,13 +845,13 @@ calc_heat_indices <- function(temp_c, dewpoint_c) {
 .WBGT_BREAKS <- (c(78, 82, 85, 88) - 32) * 5 / 9
 .HI_BREAKS <- (c(80, 90, 103, 124) - 32) * 5 / 9
 
-#' heat stress risk categories
+#' Heat stress risk categories
 #'
 #' Classify heat stress risk using the US National Weather Service WBGT flag
 #' thresholds of 78, 82, 85 and 88 F (25.6, 27.8, 29.4 and 31.1 C).
 #'
 #' @param wbgt WBGT value in Celsius
-#' @return A factor of risk categories, the same length as the input.
+#' @return Factor with the risk category
 #' @export
 #' @examples
 #' wbgt_risk_category(c(25, 28, 31, 34))
@@ -855,10 +863,11 @@ wbgt_risk_category <- function(wbgt) {
 
 #' Heat index risk categories
 #'
-#' Classify heat stress risk based on heat index using NWS categories.
+#' This function puts heat index values into heat stress risk categories. It
+#' uses the NWS categories.
 #'
 #' @param hi Heat index value in Celsius
-#' @return A factor of risk categories, the same length as the input.
+#' @return Factor with the risk category
 #' @export
 #' @examples
 #' heat_index_risk_category(c(27, 33, 40, 46, 55))
@@ -903,25 +912,25 @@ heat_index_risk_category <- function(hi) {
 .validate_region <- function(json_file, north, south, east, west) {
   has_bbox <- !is.null(north) && !is.null(south) && !is.null(east) && !is.null(west)
   if (is.null(json_file) && !has_bbox) {
-    stop("Must provide either json_file or bounding box coordinates (north, south, east, west)")
+    stop("You must supply json_file or the bounding box coordinates (north, south, east, west)")
   }
 }
 
 #' Download daily ERA5 climate data
 #'
-#' Download ERA5 climate variables (temperature, humidity, wet bulb, wind,
-#' solar radiation) for a region.
+#' This function downloads ERA5 climate variables (temperature, humidity, wet
+#' bulb, wind, solar radiation) for a region.
 #'
 #' @param request_id Unique identifier for the data request
 #' @param start_date Start date in "YYYY-MM-DD" format
 #' @param end_date End date in "YYYY-MM-DD" format
 #' @param variables Character vector of variables to download. Options:
 #'   "temperature", "humidity", "wet_bulb", "wind", "solar"
-#' @param json_file Path to GeoJSON file defining the region
+#' @param json_file Path to the GeoJSON file that defines the region
 #' @param north,south,east,west Bounding box coordinates (alternative to json_file)
 #' @param resolution Spatial resolution in degrees (default: 0.25)
-#' @param use_cache Whether to use cached data (default: TRUE)
-#' @param verbose Whether to print progress messages (default: FALSE)
+#' @param use_cache If TRUE, the function uses cached data (default: TRUE)
+#' @param verbose If TRUE, the function prints progress messages (default: FALSE)
 #' @return data.frame with date, latitude, longitude, and requested variables
 #' @export
 #' @examplesIf interactive()
@@ -948,8 +957,8 @@ GetERA5DailyClimate <- function(request_id, start_date, end_date,
   invalid <- setdiff(variables, valid_vars)
   if (length(invalid) > 0) {
     stop(
-      "Invalid variables: ", paste(invalid, collapse = ", "),
-      ". Valid options: ", paste(valid_vars, collapse = ", ")
+      "Incorrect variables: ", paste(invalid, collapse = ", "),
+      ". Permitted options: ", paste(valid_vars, collapse = ", ")
     )
   }
 
@@ -1030,11 +1039,11 @@ get_era5_daily_climate <- GetERA5DailyClimate
 #' @param request_id Unique identifier for the data request
 #' @param start_date Start date in "YYYY-MM-DD" format
 #' @param end_date End date in "YYYY-MM-DD" format
-#' @param json_file Path to GeoJSON file defining the region
+#' @param json_file Path to the GeoJSON file that defines the region
 #' @param north,south,east,west Bounding box coordinates (alternative to json_file)
 #' @param resolution Spatial resolution in degrees (default: 0.25)
-#' @param use_cache Whether to use cached data (default: TRUE)
-#' @param verbose Whether to print progress messages (default: FALSE)
+#' @param use_cache If TRUE, the function uses cached data (default: TRUE)
+#' @param verbose If TRUE, the function prints progress messages (default: FALSE)
 #' @return data.frame with date, latitude, longitude, temp_c
 #' @export
 #' @examplesIf interactive()
@@ -1066,7 +1075,8 @@ get_era5_daily_temperature <- GetERA5DailyTemperature
 
 #' Download daily ERA5 humidity data
 #'
-#' Downloads temperature, dewpoint, and calculates relative humidity.
+#' This function downloads temperature and dewpoint data. Then it calculates the
+#' relative humidity.
 #'
 #' @inheritParams GetERA5DailyTemperature
 #' @return data.frame with date, latitude, longitude, temp_c, dewpoint_c, rh
@@ -1100,7 +1110,8 @@ get_era5_daily_humidity <- GetERA5DailyHumidity
 
 #' Download daily ERA5 wet bulb temperature data
 #'
-#' Downloads temperature, dewpoint, and calculates RH and wet bulb temperature.
+#' This function downloads temperature and dewpoint data. Then it calculates RH
+#' and the wet bulb temperature.
 #'
 #' @inheritParams GetERA5DailyTemperature
 #' @return data.frame with date, latitude, longitude, temp_c, dewpoint_c, rh, wet_bulb
@@ -1134,7 +1145,8 @@ get_era5_daily_wet_bulb <- GetERA5DailyWetBulb
 
 #' Download daily ERA5 wind data
 #'
-#' Downloads 10m wind components and calculates wind speed.
+#' This function downloads the 10m wind components. Then it calculates the wind
+#' speed.
 #'
 #' @inheritParams GetERA5DailyTemperature
 #' @return data.frame with date, latitude, longitude, wind_speed
@@ -1168,25 +1180,28 @@ get_era5_daily_wind <- GetERA5DailyWind
 
 #' Download ERA5 data and calculate heat stress indices
 #'
-#' Download ERA5 temperature, dewpoint, and wind data for a region and calculate
-#' heat stress indices.
+#' This function downloads ERA5 temperature, dewpoint, and wind data for a
+#' region. Then it calculates the heat stress indices.
 #'
 #' @param request_id Unique identifier for the data request
 #' @param start_date Start date in "YYYY-MM-DD" format
 #' @param end_date End date in "YYYY-MM-DD" format
-#' @param json_file Path to GeoJSON file defining the region (for geojson method)
-#' @param north Northern latitude boundary (for bbox method)
-#' @param south Southern latitude boundary (for bbox method)
-#' @param east Eastern longitude boundary (for bbox method)
-#' @param west Western longitude boundary (for bbox method)
-#' @param solar_load Whether to include solar radiation in calculations (default: FALSE).
-#'   When TRUE, downloads solar radiation data and uses it for WBGT and UTCI.
+#' @param json_file Path to the GeoJSON file that defines the region (for the geojson method)
+#' @param north Northern latitude boundary (for the bbox method)
+#' @param south Southern latitude boundary (for the bbox method)
+#' @param east Eastern longitude boundary (for the bbox method)
+#' @param west Western longitude boundary (for the bbox method)
+#' @param solar_load If TRUE, include solar radiation in the calculations
+#'   (default: FALSE). If TRUE, the function downloads solar radiation data and
+#'   uses these data for WBGT and UTCI.
 #' @param resolution Spatial resolution in degrees (default: 0.25)
-#' @param use_cache Whether to use cached data if available (default: TRUE)
-#' @param verbose Whether to print progress messages (default: FALSE)
+#' @param use_cache If TRUE, the function uses cached data when the data is
+#'   available (default: TRUE)
+#' @param verbose If TRUE, the function prints progress messages (default: FALSE)
 #' @return data.frame with columns: date, latitude, longitude, temp_c, dewpoint_c,
 #'   wind_speed, rh, wet_bulb, heat_index, wbgt, utci, humidex, wbgt_risk,
-#'   heat_index_risk, utci_stress. When solar_load=TRUE, also includes solar_radiation.
+#'   heat_index_risk, utci_stress. If solar_load=TRUE, the data.frame
+#'   also contains solar_radiation.
 #' @export
 #' @examplesIf interactive()
 #' region <- system.file("extdata", "region.geojson", package = "varunayan")
@@ -1286,17 +1301,18 @@ get_era5_daily_heat_data <- GetERA5DailyHeatIndexData
 
 #' Get monthly ERA5 heat stress index data
 #'
-#' Download ERA5 heat stress indices aggregated to a given month.
+#' This function downloads ERA5 heat stress indices and aggregates them to the
+#' specified month.
 #'
 #' @param request_id Unique identifier for the data request
-#' @param year Year (e.g., 2023)
+#' @param year Year (for example, 2023)
 #' @param month Month (1-12)
-#' @param json_file Path to GeoJSON file defining the region
+#' @param json_file Path to the GeoJSON file that defines the region
 #' @param north,south,east,west Bounding box coordinates (alternative to json_file)
-#' @param solar_load Whether to include solar radiation (default: FALSE)
+#' @param solar_load If TRUE, include solar radiation (default: FALSE)
 #' @param resolution Spatial resolution in degrees (default: 0.25)
-#' @param use_cache Whether to use cached data (default: TRUE)
-#' @param verbose Whether to print progress messages (default: FALSE)
+#' @param use_cache If TRUE, the function uses cached data (default: TRUE)
+#' @param verbose If TRUE, the function prints progress messages (default: FALSE)
 #' @return A data.frame with one row per grid point for the requested month: `year`, `month`, `latitude`, `longitude`, monthly means of the daily heat stress variables, and the categorical columns `wbgt_risk`, `heat_index_risk` and `utci_stress`.
 #' @export
 #' @examplesIf interactive()

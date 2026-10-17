@@ -13,7 +13,7 @@ estimate_cds_fields(
 )
 }
 \arguments{
-\item{n_variables}{Number of variables requested}
+\item{n_variables}{Number of requested variables}
 
 \item{start_date}{Start date}
 
@@ -27,8 +27,8 @@ estimate_cds_fields(
 Integer number of estimated fields
 }
 \description{
-The CDS API limits requests to 120,000 fields for hourly/daily reanalysis
-and 10,000 fields for monthly means. A field is one variable x one time step
-x one pressure level.
+The CDS API has a limit of 120,000 fields for each hourly or daily reanalysis
+request. The limit for monthly means is 10,000 fields. A field is one
+variable x one time step x one pressure level.
 }
 \keyword{internal}

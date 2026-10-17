@@ -10,7 +10,7 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-# ponytail: eval=FALSE — needs live CDS API; CI with CDS_API_KEY can override
+# ponytail: eval=FALSE. The code must have live CDS API access. CI with CDS_API_KEY can replace this value.
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#",
@@ -36,35 +36,35 @@ library(ggpubr)
 theme_set(theme_pubr(base_size = 11))
 ```
 
-Air temperature alone does not capture heat stress well. Humidity limits the body's cooling through sweating, so two days at the same temperature can differ in physiological risk.
+Air temperature is not sufficient to measure heat stress. Humidity decreases the cooling of the body by sweat. Thus, two days at the same temperature can have different physiological risks.
 
-Here we calculate six heat stress indices from ERA5 data and compare them:
+We calculate six heat stress indices from ERA5 data. Then we compare these indices:
 
 - Air temperature (T): standard 2m temperature
-- Wet bulb temperature (Tw): temperature accounting for humidity via evaporative cooling
-- Heat index (HI): apparent temperature, how hot it "feels"
-- WBGT: wet bulb globe temperature, the occupational heat stress standard
+- Wet bulb temperature (Tw): the temperature that includes the effect of humidity through evaporative cooling
+- Heat index (HI): apparent temperature, the temperature that a person "feels"
+- WBGT: wet bulb globe temperature, the standard for occupational heat stress
 - UTCI: universal thermal climate index
 - Humidex: Canadian heat discomfort index
 
 
 
-## Why multiple indices?
+## Why use more than one index?
 
-Each index weights temperature, humidity, wind, and radiation differently:
+Each index gives a different weight to temperature, humidity, wind, and radiation:
 
-| Index | Purpose | Key Factors | Primary Use |
+| Index | Purpose | Primary Factors | Primary Use |
 |-------|---------|-------------|-------------|
-| Temperature | Actual air temperature | Dry bulb only | Baseline measurement |
+| Temperature | Actual air temperature | Dry bulb only | Reference measurement |
 | Wet Bulb | Evaporative cooling potential | T + Humidity | Physiological limit |
-| Heat Index | Perceived temperature | T + RH (empirical) | Public weather alerts |
+| Heat Index | Apparent temperature | T + RH (empirical) | Public weather warnings |
 | WBGT | Occupational heat limits | Tw + T + Radiation | Workplace safety |
-| UTCI | Comprehensive thermal comfort | T + Tmrt + Wind + Humidity | Climate research |
-| Humidex | Comfort assessment | T + Dewpoint | Canadian weather |
+| UTCI | Full thermal comfort | T + Tmrt + Wind + Humidity | Climate research |
+| Humidex | Comfort estimate | T + Dewpoint | Canadian weather |
 
-## Understanding the indices
+## Description of the indices
 
-Nomenclature used throughout:
+This vignette uses these symbols:
 
 | Symbol | Description | Unit |
 |--------|-------------|------|
@@ -81,11 +81,11 @@ Nomenclature used throughout:
 
 ### Wet bulb temperature (Tw)
 
-The wet bulb temperature represents the lowest temperature that can be achieved through evaporative cooling alone. It's calculated using the [Stull (2011)](https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml) formula:
+The wet bulb temperature is the lowest temperature that you can get with only evaporative cooling. We use the [Stull (2011)](https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml) formula to calculate the wet bulb temperature:
 
 $$T_w = T \cdot \arctan[0.151977(RH + 8.313659)^{0.5}] + \arctan(T + RH) - \arctan(RH - 1.676331) + 0.00391838 \cdot RH^{1.5} \cdot \arctan(0.023101 \cdot RH) - 4.686035$$
 
-A wet bulb temperature of 35°C is considered the upper limit for human survivability, as the body cannot cool itself through sweating at this point (the air is so hot and humid that sweating no longer cools the body!).
+The usual estimate of the upper limit for human survival is a wet bulb temperature of 35°C. At this temperature, sweat cannot decrease the temperature of the body. The air is so hot and humid that sweat does not cool the body.
 
 ### Heat Index (HI)
 
@@ -94,18 +94,18 @@ The Heat Index uses the [Rothfusz regression equation](https://www.weather.gov/m
 $$HI = -42.379 + 2.049T + 10.143RH - 0.225T \cdot RH - 0.007T^2 - 0.055RH^2 + ...$$
 
 Risk categories:
-- **Normal** (<26.7°C, 80°F): No special precautions
-- **Caution** (26.7-32.2°C, 80-90°F): Fatigue possible with prolonged exposure
-- **Extreme Caution** (32.2-39.4°C, 90-103°F): Heat cramps and exhaustion possible
-- **Danger** (39.4-51.1°C, 103-124°F): Heat exhaustion likely, heat stroke possible
-- **Extreme Danger** (≥51.1°C, 124°F): Heat stroke highly likely
+- **Normal** (<26.7°C, 80°F): No special precautions are necessary
+- **Caution** (26.7-32.2°C, 80-90°F): Fatigue can occur after long exposure
+- **Extreme Caution** (32.2-39.4°C, 90-103°F): Heat cramps and heat exhaustion can occur
+- **Danger** (39.4-51.1°C, 103-124°F): There is a high risk of heat exhaustion. Heat stroke can occur
+- **Extreme Danger** (≥51.1°C, 124°F): There is a very high risk of heat stroke
 
 ### WBGT (Wet Bulb Globe Temperature)
 
 WBGT is the [ISO 7243](https://www.iso.org/standard/67188.html) standard for occupational heat stress:
 
 $$WBGT_{outdoor} = 0.7 \cdot T_{nwb} + 0.2 \cdot T_g + 0.1 \cdot T_a$$
-Where $T_{nwb}$ is natural wet bulb, $T_g$ is globe temperature (accounting for radiation), and $T_a$ is air temperature. `wbgt_liljegren()` solves $T_{nwb}$ and $T_g$ from hourly temperature, humidity, wind and solar radiation (Liljegren et al. 2008); `wbgt_simple()` uses the Australian Bureau of Meteorology approximation from temperature and humidity alone. `wbgt()` selects either with `method =`.
+In this equation, $T_{nwb}$ is the natural wet bulb temperature. $T_g$ is the globe temperature, which includes the effect of radiation. $T_a$ is the air temperature. `wbgt_liljegren()` solves $T_{nwb}$ and $T_g$ from hourly temperature, humidity, wind and solar radiation (Liljegren et al. 2008); `wbgt_simple()` uses the Australian Bureau of Meteorology approximation from temperature and humidity alone. `wbgt()` selects either with `method =`.
 
 Risk categories in `wbgt_risk_category()` follow the US National Weather Service WBGT flag thresholds:
 - **Low** (<25.6°C, 78°F)
@@ -116,9 +116,9 @@ Risk categories in `wbgt_risk_category()` follow the US National Weather Service
 
 ### UTCI (Universal Thermal Climate Index)
 
-UTCI is based on a multi-node model of human thermoregulation ([Bröde et al., 2012](https://doi.org/10.1007/s00484-011-0454-1)). We use the sparse regression approximation from [Roman et al. (2025)](https://doi.org/10.48550/arXiv.2508.11307):
+UTCI uses a multi-node model of human thermoregulation ([Bröde et al., 2012](https://doi.org/10.1007/s00484-011-0454-1)). We use the sparse regression approximation from [Roman et al. (2025)](https://doi.org/10.48550/arXiv.2508.11307):
 
-The UTCI considers:
+The UTCI uses these variables:
 - Air temperature
 - Mean radiant temperature
 - Wind speed at 10m
@@ -138,16 +138,16 @@ Thermal stress categories:
 
 ### Humidex
 
-The Canadian [Humidex](https://climate.weather.gc.ca/glossary_e.html#humidex) is calculated as:
+This equation gives the Canadian [Humidex](https://climate.weather.gc.ca/glossary_e.html#humidex):
 
 $$H = T + 0.5555 \cdot (e - 10)$$
 
-Where $e = 6.11 \cdot \exp(5417.7530 \cdot (1/273.15 - 1/(273.15 + T_d)))$ is the vapor pressure.
+In this equation, $e = 6.11 \cdot \exp(5417.7530 \cdot (1/273.15 - 1/(273.15 + T_d)))$ is the vapor pressure.
 
-# Calculating heat indices using ERA5 data
+# Calculate heat indices from ERA5 data
 
-The helper function `GetERA5DailyHeatIndexData()` downloads temperature, dewpoint, and wind data
-and calculates all heat stress indices in one call.
+The helper function `GetERA5DailyHeatIndexData()` downloads temperature, dewpoint, and wind data.
+The function also calculates all the heat stress indices in one call.
 
 ```{r download_geojson}
 states_url <- "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson"
@@ -181,10 +181,11 @@ heat_solar <- GetERA5DailyHeatIndexData(
 head(heat_solar)
 ```
 
-## Solar load impact
+## Effect of solar load
 
-When `solar_load = TRUE`, the function also downloads solar radiation data and
-uses it to calculate outdoor WBGT and UTCI values that account for direct sunlight.
+When `solar_load = TRUE`, the function also downloads solar radiation data.
+The function uses these data to calculate outdoor WBGT and UTCI values.
+These values include the effect of direct sunlight.
 
 ```{r solar_comparison, fig.width=8, fig.height=5}
 daily_mean <- function(df, condition) {
@@ -199,21 +200,22 @@ solar_compare <- bind_rows(daily_mean(heat_shade, "Shade"), daily_mean(heat_sola
 ggplot(solar_compare, aes(date, WBGT, color = Condition)) +
   geom_line(linewidth = 1) +
   scale_color_manual(values = c(Shade = "#3498DB", Sun = "#E74C3C")) +
-  labs(title = "Impact of solar radiation on WBGT", x = NULL, y = "WBGT (°C)")
+  labs(title = "Effect of solar radiation on WBGT", x = NULL, y = "WBGT (°C)")
 ```
 
-Solar radiation adds several degrees to WBGT, which is the gap between the sun and shade lines.
+Solar radiation adds some degrees to WBGT.
+The difference between the sun line and the shade line shows this increase.
 
 ## Temporal analysis
 
-For the remaining analyses, we use the solar-loaded data as it better represents
-outdoor conditions.
+For the remaining analyses, we use the solar-loaded data.
+These data show outdoor conditions more accurately.
 
 ```{r set_heat_data}
 heat_data <- heat_solar
 ```
 
-Daily mean of each index over the month:
+This plot shows the daily mean of each index for the month:
 
 ```{r daily_comparison, fig.width=10, fig.height=6}
 index_cols <- c(
@@ -233,7 +235,7 @@ ggplot(daily_indices, aes(date, value, color = Index)) +
   labs(title = "Heat stress indices - India (May 2023)", x = NULL, y = "°C")
 ```
 
-## Index differences from air temperature
+## Difference between each index and air temperature
 
 ```{r index_differences, fig.width=10, fig.height=5}
 daily_diff <- heat_data %>%
@@ -246,18 +248,18 @@ ggplot(daily_diff, aes(date, diff, fill = Index)) +
   geom_col(position = "dodge", alpha = 0.8) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   scale_fill_brewer(palette = "Set2") +
-  labs(title = "Deviation from air temperature", x = NULL, y = "Difference (°C)")
+  labs(title = "Difference from air temperature", x = NULL, y = "Difference (°C)")
 ```
 
-A few things stand out:
+The plot shows these results:
 
-- Wet bulb stays below air temperature because of evaporative cooling.
-- Heat index and humidex rise above it when humidity is high.
-- WBGT and UTCI run high here because of the solar load.
+- The wet bulb temperature stays less than the air temperature because of evaporative cooling.
+- The heat index and the humidex increase to more than the air temperature when the humidity is high.
+- WBGT and UTCI are high in this example because of the solar load.
 
 ## Spatial analysis
 
-The same indices, mapped across India by district.
+The maps show the same indices for each district of India.
 
 
 ```{r download_districts}
@@ -312,7 +314,7 @@ ggplot() +
   theme_void()
 ```
 
-# Risk assessment
+# Risk categories
 
 ```{r risk_categories, fig.width=12, fig.height=5}
 wbgt_levels <- c("Low", "Moderate", "High", "Very high", "Extreme")
@@ -347,9 +349,11 @@ risk_map("wbgt_risk", risk_colors, "WBGT risk") |
   risk_map("hi_risk", hi_colors, "Heat index risk")
 ```
 
-# Relationship between indices
+# Relation between the indices
 
-How the indices track each other, plotted against air temperature and as a correlation matrix.
+These plots show the relation between the indices.
+The first plot compares each index with the air temperature.
+The last plot shows a correlation matrix.
 
 ```{r scatter_indices, fig.width=12, fig.height=8}
 sample_data <- heat_data %>% sample_n(min(5000, n()))

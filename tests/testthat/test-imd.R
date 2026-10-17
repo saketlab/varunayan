@@ -21,7 +21,7 @@ test_that("get_imd_grid_specs returns expected specs", {
   expect_equal(length(seq(rf1$lat_start, rf1$lat_end, by = rf1$resolution)), rf1$nlat)
   expect_equal(length(seq(rf$lon_start, rf$lon_end, by = rf$resolution)), rf$nlon)
   expect_equal(length(seq(rf$lat_start, rf$lat_end, by = rf$resolution)), rf$nlat)
-  expect_error(get_imd_grid_specs("foo"), "Invalid dataset. Must be one of: rainfall_0.25")
+  expect_error(get_imd_grid_specs("foo"), "Invalid dataset. The dataset must be one of: rainfall_0.25")
 })
 
 test_that("list_imd_datasets returns the four datasets", {
@@ -38,7 +38,7 @@ test_that("is_leap_year and extract_years_from_filenames", {
   expect_equal(varunayan:::is_leap_year(c(1900, 2000, 2023, 2024)), c(FALSE, TRUE, FALSE, TRUE))
   yrs <- varunayan:::extract_years_from_filenames(c("imd_tmax_1.0_2021.grd", "/x/imd_rainfall_0.25_2023.nc"))
   expect_equal(unname(yrs), c(2021L, 2023L))
-  expect_error(varunayan:::extract_years_from_filenames("no_year.grd"), "Could not extract years")
+  expect_error(varunayan:::extract_years_from_filenames("no_year.grd"), "Cannot extract the years")
 })
 
 test_that("read_imd_temperature round-trips known cell values and drops 99.9", {
@@ -78,9 +78,9 @@ test_that("read_imd_temperature warns on truncated file and errors on missing fi
   imd_fx_write_temperature(f, 2023, n_days = 10L)
   expect_warning(
     suppressMessages(read_imd_temperature(f, "tmax", 2023)),
-    "Expected 350765 values but got 9610"
+    "Expected 350765 values, but found 9610"
   )
-  expect_error(read_imd_temperature(tempfile(), "tmax", 2023), "File not found")
+  expect_error(read_imd_temperature(tempfile(), "tmax", 2023), "Cannot find the file")
   expect_error(suppressMessages(read_imd_temperature(f, "tavg", 2023)), "Invalid dataset")
 })
 
@@ -115,7 +115,7 @@ test_that("read_imd_rainfall falls back to ncdf4 when read_ncdf fails", {
   local_mocked_bindings(read_ncdf = function(...) stop("boom"))
   expect_warning(
     df <- suppressMessages(read_imd_rainfall(f, 0.25, 2023)),
-    "read_ncdf failed, trying ncdf4: boom"
+    "read_ncdf failed. The function will try ncdf4: boom"
   )
   expect_equal(nrow(df), 5L * 365L)
   expect_true(all(c("date", "latitude", "longitude", "rainfall") %in% names(df)))
@@ -125,7 +125,7 @@ test_that("read_imd_rainfall falls back to ncdf4 when read_ncdf fails", {
 })
 
 test_that("read_imd_rainfall errors on missing file or bad resolution", {
-  expect_error(read_imd_rainfall(tempfile(), 0.25, 2023), "File not found")
+  expect_error(read_imd_rainfall(tempfile(), 0.25, 2023), "Cannot find the file")
   f <- tempfile(fileext = ".nc")
   imd_fx_write_rainfall(f, 2023)
   expect_error(suppressMessages(read_imd_rainfall(f, 0.5, 2023)), "Invalid dataset")
@@ -159,10 +159,10 @@ test_that("process_imd_files reads rainfall and infers resolution from filename"
 })
 
 test_that("process_imd_files validates inputs", {
-  expect_error(process_imd_files(character(0), "tmax"), "No files provided")
+  expect_error(process_imd_files(character(0), "tmax"), "The file list is empty")
   expect_error(
     process_imd_files(c("a_2020.grd", "b_2021.grd"), "tmax", years = 2020),
-    "Number of years must match number of files"
+    "The number of years must be equal to the number of files"
   )
   f <- tempfile(fileext = "_2023.grd")
   imd_fx_write_temperature(f, 2023)
@@ -172,7 +172,7 @@ test_that("process_imd_files validates inputs", {
   )
   expect_error(
     suppressMessages(process_imd_files("missing_2023.grd", "tmax")),
-    "Error processing missing_2023.grd: File not found"
+    "Cannot process missing_2023.grd: Cannot find the file"
   )
 })
 
@@ -189,7 +189,7 @@ test_that("filter_imd_by_bbox keeps exactly the cells inside the box", {
   df <- imd_fx_small_df()
   out <- imd_fx_expect_msg(
     filter_imd_by_bbox(df, north = 22, south = 18, east = 76, west = 72),
-    "Filtered 8 points to 4 within bounding box"
+    "Filtered 8 points to 4 in the bounding box"
   )
   expect_equal(nrow(out), 4L)
   expect_setequal(paste(out$latitude, out$longitude), c("18.5 73.5", "21.5 74.5"))
@@ -269,10 +269,10 @@ test_that("aggregate_imd_by_frequency averages temperature and handles yearly", 
 })
 
 test_that("aggregate_imd_by_frequency validates inputs", {
-  expect_error(aggregate_imd_by_frequency(data.frame(x = 1), "monthly"), "must contain 'date'")
+  expect_error(aggregate_imd_by_frequency(data.frame(x = 1), "monthly"), "must contain a 'date'")
   expect_error(
     aggregate_imd_by_frequency(data.frame(date = Sys.Date(), latitude = 1, longitude = 1), "monthly"),
-    "No value column"
+    "Cannot find a value column"
   )
 })
 
@@ -421,7 +421,7 @@ test_that("download_imd_rainfall downloads, caches, then reuses cache", {
   )
   files <- imd_fx_expect_msg(
     download_imd_rainfall(2023, 2023, resolution = 0.25, output_dir = out_dir),
-    "Need to download 1 year"
+    "Download is necessary for 1 year"
   )
   expect_equal(calls, "2023 RF25.php RF25")
   expect_equal(files, file.path(out_dir, "imd_rainfall_0.25_2023.nc"))
@@ -432,7 +432,7 @@ test_that("download_imd_rainfall downloads, caches, then reuses cache", {
   unlink(files)
   files2 <- imd_fx_expect_msg(
     download_imd_rainfall(2023, 2023, resolution = 0.25, output_dir = out_dir),
-    "All requested data available in cache"
+    "All the requested data is in the cache"
   )
   expect_equal(length(calls), 1L)
   expect_true(file.exists(files2))
@@ -461,9 +461,9 @@ test_that("download_imd_rainfall stops when server is down and data not cached",
   expect_warning(
     expect_error(
       suppressMessages(download_imd_rainfall(2023, 2023, output_dir = tempfile("dl"))),
-      "Server unreachable and 1 year\\(s\\) not in cache"
+      "Cannot connect to the server, and 1 year\\(s\\) are not in the cache"
     ),
-    "not responding"
+    "does not respond"
   )
 })
 
@@ -475,7 +475,7 @@ test_that("download_imd_rainfall surfaces per-year download failure", {
   )
   expect_error(
     suppressMessages(download_imd_rainfall(2023, 2023, output_dir = tempfile("dl"))),
-    "Failed to download 2023: server exploded"
+    "Download failed for 2023: server exploded"
   )
 })
 
@@ -500,7 +500,7 @@ test_that("download_imd_temperature downloads, caches and reuses cache", {
 
   files2 <- imd_fx_expect_msg(
     download_imd_temperature(2023, 2023, var_type = "tmin", output_dir = out_dir),
-    "Using cached data for 2023"
+    "Use of cached data for 2023"
   )
   expect_equal(length(calls), 1L)
   expect_true(file.exists(files2))
@@ -517,9 +517,9 @@ test_that("download_imd_temperature errors when server down or download fails", 
   expect_warning(
     expect_error(
       suppressMessages(download_imd_temperature(2023, 2024, output_dir = tempfile("dl"))),
-      "Server unreachable and 2 year\\(s\\) not in cache"
+      "Cannot connect to the server, and 2 year\\(s\\) are not in the cache"
     ),
-    "not responding"
+    "does not respond"
   )
   local_mocked_bindings(
     check_imd_server = function(...) TRUE,
@@ -527,7 +527,7 @@ test_that("download_imd_temperature errors when server down or download fails", 
   )
   expect_error(
     suppressMessages(download_imd_temperature(2023, 2023, output_dir = tempfile("dl"), use_cache = FALSE)),
-    "Failed to download 2023: bad gateway"
+    "Download failed for 2023: bad gateway"
   )
 })
 
@@ -588,7 +588,7 @@ test_that("imd_rainfall_bbox errors when nothing downloaded", {
   local_mocked_bindings(download_imd_rainfall = function(...) character(0))
   expect_error(
     suppressMessages(imd_rainfall_bbox("x", 2023, 2023, 20, 19, 73, 72, output_dir = tempfile())),
-    "No files were successfully downloaded"
+    "All file downloads failed"
   )
 })
 
@@ -609,12 +609,12 @@ test_that("imd_rainfall_geojson yearly end-to-end", {
 
   expect_error(
     suppressMessages(imd_rainfall_geojson("gq", 2023, 2023, tempfile(fileext = ".geojson"))),
-    "GeoJSON file not found"
+    "Cannot find the GeoJSON file"
   )
   local_mocked_bindings(download_imd_rainfall = function(...) character(0))
   expect_error(
     suppressMessages(imd_rainfall_geojson("gq", 2023, 2023, gj, output_dir = out_dir)),
-    "No files were successfully downloaded"
+    "All file downloads failed"
   )
 })
 
@@ -640,7 +640,7 @@ test_that("imd_temperature_bbox monthly uses mean", {
   local_mocked_bindings(download_imd_temperature = function(...) character(0))
   expect_error(
     suppressMessages(imd_temperature_bbox("tq", 2023, 2023, 20, 19, 73, 72, output_dir = out_dir)),
-    "No files were successfully downloaded"
+    "All file downloads failed"
   )
 })
 
@@ -661,11 +661,11 @@ test_that("imd_temperature_geojson daily end-to-end", {
 
   expect_error(
     suppressMessages(imd_temperature_geojson("tg", 2023, 2023, tempfile(fileext = ".geojson"))),
-    "GeoJSON file not found"
+    "Cannot find the GeoJSON file"
   )
   local_mocked_bindings(download_imd_temperature = function(...) character(0))
   expect_error(
     suppressMessages(imd_temperature_geojson("tg", 2023, 2023, gj, output_dir = out_dir)),
-    "No files were successfully downloaded"
+    "All file downloads failed"
   )
 })

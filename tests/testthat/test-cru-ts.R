@@ -147,13 +147,13 @@ test_that(".read_cru_ts_nc reads values, coordinates and drops fill", {
 test_that(".read_cru_ts_nc errors on missing variable", {
   f <- tempfile(fileext = ".nc")
   cru_fx_write_nc(f, "tmp")
-  expect_error(varunayan:::.read_cru_ts_nc(f, "pre"), "Variable 'pre' not found in NetCDF. Available: tmp, stn")
+  expect_error(varunayan:::.read_cru_ts_nc(f, "pre"), "Variable 'pre' is not in the NetCDF file. Available variables: tmp, stn")
 })
 
 test_that(".parse_cru_ts_time handles months since and bad units", {
   d <- varunayan:::.parse_cru_ts_time(c(0, 1, 12, 13), "months since 1900-11-15")
   expect_equal(d, as.Date(c("1900-11-01", "1900-12-01", "1901-11-01", "1901-12-01")))
-  expect_error(varunayan:::.parse_cru_ts_time(1, "hours since 1900-01-01"), "Unrecognised time units")
+  expect_error(varunayan:::.parse_cru_ts_time(1, "hours since 1900-01-01"), "The time units in the CRU TS file are not known")
 })
 
 test_that(".decompress_gz round-trips", {
