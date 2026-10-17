@@ -59,10 +59,9 @@ signal_if_too_large <- function(err_msg, start_date, end_date) {
 #' @return Invisibly, `TRUE` once the key has been registered with 'ecmwfr'. Errors if no key can be found.
 #' @export
 #' @examples
-#' \dontrun{
-#' setup_cds_credentials(key = "your-cds-api-key-here")
-#' Sys.setenv(CDS_API_KEY = "your-cds-api-key-here")
-#' setup_cds_credentials()
+#' # setup_cds_credentials(key = "your-cds-api-key-here")
+#' if (nzchar(Sys.getenv("CDS_API_KEY"))) {
+#'   setup_cds_credentials()
 #' }
 setup_cds_credentials <- function(key = NULL) {
   if (is.null(key)) {

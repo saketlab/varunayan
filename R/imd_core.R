@@ -112,8 +112,13 @@ imd_rainfall_bbox <- function(request_id, start_year, end_year,
 #' @return data.frame with the rainfall series of the nearest cell.
 #' @export
 #' @examples
-#' \dontrun{
-#' powai <- imd_rainfall_point("powai", 1901, 2024, 19.1277, 72.9047)
+#' \donttest{
+#' powai <- tryCatch(
+#'   imd_rainfall_point("powai", 2023, 2023, 19.1277, 72.9047,
+#'     resolution = 1, use_cache = FALSE
+#'   ),
+#'   error = function(e) message("IMD server unavailable: ", conditionMessage(e))
+#' )
 #' }
 imd_rainfall_point <- function(request_id, start_year, end_year,
                                latitude, longitude,
@@ -482,12 +487,15 @@ save_imd_results <- function(data, request_id, var_type, resolution, frequency, 
 #' @return A data.frame with the columns `region`, `year`, `month` (only for monthly data), and `temperature`.
 #' @export
 #' @examples
-#' \dontrun{
-#' temp <- imd_temperature_by_region(
-#'   request_id = "india_states",
-#'   start_year = 2009, end_year = 2024,
-#'   geojson_file = "india_states.geojson",
-#'   feature_col = "state_name", var_type = "tmean", frequency = "monthly"
+#' \donttest{
+#' temp <- tryCatch(
+#'   imd_temperature_by_region(
+#'     request_id = "demo_region",
+#'     start_year = 2023, end_year = 2023,
+#'     geojson_file = system.file("extdata", "region.geojson", package = "varunayan"),
+#'     var_type = "tmax", frequency = "monthly", use_cache = FALSE
+#'   ),
+#'   error = function(e) message("IMD server unavailable: ", conditionMessage(e))
 #' )
 #' }
 imd_temperature_by_region <- function(request_id, start_year, end_year,

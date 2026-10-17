@@ -53,7 +53,12 @@ the disk. Thus, this function is the method with the lowest cost to get a long
 series for one location.
 }
 \examples{
-\dontrun{
-powai <- imd_rainfall_point("powai", 1901, 2024, 19.1277, 72.9047)
+\donttest{
+powai <- tryCatch(
+  imd_rainfall_point("powai", 2023, 2023, 19.1277, 72.9047,
+    resolution = 1, use_cache = FALSE
+  ),
+  error = function(e) message("IMD server unavailable: ", conditionMessage(e))
+)
 }
 }

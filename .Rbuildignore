@@ -30,3 +30,5 @@
 ^cran-comments\.md$
 ^deploy_pages\.sh$
 ^man/figures/og-card\.png$
+^inst/extdata/india_era5_cru_comparison\.rds$
+^inst/extdata/india_hadex3\.rds$

@@ -13,7 +13,7 @@
 #'   If `FALSE`, the function returns only `station_id` and `name`.
 #' @param cores Integer. The number of parallel workers that get the
 #'   coordinates (the function sends this value to [parallel::mclapply()]). The
-#'   default is 4. On Windows, set it to 1.
+#'   default is 2 (1 on Windows, where forking is not available).
 #' @param ... Not used. This argument is necessary for compatibility with the aliases.
 #'
 #' @return A `data.frame` with the columns `station_id` and `name`. If
@@ -21,12 +21,15 @@
 #'   and `longitude`. The value is `NA` if IMD has no coordinate for a station.
 #'
 #' @examples
-#' \dontrun{
-#' stations <- imd_stations()
-#' shimla <- stations[grepl("Shimla", stations$name), ]
+#' \donttest{
+#' stations <- tryCatch(
+#'   imd_stations(with_coordinates = FALSE),
+#'   error = function(e) message("IMD server unavailable: ", conditionMessage(e))
+#' )
 #' }
 #' @export
-imd_stations <- function(with_coordinates = TRUE, cores = 4) {
+imd_stations <- function(with_coordinates = TRUE,
+                         cores = if (.Platform$OS.type == "windows") 1L else 2L) {
   ua <- "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126 Safari/537.36"
   list_url <- "https://internal.imd.gov.in/pages/city_weather_main_mausam.php"
   api_url <- "https://city.imd.gov.in/citywx/responsive/api/fetchCity_static.php"

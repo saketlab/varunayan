@@ -7,7 +7,10 @@
 \usage{
 IMDStations(...)
 
-imd_stations(with_coordinates = TRUE, cores = 4)
+imd_stations(
+  with_coordinates = TRUE,
+  cores = if (.Platform$OS.type == "windows") 1L else 2L
+)
 }
 \arguments{
 \item{...}{Not used. This argument is necessary for compatibility with the aliases.}
@@ -18,7 +21,7 @@ If \code{FALSE}, the function returns only \code{station_id} and \code{name}.}
 
 \item{cores}{Integer. The number of parallel workers that get the
 coordinates (the function sends this value to \code{\link[parallel:mclapply]{parallel::mclapply()}}). The
-default is 4. On Windows, set it to 1.}
+default is 2 (1 on Windows, where forking is not available).}
 }
 \value{
 A \code{data.frame} with the columns \code{station_id} and \code{name}. If
@@ -35,8 +38,10 @@ You can use the returned coordinates directly as input to \code{\link[=era5ify_p
 You can also use them to make maps.
 }
 \examples{
-\dontrun{
-stations <- imd_stations()
-shimla <- stations[grepl("Shimla", stations$name), ]
+\donttest{
+stations <- tryCatch(
+  imd_stations(with_coordinates = FALSE),
+  error = function(e) message("IMD server unavailable: ", conditionMessage(e))
+)
 }
 }

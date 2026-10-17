@@ -28,9 +28,8 @@ for ERA5 downloads. The function examines the credentials in this order:
 }
 }
 \examples{
-\dontrun{
-setup_cds_credentials(key = "your-cds-api-key-here")
-Sys.setenv(CDS_API_KEY = "your-cds-api-key-here")
-setup_cds_credentials()
+# setup_cds_credentials(key = "your-cds-api-key-here")
+if (nzchar(Sys.getenv("CDS_API_KEY"))) {
+  setup_cds_credentials()
 }
 }

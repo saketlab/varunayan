@@ -45,12 +45,15 @@ each state) and each time period. Each row contains the mean temperature of
 the region.
 }
 \examples{
-\dontrun{
-temp <- imd_temperature_by_region(
-  request_id = "india_states",
-  start_year = 2009, end_year = 2024,
-  geojson_file = "india_states.geojson",
-  feature_col = "state_name", var_type = "tmean", frequency = "monthly"
+\donttest{
+temp <- tryCatch(
+  imd_temperature_by_region(
+    request_id = "demo_region",
+    start_year = 2023, end_year = 2023,
+    geojson_file = system.file("extdata", "region.geojson", package = "varunayan"),
+    var_type = "tmax", frequency = "monthly", use_cache = FALSE
+  ),
+  error = function(e) message("IMD server unavailable: ", conditionMessage(e))
 )
 }
 }

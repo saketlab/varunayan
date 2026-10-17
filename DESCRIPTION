@@ -26,7 +26,7 @@ Description: Download and process climate data for custom geographical
     health studies: heatwave and warm-night frequency and duration under
     India Meteorological Department and percentile definitions, the Excess
     Heat Factor (Nairn and Fawcett (2015) <doi:10.3390/ijerph120100227>)
-    and diurnal temperature range. 
+    and diurnal temperature range.
 License: MIT + file LICENSE
 URL: https://varunayan.saketlab.org/R/,
     https://github.com/saketlab/varunayanR
@@ -66,7 +66,7 @@ Suggests:
     tidyr,
     units,
     withr (>= 2.5.0)
-VignetteBuilder: 
+VignetteBuilder:
     knitr
 Config/roxygen2/version: 8.1.1
 Config/testthat/edition: 3
