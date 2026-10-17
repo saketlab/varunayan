@@ -47,8 +47,9 @@ jobs:
       # LaTeX for the PDF manual, which CRAN builds
       - uses: r-lib/actions/setup-tinytex@v2
 
+      # Rd.sty sets \url in Courier (pcrr8t), which TinyTeX does not include
       - name: Install LaTeX packages for the manual
-        run: tlmgr install inconsolata
+        run: tlmgr install inconsolata courier
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
