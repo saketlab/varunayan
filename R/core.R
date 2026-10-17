@@ -335,6 +335,12 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
 #'   When TRUE, the function returns temperature variables in Celsius (converted from Kelvin).
 #'   It returns precipitation variables in mm (converted from meters).
 #' @param verbose If TRUE, print detailed progress messages
+#' @param level `"union"` (default) returns one row for each grid cell inside
+#'   the union of all the features. `"feature"` returns one row for each
+#'   feature (for example, each district), with the mean of the cells inside
+#'   it. Such rows have a `feature_id` column (the row number of the feature)
+#'   and the feature properties in place of `latitude` and `longitude`. A
+#'   feature smaller than a grid cell gets the nearest cell.
 #' @param ... Arguments passed to the main function (used by aliases).
 #'
 #' @return data.frame with processed climate data. When `convert_units = TRUE`:
@@ -360,14 +366,17 @@ era5ify_geojson <- function(request_id, variables, start_date, end_date, json_fi
                             dataset_type = "single", pressure_levels = NULL,
                             frequency = "hourly", resolution = 0.25,
                             save_raw = FALSE, output_dir = tempdir(), use_cache = TRUE,
-                            convert_units = TRUE, verbose = FALSE) {
+                            convert_units = TRUE, verbose = FALSE,
+                            level = c("union", "feature")) {
+  level <- match.arg(level)
   if (!grepl(pattern = "^https?://", json_file) && !file.exists(json_file)) {
     stop("Cannot find the GeoJSON file: ", json_file)
   }
 
   validated <- validate_era5_inputs(dataset_type, variables, start_date, end_date)
 
-  bbox <- st_bbox(st_read(json_file, quiet = TRUE))
+  regions <- st_read(json_file, quiet = TRUE)
+  bbox <- st_bbox(regions)
   area <- c(bbox[["ymax"]], bbox[["xmin"]], bbox[["ymin"]], bbox[["xmax"]])
 
   if (verbose) {
@@ -393,6 +402,22 @@ era5ify_geojson <- function(request_id, variables, start_date, end_date, json_fi
 
   if (convert_units) {
     processed_data <- convert_era5_units(processed_data)
+  }
+
+  if (level == "feature") {
+    regions$feature_id <- seq_len(nrow(regions))
+    regions <- st_make_valid(regions)
+    # feature_id is the row number, so properties attach by indexing
+    agg <- aggregate_to_polygons(
+      processed_data, regions,
+      value_col = "value", method = "point_in_polygon", polygon_id_cols = "feature_id",
+      fill_empty = TRUE, by = setdiff(names(processed_data), c("latitude", "longitude", "value"))
+    )
+    processed_data <- cbind(
+      st_drop_geometry(regions)[agg$feature_id, , drop = FALSE],
+      agg[setdiff(names(agg), "feature_id")]
+    )
+    rownames(processed_data) <- NULL
   }
 
   message("The package processed all the data.")

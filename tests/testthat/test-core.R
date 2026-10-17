@@ -284,6 +284,7 @@ era5_mock_cds <- function(log = new.env(), ...) {
   local_mocked_bindings(
     get_cds_credentials = function(...) TRUE,
     wf_request = era5_fake_wf_request(log, ...),
+    download_era5_timeseries = function(...) stop("network disabled in tests"),
     .env = parent.frame()
   )
   log
@@ -410,6 +411,36 @@ test_that("era5ify_geojson filters to the polygon", {
   expect_equal(daily$value[daily$longitude == 77.5], 280 + 20 + 7.75 + 1.5)
 })
 
+test_that("era5ify_geojson level = 'feature' returns one row per feature", {
+  d <- era5_tempdir()
+  on.exit(unlink(d, recursive = TRUE), add = TRUE)
+  box <- function(xmin, xmax, ymin, ymax) {
+    sf::st_as_sfc(sf::st_bbox(c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)))
+  }
+  # west holds cell 77.25, east holds 77.5, tiny holds none
+  regions <- sf::st_sf(
+    name = c("west", "east", "tiny"),
+    geometry = c(box(77.1, 77.4, 19.9, 20.1), box(77.4, 77.6, 19.9, 20.1), box(77.30, 77.32, 19.95, 19.97)),
+    crs = 4326
+  )
+  gj <- tempfile(fileext = ".geojson")
+  on.exit(unlink(gj), add = TRUE)
+  sf::st_write(regions, gj, quiet = TRUE)
+  era5_mock_cds()
+
+  out <- suppressMessages(era5ify_geojson(
+    "gj_feat", "2m_temperature", "2023-01-01", "2023-01-01",
+    json_file = gj, frequency = "daily", output_dir = d, use_cache = FALSE,
+    convert_units = FALSE, level = "feature"
+  ))
+  expect_equal(nrow(out), 3)
+  expect_false(any(c("latitude", "longitude") %in% names(out)))
+  out <- out[order(out$feature_id), ]
+  expect_equal(out$name, c("west", "east", "tiny"))
+  expect_equal(out$value[1:2], 280 + 20 + c(7.725, 7.75) + 1.5)
+  expect_equal(out$value[3], out$value[1]) # nearest cell is 77.25
+})
+
 test_that("era5ify_geojson filters combined multi-chunk data", {
   d <- era5_tempdir()
   on.exit(unlink(d, recursive = TRUE), add = TRUE)
@@ -497,8 +528,7 @@ test_that("era5ify_point works for single-level data (default dataset_type)", {
 
   out <- suppressMessages(era5ify_point(
     "pt", "2m_temperature", "2023-01-01", "2023-01-01",
-    lat = 19.8, lon = 77.3, output_dir = d, use_cache = FALSE,
-    use_timeseries_api = FALSE # the default would call the live timeseries API
+    lat = 19.8, lon = 77.3, output_dir = d, use_cache = FALSE
   ))
   expect_gt(nrow(out), 0)
   expect_true(all(out$latitude == 19.75 & out$longitude == 77.25))

@@ -22,7 +22,8 @@ era5ify_geojson(
   output_dir = tempdir(),
   use_cache = TRUE,
   convert_units = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  level = c("union", "feature")
 )
 }
 \arguments{
@@ -57,6 +58,13 @@ When TRUE, the function returns temperature variables in Celsius (converted from
 It returns precipitation variables in mm (converted from meters).}
 
 \item{verbose}{If TRUE, print detailed progress messages}
+
+\item{level}{\code{"union"} (default) returns one row for each grid cell inside
+the union of all the features. \code{"feature"} returns one row for each
+feature (for example, each district), with the mean of the cells inside
+it. Such rows have a \code{feature_id} column (the row number of the feature)
+and the feature properties in place of \code{latitude} and \code{longitude}. A
+feature smaller than a grid cell gets the nearest cell.}
 }
 \value{
 data.frame with processed climate data. When \code{convert_units = TRUE}:
