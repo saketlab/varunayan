@@ -1,0 +1,211 @@
+utils::globalVariables(c("weight", "col_name"))
+
+#' Get ERA5 temperature data for a country
+#'
+#' Downloads ERA5 temperature data for a country and aggregates the data.
+#' The function finds the country boundary and downloads monthly data with
+#' [era5ify_geojson()]. It returns country-level averages for each year and
+#' month, with area weights (cosine of latitude).
+#'
+#' @param country One of: a country name string (the function uses
+#'   \code{maps::map()} to find it), a path to a GeoJSON file, or an `sf` object.
+#'   The function automatically accepts common aliases, for example `"USA"` and `"UK"`.
+#' @param start_date Start date in `"YYYY-MM-DD"` format.
+#' @param end_date End date in `"YYYY-MM-DD"` format.
+#' @param variables Character vector of temperature shorthand names or ERA5
+#'   variable names. Shorthands: `"mean"` (2m_temperature), `"max"`
+#'   (maximum_2m_temperature_since_previous_post_processing), `"min"`
+#'   (minimum_2m_temperature_since_previous_post_processing). Default: `"mean"`.
+#' @param request_id Optional request identifier. If you do not supply it, the
+#'   function makes it from the country name.
+#' @param resolution Spatial resolution in degrees (default: 0.25).
+#' @param verbose If TRUE, show detailed progress messages.
+#' @param ... More arguments that the function sends to [era5ify_geojson()].
+#'
+#' @return A data.frame with the columns `year`, `month`, and one column for
+#'   each requested variable (for example, `temperature_mean`, `temperature_max`,
+#'   `temperature_min`). The temperature values are in Celsius.
+#'
+#' @export
+#' @examplesIf interactive()
+#' # Monthly mean temperature for India
+#' get_era5_country_temperature("India", "2023-06-01", "2023-06-30")
+#'
+#' # Mean and max temperature for the USA
+#' get_era5_country_temperature("USA", "2023-01-01", "2023-12-31",
+#'   variables = c("mean", "max")
+#' )
+#'
+#' # Use an sf object directly
+#' library(sf)
+#' poly <- st_read("my_country.geojson")
+#' get_era5_country_temperature(poly, "2023-01-01", "2023-06-30")
+get_era5_country_temperature <- function(country, start_date, end_date,
+                                         variables = "mean",
+                                         request_id = NULL,
+                                         resolution = 0.25,
+                                         verbose = FALSE, ...) {
+  var_map <- c(
+    mean = "2m_temperature",
+    max  = "maximum_2m_temperature_since_previous_post_processing",
+    min  = "minimum_2m_temperature_since_previous_post_processing"
+  )
+
+  col_map <- c(
+    "2m_temperature" = "temperature_mean",
+    "maximum_2m_temperature_since_previous_post_processing" = "temperature_max",
+    "minimum_2m_temperature_since_previous_post_processing" = "temperature_min",
+    "t2m" = "temperature_mean",
+    "mx2t" = "temperature_max",
+    "mn2t" = "temperature_min"
+  )
+
+  era5_vars <- vapply(variables, function(v) {
+    if (v %in% names(var_map)) var_map[[v]] else v
+  }, character(1), USE.NAMES = FALSE)
+
+  era5_vars <- unique(era5_vars)
+
+  polygon <- .resolve_country_polygon(country)
+
+  tmp_geojson <- tempfile(fileext = ".geojson")
+  sf::st_write(polygon, tmp_geojson, driver = "GeoJSON", quiet = TRUE)
+  on.exit(unlink(tmp_geojson), add = TRUE)
+
+  if (is.null(request_id)) {
+    country_label <- if (is.character(country)) country else "custom"
+    request_id <- paste0("country_", gsub("[^a-zA-Z0-9]", "_", tolower(country_label)))
+  }
+
+  bbox <- sf::st_bbox(polygon)
+
+  # st_intersects runs once per unique grid point; the time steps reuse it.
+  all_bbox <- lapply(era5_vars, function(v) {
+    rid <- paste0(request_id, "_", gsub("[^a-zA-Z0-9]", "_", v))
+    era5ify_bbox(
+      request_id = rid,
+      variables   = v,
+      start_date  = start_date,
+      end_date    = end_date,
+      north = bbox[["ymax"]], south = bbox[["ymin"]],
+      east  = bbox[["xmax"]], west  = bbox[["xmin"]],
+      frequency   = "monthly",
+      resolution  = resolution,
+      verbose     = verbose,
+      ...
+    )
+  })
+  bbox_raw <- data.table::rbindlist(all_bbox, use.names = TRUE)
+
+  one_slice <- unique(bbox_raw[, c("latitude", "longitude")])
+  filtered_slice <- filter_dataframe_by_geojson(one_slice, tmp_geojson)
+  grid_mask <- data.table::as.data.table(filtered_slice[, c("latitude", "longitude")])
+  data.table::setkey(grid_mask, latitude, longitude)
+
+  dt_all <- data.table::as.data.table(bbox_raw)
+  data.table::setkey(dt_all, latitude, longitude)
+  raw <- dt_all[grid_mask, nomatch = 0L]
+
+  raw[, c("year", "month") := .(
+    data.table::year(datetime),
+    data.table::month(datetime)
+  )]
+  raw[, weight := cos(latitude * pi / 180)]
+
+  agg <- raw[, .(value = stats::weighted.mean(value, weight, na.rm = TRUE)),
+    by = .(year, month, variable)
+  ]
+
+  agg[, col_name := col_map[variable]]
+  agg[is.na(col_name), col_name := variable]
+
+  wide <- data.table::dcast(agg, year + month ~ col_name, value.var = "value")
+  data.table::setorder(wide, year, month)
+
+  as.data.frame(wide)
+}
+
+#' Convert a country specification to an sf polygon
+#'
+#' @param country A country name (string), a file path to a GeoJSON file, or an sf object.
+#' @return An sf object with the country polygon.
+#' @keywords internal
+.resolve_country_polygon <- function(country) {
+  if (inherits(country, "sf") || inherits(country, "sfc")) {
+    return(sf::st_sf(geometry = sf::st_geometry(country)))
+  }
+
+  if (!is.character(country) || length(country) != 1) {
+    stop("'country' must be a country name (string), a file path, or an sf object.")
+  }
+
+  if (file.exists(country)) {
+    return(sf::st_read(country, quiet = TRUE))
+  }
+
+  if (!requireNamespace("maps", quietly = TRUE)) {
+    stop(
+      "Package 'maps' is necessary to find country names. ",
+      "Install it with: install.packages('maps')"
+    )
+  }
+
+  aliases <- c(
+    "USA" = "USA",
+    "US" = "USA",
+    "United States" = "USA",
+    "U.S. Virgin Islands" = "Virgin Islands, US",
+    "UK" = "UK",
+    "United Kingdom" = "UK",
+    "Russia" = "Russia",
+    "Czechia" = "Czech Republic",
+    "Czech Republic" = "Czech Republic",
+    "South Korea" = "South Korea",
+    "North Korea" = "North Korea",
+    "North Macedonia" = "North Macedonia",
+    "Ivory Coast" = "Ivory Coast",
+    "Eswatini" = "Swaziland",
+    "Timor-Leste" = "Timor-Leste",
+    "Cabo Verde" = "Cape Verde",
+    "Turkiye" = "Turkey",
+    "T\u00fcrkiye" = "Turkey",
+    "Antigua & Barbuda" = "Antigua",
+    "Antigua and Barbuda" = "Antigua",
+    "Bosnia & Herzegovina" = "Bosnia and Herzegovina",
+    "British Virgin Islands" = "Virgin Islands, British",
+    "Cura\u00e7ao" = "Curacao",
+    "Hong Kong" = "China:Hong Kong",
+    "Macao" = "China:Macao",
+    "R\u00e9union" = "Reunion",
+    "St. Kitts & Nevis" = "Saint Kitts",
+    "Saint Kitts and Nevis" = "Saint Kitts",
+    "St. Lucia" = "Saint Lucia",
+    "St. Pierre & Miquelon" = "Saint Pierre and Miquelon",
+    "St. Vincent & Grenadines" = "Saint Vincent",
+    "Saint Vincent and the Grenadines" = "Saint Vincent",
+    "St. Barth\u00e9lemy" = "Saint Barthelemy",
+    "Saint Martin (French part)" = "Saint Martin",
+    "S\u00e3o Tom\u00e9 & Pr\u00edncipe" = "Sao Tome and Principe",
+    "Sao Tome and Principe" = "Sao Tome and Principe",
+    "Trinidad & Tobago" = "Trinidad",
+    "Trinidad and Tobago" = "Trinidad",
+    "Turks & Caicos Islands" = "Turks and Caicos Islands",
+    "Wallis & Futuna" = "Wallis and Futuna"
+  )
+
+  region <- if (country %in% names(aliases)) aliases[[country]] else country
+
+  map_data <- tryCatch(
+    maps::map("world", regions = region, plot = FALSE, fill = TRUE),
+    error = function(e) NULL
+  )
+
+  if (is.null(map_data)) {
+    stop(
+      sprintf("Country '%s' not found in maps database. ", country),
+      "To see the available names, use: maps::map('world')$names"
+    )
+  }
+
+  sf::st_as_sf(map_data)
+}

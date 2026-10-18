@@ -1,0 +1,80 @@
+Type: Package
+Package: varunayan
+Title: Download and Process 'ERA5', IMD, 'HadEX3' and 'CRU TS' Data
+Version: 0.2.0
+Authors@R: c(
+    person("Saket", "Choudhary", , "saketc@iitb.ac.in", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0001-5202-7633")),
+    person("Darakhshan", "Nehal", role = "aut"),
+    person("James C.", "Liljegren", role = "ctb",
+           comment = "Author of the original WBGT C code translated in R/wbgt_liljegren.R"),
+    person("UChicago Argonne, LLC", role = "cph",
+           comment = "Copyright holder of the original WBGT C code")
+  )
+Description: Download and process climate data for custom geographical
+    regions defined by bounding boxes, 'GeoJSON' polygons, or point
+    coordinates. Supports the fifth generation European Centre for
+    Medium-Range Weather Forecasts atmospheric reanalysis ('ERA5';
+    Hersbach et al. (2020) <doi:10.1002/qj.3803>) from the 'Copernicus'
+    Climate Data Store (CDS) <https://cds.climate.copernicus.eu/>, India
+    Meteorological Department (IMD) gridded rainfall and temperature (Pai
+    et al. (2014) <doi:10.54302/mausam.v65i1.851>), Hadley Centre global
+    land climate extremes indices version 3 ('HadEX3'; Dunn et al. (2020)
+    <doi:10.1029/2019JD032263>), and Climatic Research Unit gridded Time
+    Series ('CRU TS'; Harris et al. (2020)
+    <doi:10.1038/s41597-020-0453-3>). Also computes heat stress indices
+    including heat index, wet-bulb temperature, outdoor wet-bulb globe
+    temperature (Liljegren et al. (2008) <doi:10.1080/15459620802310770>)
+    and the Universal Thermal Climate Index (Bröde et al. (2012)
+    <doi:10.1007/s00484-011-0454-1>), and heat exposure indicators for
+    health studies: heatwave and warm-night frequency and duration under
+    India Meteorological Department and percentile definitions, the Excess
+    Heat Factor (Nairn and Fawcett (2015) <doi:10.3390/ijerph120100227>)
+    and diurnal temperature range.
+License: MIT + file LICENSE
+URL: https://varunayan.saketlab.org/R/,
+    https://github.com/saketlab/varunayanR
+BugReports: https://github.com/saketlab/varunayanR/issues
+Depends:
+    R (>= 4.1.0)
+Imports:
+    data.table,
+    digest,
+    dplyr,
+    ecmwfr (>= 2.0.0),
+    httr,
+    jsonlite,
+    lubridate,
+    magrittr,
+    ncdf4,
+    rlang,
+    sf,
+    stars,
+    stats,
+    terra,
+    tools,
+    utils,
+    parallel
+Suggests:
+    ggplot2,
+    ggpubr,
+    gridExtra,
+    knitr,
+    maps,
+    ncmeta,
+    patchwork,
+    R.utils,
+    rmarkdown,
+    scales,
+    testthat (>= 3.1.7),
+    tidyr,
+    units,
+    withr (>= 2.5.0)
+VignetteBuilder:
+    knitr
+Config/roxygen2/version: 8.1.1
+Config/testthat/edition: 3
+Copyright: See file inst/COPYRIGHTS
+Encoding: UTF-8
+Language: en-US
+Roxygen: list(markdown = TRUE)
