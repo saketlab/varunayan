@@ -1,0 +1,196 @@
+---
+title: "Country-level temperature trends"
+output:
+  rmarkdown::html_vignette:
+    self_contained: true
+vignette: >
+  %\VignetteIndexEntry{Country-level temperature trends}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+has_suggests <- all(vapply(c("ggplot2", "tidyr", "patchwork"),
+  requireNamespace, logical(1),
+  quietly = TRUE
+))
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#",
+  eval = has_suggests,
+  fig.width = 10,
+  fig.height = 7,
+  fig.dpi = 300,
+  warning = FALSE,
+  message = FALSE,
+  out.width = "100%"
+)
+```
+
+```{r setup}
+library(varunayan)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(patchwork)
+```
+
+`get_era5_country_temperature()` does three steps.
+First, the function finds the boundary of a country.
+Then it downloads monthly ERA5 data.
+Then it returns national averages with cosine-latitude area weights.
+
+One call does all of these steps.
+You do not have to find boundaries, write GeoJSON, call `era5ify_geojson()`, and aggregate grid cells manually.
+
+In this example, we get the monthly mean, maximum, and minimum temperatures for 2024.
+We get these data for four European countries and four South Asian countries.
+
+## Download data
+
+We give the short values `"mean"`, `"max"`, and `"min"` to the `variables` argument.
+
+```{r download, eval = FALSE}
+countries <- c(
+  "France", "Germany", "Spain", "Norway",
+  "India", "Pakistan", "Bangladesh", "Nepal"
+)
+
+all_data <- lapply(countries, function(cntry) {
+  df <- get_era5_country_temperature(
+    country    = cntry,
+    start_date = "2024-01-01",
+    end_date   = "2024-12-31",
+    variables  = c("mean", "max", "min")
+  )
+  df$country <- cntry
+  df
+})
+
+temps <- bind_rows(all_data)
+```
+
+```{r load-data, echo = FALSE}
+temps <- readRDS(system.file("extdata", "country_temps.rds", package = "varunayan"))
+```
+
+```{r preview}
+head(temps)
+```
+
+We add the region of each country to the data.
+The plots use the region to make facets.
+
+```{r regions}
+region_map <- c(
+  France = "Europe", Germany = "Europe", Spain = "Europe", Norway = "Europe",
+  India = "South Asia", Pakistan = "South Asia",
+  Bangladesh = "South Asia", Nepal = "South Asia"
+)
+
+temps$region <- region_map[temps$country]
+temps$month_label <- factor(month.abb[temps$month], levels = month.abb)
+
+# Cool colors for Europe, warm colors for South Asia
+country_colors <- c(
+  France = "#2166AC", Germany = "#4393C3",
+  Spain = "#92C5DE", Norway = "#053061",
+  India = "#B2182B", Pakistan = "#D6604D",
+  Bangladesh = "#F4A582", Nepal = "#67001F"
+)
+```
+
+## Seasonal heatmap
+
+```{r heatmap, fig.height = 6}
+ggplot(temps, aes(x = month_label, y = country, fill = temperature_mean)) +
+  geom_tile(color = "white", linewidth = 0.4) +
+  facet_grid(region ~ ., scales = "free_y", space = "free_y") +
+  scale_fill_distiller(
+    palette = "RdYlBu", direction = -1,
+    name = "Mean temp (\u00B0C)"
+  ) +
+  labs(
+    x = NULL, y = NULL,
+    title = "Mean monthly temperature by country (2024)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid = element_blank(),
+    strip.text.y = element_text(angle = 0, face = "bold")
+  )
+```
+
+The temperatures of South Asian countries stay more than 20 &deg;C for all of the year.
+The temperatures of European countries change by more than 20 &deg;C between winter and summer.
+In Norway, the temperature is less than 0 &deg;C from November to March.
+
+## Monthly trend lines with min/max ribbon
+
+```{r trendlines, fig.height = 8}
+ggplot(temps, aes(x = month, color = country, fill = country)) +
+  geom_ribbon(aes(ymin = temperature_min, ymax = temperature_max),
+    alpha = 0.15, color = NA
+  ) +
+  geom_line(aes(y = temperature_mean), linewidth = 0.9) +
+  geom_point(aes(y = temperature_mean), size = 1.5) +
+  facet_wrap(~region, ncol = 1, scales = "free_y") +
+  scale_color_manual(values = country_colors) +
+  scale_fill_manual(values = country_colors) +
+  scale_x_continuous(breaks = 1:12, labels = month.abb) +
+  labs(
+    x = NULL, y = "Temperature (\u00B0C)",
+    title = "Monthly temperature with min-max range (2024)",
+    subtitle = "Ribbon: national-average daily min to daily max",
+    color = NULL, fill = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+
+## Diurnal range
+
+The diurnal temperature range (DTR) is the difference between the daily maximum and the daily minimum.
+The DTR is larger in continental and arid climates than in humid tropical climates.
+
+```{r dtr, fig.height = 6}
+temps$dtr <- temps$temperature_max - temps$temperature_min
+
+ggplot(temps, aes(x = month, y = dtr, color = country)) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.5) +
+  facet_wrap(~region, ncol = 1) +
+  scale_color_manual(values = country_colors) +
+  scale_x_continuous(breaks = 1:12, labels = month.abb) +
+  labs(
+    x = NULL, y = "Diurnal temperature range (\u00B0C)",
+    title = "Monthly diurnal temperature range (2024)",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+
+## Regional comparison
+
+Last, we show all eight countries on one axis.
+The line type shows the region of each country.
+
+```{r comparison, fig.height = 6}
+ggplot(temps, aes(
+  x = month, y = temperature_mean,
+  color = country, linetype = region
+)) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 1.5) +
+  scale_x_continuous(breaks = 1:12, labels = month.abb) +
+  scale_color_manual(values = country_colors) +
+  scale_linetype_manual(values = c("Europe" = "solid", "South Asia" = "dashed")) +
+  labs(
+    x = NULL, y = "Mean temperature (\u00B0C)",
+    title = "Europe vs South Asia: monthly temperature (2024)",
+    color = NULL, linetype = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```

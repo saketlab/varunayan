@@ -1,0 +1,98 @@
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+on:
+  push:
+    branches: [main]
+    paths: ['R/**', '.github/workflows/pkgdown.yaml']
+  pull_request:
+    branches: [main, develop]
+    paths: ['R/**', '.github/workflows/pkgdown.yaml']
+  release:
+    types: [published]
+  workflow_dispatch:
+
+name: pkgdown
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pkgdown-${{ github.event_name == 'pull_request' && github.run_id || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  pkgdown:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # varunayan.saketlab.org serves /var/www/r-pkgdown/varunayan/docs; the
+      # Python docs (docs-hostinger.yml) deploy to its python/ folder
+      SITE_ROOT: /var/www/r-pkgdown/varunayan/docs/R
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgdown, local::.
+          needs: website
+          working-directory: R
+
+      - name: Set up CDS credentials
+        if: env.CDS_API_KEY != ''
+        run: |
+          echo "url: https://cds.climate.copernicus.eu/api" > ~/.cdsapirc
+          echo "key: $CDS_API_KEY" >> ~/.cdsapirc
+        env:
+          CDS_API_KEY: ${{ secrets.CDS_API_KEY }}
+
+      - name: Build site
+        working-directory: R
+        run: pkgdown::build_site(new_process = FALSE, install = FALSE)
+        shell: Rscript {0}
+        env:
+          CDS_API_KEY: ${{ secrets.CDS_API_KEY }}
+
+      # same docs@host login as bharatvitals' DEPLOY_* secrets; the *.saketlab.org
+      # vhost serves varunayan.saketlab.org from /var/www/r-pkgdown/varunayan/docs
+      - name: Upload the site
+        if: github.event_name != 'pull_request'
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avzr --delete --rsync-path="mkdir -p ${{ env.SITE_ROOT }} && rsync"
+          path: R/docs/
+          remote_path: ${{ env.SITE_ROOT }}/
+          remote_host: ${{ secrets.DEPLOY_HOST }}
+          remote_port: ${{ secrets.DEPLOY_PORT || 22 }}
+          remote_user: ${{ secrets.DEPLOY_USER }}
+          remote_key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      # on the host; Cloudflare answers 403 to runner IPs
+      - name: Mirror and check the site
+        if: github.event_name != 'pull_request'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          envs: SITE_ROOT
+          script: |
+            set -eu
+            # varunayanr.saketlab.org mirrors the same files
+            mirror=/var/www/r-pkgdown/varunayanr/docs
+            if [ ! -L "$mirror" ]; then
+              mkdir -p "$(dirname "$mirror")"
+              if [ -e "$mirror" ]; then mv "$mirror" "$mirror.old"; fi
+              ln -s "$SITE_ROOT" "$mirror"
+            fi
+            for url in varunayan.saketlab.org/R/ varunayanr.saketlab.org/; do
+              code=$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: ${url%%/*}" "https://127.0.0.1/${url#*/}")
+              test "$code" = "200" || { echo "$url answered $code" >&2; exit 1; }
+            done

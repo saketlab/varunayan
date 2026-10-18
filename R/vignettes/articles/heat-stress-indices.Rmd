@@ -1,0 +1,392 @@
+---
+title: "Heat stress indices comparison"
+output:
+  rmarkdown::html_vignette:
+    self_contained: true
+vignette: >
+  %\VignetteIndexEntry{Heat stress indices comparison}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+# ponytail: eval=FALSE. The code must have live CDS API access. CI with CDS_API_KEY can replace this value.
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#",
+  eval = FALSE,
+  fig.width = 10,
+  fig.height = 7,
+  fig.dpi = 300,
+  warning = FALSE,
+  message = FALSE,
+  out.width = "100%"
+)
+```
+
+```{r setup}
+library(varunayan)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(lubridate)
+library(tidyr)
+library(patchwork)
+library(ggpubr)
+theme_set(theme_pubr(base_size = 11))
+```
+
+Air temperature is not sufficient to measure heat stress. Humidity decreases the cooling of the body by sweat. Thus, two days at the same temperature can have different physiological risks.
+
+We calculate six heat stress indices from ERA5 data. Then we compare these indices:
+
+- Air temperature (T): standard 2m temperature
+- Wet bulb temperature (Tw): the temperature that includes the effect of humidity through evaporative cooling
+- Heat index (HI): apparent temperature, the temperature that a person "feels"
+- WBGT: wet bulb globe temperature, the standard for occupational heat stress
+- UTCI: universal thermal climate index
+- Humidex: Canadian heat discomfort index
+
+
+
+## Why use more than one index?
+
+Each index gives a different weight to temperature, humidity, wind, and radiation:
+
+| Index | Purpose | Primary Factors | Primary Use |
+|-------|---------|-------------|-------------|
+| Temperature | Actual air temperature | Dry bulb only | Reference measurement |
+| Wet Bulb | Evaporative cooling potential | T + Humidity | Physiological limit |
+| Heat Index | Apparent temperature | T + RH (empirical) | Public weather warnings |
+| WBGT | Occupational heat limits | Tw + T + Radiation | Workplace safety |
+| UTCI | Full thermal comfort | T + Tmrt + Wind + Humidity | Climate research |
+| Humidex | Comfort estimate | T + Dewpoint | Canadian weather |
+
+## Description of the indices
+
+This vignette uses these symbols:
+
+| Symbol | Description | Unit |
+|--------|-------------|------|
+| T, Ta | Air temperature (dry bulb) | °C |
+| Td | Dewpoint temperature | °C |
+| Tw, Tnwb | Wet bulb temperature (natural) | °C |
+| Tg | Globe temperature | °C |
+| Tmrt | Mean radiant temperature | °C |
+| RH | Relative humidity | % |
+| e | Vapor pressure | hPa |
+| HI | Heat Index | °C |
+| WBGT | Wet Bulb Globe Temperature | °C |
+| UTCI | Universal Thermal Climate Index | °C |
+
+### Wet bulb temperature (Tw)
+
+The wet bulb temperature is the lowest temperature that you can get with only evaporative cooling. We use the [Stull (2011)](https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml) formula to calculate the wet bulb temperature:
+
+$$T_w = T \cdot \arctan[0.151977(RH + 8.313659)^{0.5}] + \arctan(T + RH) - \arctan(RH - 1.676331) + 0.00391838 \cdot RH^{1.5} \cdot \arctan(0.023101 \cdot RH) - 4.686035$$
+
+The usual estimate of the upper limit for human survival is a wet bulb temperature of 35°C. At this temperature, sweat cannot decrease the temperature of the body. The air is so hot and humid that sweat does not cool the body.
+
+### Heat Index (HI)
+
+The Heat Index uses the [Rothfusz regression equation](https://www.weather.gov/media/ffc/ta_htindx.PDF) from the US National Weather Service:
+
+$$HI = -42.379 + 2.049T + 10.143RH - 0.225T \cdot RH - 0.007T^2 - 0.055RH^2 + ...$$
+
+Risk categories:
+- **Normal** (<26.7°C, 80°F): No special precautions are necessary
+- **Caution** (26.7-32.2°C, 80-90°F): Fatigue can occur after long exposure
+- **Extreme Caution** (32.2-39.4°C, 90-103°F): Heat cramps and heat exhaustion can occur
+- **Danger** (39.4-51.1°C, 103-124°F): There is a high risk of heat exhaustion. Heat stroke can occur
+- **Extreme Danger** (≥51.1°C, 124°F): There is a very high risk of heat stroke
+
+### WBGT (Wet Bulb Globe Temperature)
+
+WBGT is the [ISO 7243](https://www.iso.org/standard/67188.html) standard for occupational heat stress:
+
+$$WBGT_{outdoor} = 0.7 \cdot T_{nwb} + 0.2 \cdot T_g + 0.1 \cdot T_a$$
+In this equation, $T_{nwb}$ is the natural wet bulb temperature. $T_g$ is the globe temperature, which includes the effect of radiation. $T_a$ is the air temperature. `wbgt_liljegren()` solves $T_{nwb}$ and $T_g$ from hourly temperature, humidity, wind and solar radiation (Liljegren et al. 2008); `wbgt_simple()` uses the Australian Bureau of Meteorology approximation from temperature and humidity alone. `wbgt()` selects either with `method =`.
+
+Risk categories in `wbgt_risk_category()` follow the US National Weather Service WBGT flag thresholds:
+- **Low** (<25.6°C, 78°F)
+- **Moderate** (25.6-27.8°C, 78-82°F)
+- **High** (27.8-29.4°C, 82-85°F)
+- **Very High** (29.4-31.1°C, 85-88°F)
+- **Extreme** (≥31.1°C, 88°F)
+
+### UTCI (Universal Thermal Climate Index)
+
+UTCI uses a multi-node model of human thermoregulation ([Bröde et al., 2012](https://doi.org/10.1007/s00484-011-0454-1)). We use the sparse regression approximation from [Roman et al. (2025)](https://doi.org/10.48550/arXiv.2508.11307):
+
+The UTCI uses these variables:
+- Air temperature
+- Mean radiant temperature
+- Wind speed at 10m
+- Relative humidity
+
+Thermal stress categories:
+- **Extreme cold stress** (<-40°C)
+- **Very strong cold stress** (-40 to -27°C)
+- **Strong cold stress** (-27 to -13°C)
+- **Moderate cold stress** (-13 to 0°C)
+- **Slight cold stress** (0 to 9°C)
+- **No thermal stress** (9 to 26°C)
+- **Moderate heat Stress** (26 to 32°C)
+- **Strong heat stress** (32 to 38°C)
+- **Very strong heat stress** (38 to 46°C)
+- **Extreme heat stress** (>46°C)
+
+### Humidex
+
+This equation gives the Canadian [Humidex](https://climate.weather.gc.ca/glossary_e.html#humidex):
+
+$$H = T + 0.5555 \cdot (e - 10)$$
+
+In this equation, $e = 6.11 \cdot \exp(5417.7530 \cdot (1/273.15 - 1/(273.15 + T_d)))$ is the vapor pressure.
+
+# Calculate heat indices from ERA5 data
+
+The helper function `GetERA5DailyHeatIndexData()` downloads temperature, dewpoint, and wind data.
+The function also calculates all the heat stress indices in one call.
+
+```{r download_geojson}
+states_url <- "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson"
+states_file <- "indian_states.geojson"
+
+if (!file.exists(states_file)) {
+  options(timeout = max(600, getOption("timeout"))) # LGD GeoJSON is large
+  try(download.file(states_url, states_file, mode = "wb"), silent = TRUE)
+}
+
+states_sf <- sf::st_read(states_file, quiet = TRUE)
+```
+
+```{r download_era5}
+heat_shade <- GetERA5DailyHeatIndexData(
+  request_id = "india_heat_may2023_shade",
+  start_date = "2023-05-01",
+  end_date = "2023-05-31",
+  json_file = states_file,
+  solar_load = FALSE
+)
+
+heat_solar <- GetERA5DailyHeatIndexData(
+  request_id = "india_heat_may2023_solar",
+  start_date = "2023-05-01",
+  end_date = "2023-05-31",
+  json_file = states_file,
+  solar_load = TRUE
+)
+
+head(heat_solar)
+```
+
+## Effect of solar load
+
+When `solar_load = TRUE`, the function also downloads solar radiation data.
+The function uses these data to calculate outdoor WBGT and UTCI values.
+These values include the effect of direct sunlight.
+
+```{r solar_comparison, fig.width=8, fig.height=5}
+daily_mean <- function(df, condition) {
+  df %>%
+    group_by(date) %>%
+    summarise(WBGT = mean(wbgt), .groups = "drop") %>%
+    mutate(Condition = condition)
+}
+
+solar_compare <- bind_rows(daily_mean(heat_shade, "Shade"), daily_mean(heat_solar, "Sun"))
+
+ggplot(solar_compare, aes(date, WBGT, color = Condition)) +
+  geom_line(linewidth = 1) +
+  scale_color_manual(values = c(Shade = "#3498DB", Sun = "#E74C3C")) +
+  labs(title = "Effect of solar radiation on WBGT", x = NULL, y = "WBGT (°C)")
+```
+
+Solar radiation adds some degrees to WBGT.
+The difference between the sun line and the shade line shows this increase.
+
+## Temporal analysis
+
+For the remaining analyses, we use the solar-loaded data.
+These data show outdoor conditions more accurately.
+
+```{r set_heat_data}
+heat_data <- heat_solar
+```
+
+This plot shows the daily mean of each index for the month:
+
+```{r daily_comparison, fig.width=10, fig.height=6}
+index_cols <- c(
+  temp_c = "Temperature", wet_bulb = "Wet Bulb", heat_index = "Heat Index",
+  wbgt = "WBGT", utci = "UTCI", humidex = "Humidex"
+)
+
+daily_indices <- heat_data %>%
+  group_by(date) %>%
+  summarise(across(names(index_cols), mean, na.rm = TRUE), .groups = "drop") %>%
+  pivot_longer(-date, names_to = "Index", values_to = "value") %>%
+  mutate(Index = index_cols[Index])
+
+ggplot(daily_indices, aes(date, value, color = Index)) +
+  geom_line(linewidth = 1) +
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "Heat stress indices - India (May 2023)", x = NULL, y = "°C")
+```
+
+## Difference between each index and air temperature
+
+```{r index_differences, fig.width=10, fig.height=5}
+daily_diff <- heat_data %>%
+  mutate(across(c(wet_bulb, heat_index, wbgt, utci, humidex), ~ .x - temp_c)) %>%
+  group_by(date) %>%
+  summarise(across(c(wet_bulb, heat_index, wbgt, utci, humidex), mean, na.rm = TRUE), .groups = "drop") %>%
+  pivot_longer(-date, names_to = "Index", values_to = "diff")
+
+ggplot(daily_diff, aes(date, diff, fill = Index)) +
+  geom_col(position = "dodge", alpha = 0.8) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Difference from air temperature", x = NULL, y = "Difference (°C)")
+```
+
+The plot shows these results:
+
+- The wet bulb temperature stays less than the air temperature because of evaporative cooling.
+- The heat index and the humidex increase to more than the air temperature when the humidity is high.
+- WBGT and UTCI are high in this example because of the solar load.
+
+## Spatial analysis
+
+The maps show the same indices for each district of India.
+
+
+```{r download_districts}
+districts_url <- "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-districts.geojson"
+districts_file <- "indian_districts.geojson"
+
+if (!file.exists(districts_file)) {
+  options(timeout = max(600, getOption("timeout"))) # LGD GeoJSON is large
+  download.file(districts_url, districts_file, mode = "wb")
+}
+
+districts_sf <- sf::st_read(districts_file, quiet = TRUE)
+```
+
+
+```{r spatial_prep}
+heat_vars <- c("temp_c", "wet_bulb", "heat_index", "wbgt", "utci", "humidex", "rh")
+
+monthly_heat <- heat_data %>%
+  group_by(longitude, latitude) %>%
+  summarise(across(all_of(heat_vars), mean, na.rm = TRUE), .groups = "drop") %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+district_map <- districts_sf %>%
+  st_join(monthly_heat) %>%
+  group_by(district_name, state_name) %>%
+  summarise(across(all_of(heat_vars), mean, na.rm = TRUE), .groups = "drop")
+```
+
+```{r map_temperature, fig.width=12, fig.height=10}
+heat_map <- function(var, title) {
+  ggplot(district_map) +
+    geom_sf(aes(fill = .data[[var]]), color = "white", linewidth = 0.05) +
+    scale_fill_distiller(palette = "Spectral", name = "°C", na.value = "grey90") +
+    labs(title = title) +
+    theme_void()
+}
+
+(heat_map("temp_c", "Temperature") | heat_map("wet_bulb", "Wet bulb") | heat_map("heat_index", "Heat index")) /
+  (heat_map("wbgt", "WBGT") | heat_map("utci", "UTCI") | heat_map("humidex", "Humidex")) +
+  plot_annotation(title = "Heat stress indices across India (May 2023)")
+```
+
+## Relative humidity choropleth
+
+```{r map_rh, fig.width=10, fig.height=7}
+ggplot() +
+  geom_sf(data = district_map, aes(fill = rh), color = NA) +
+  geom_sf(data = states_sf, fill = NA, color = "grey40", linewidth = 0.3) +
+  scale_fill_distiller(palette = "Blues", direction = 1, name = "RH (%)", na.value = "grey90") +
+  labs(title = "Mean relative humidity - India (May 2023)") +
+  theme_void()
+```
+
+# Risk categories
+
+```{r risk_categories, fig.width=12, fig.height=5}
+wbgt_levels <- c("Low", "Moderate", "High", "Very high", "Extreme")
+hi_levels <- c("Normal", "Caution", "Extreme Caution", "Danger", "Extreme Danger")
+
+district_map <- district_map %>%
+  mutate(
+    wbgt_risk = factor(wbgt_risk_category(wbgt), levels = wbgt_levels),
+    hi_risk = factor(heat_index_risk_category(heat_index), levels = hi_levels),
+    utci_stress = utci_category(utci)
+  )
+
+risk_colors <- c(
+  Low = "#2ECC71", Moderate = "#F1C40F", High = "#E67E22",
+  `Very high` = "#E74C3C", Extreme = "#8E44AD"
+)
+hi_colors <- c(
+  Normal = "#2ECC71", Caution = "#F1C40F", `Extreme Caution` = "#E67E22",
+  Danger = "#E74C3C", `Extreme Danger` = "#8E44AD"
+)
+
+risk_map <- function(var, colors, title) {
+  ggplot(district_map) +
+    geom_sf(aes(fill = .data[[var]]), color = "white", linewidth = 0.05) +
+    scale_fill_manual(values = colors, na.value = "grey90", drop = TRUE) +
+    labs(title = title) +
+    theme_void() +
+    theme(legend.title = element_blank())
+}
+
+risk_map("wbgt_risk", risk_colors, "WBGT risk") |
+  risk_map("hi_risk", hi_colors, "Heat index risk")
+```
+
+# Relation between the indices
+
+These plots show the relation between the indices.
+The first plot compares each index with the air temperature.
+The last plot shows a correlation matrix.
+
+```{r scatter_indices, fig.width=12, fig.height=8}
+sample_data <- heat_data %>% sample_n(min(5000, n()))
+
+scatter <- function(yvar) {
+  ggplot(sample_data, aes(temp_c, .data[[yvar]], color = rh)) +
+    geom_point(alpha = 0.3, size = 0.5) +
+    geom_abline(linetype = "dashed", color = "grey40") +
+    scale_color_distiller(palette = "Blues", direction = 1) +
+    labs(x = "Temperature (°C)", y = paste(yvar, "(°C)"))
+}
+
+(scatter("wet_bulb") | scatter("heat_index")) / (scatter("wbgt") | scatter("utci")) +
+  plot_layout(guides = "collect")
+```
+
+```{r correlation, fig.width=8, fig.height=7}
+cor_matrix <- heat_data %>%
+  select(temp_c, wet_bulb, heat_index, wbgt, utci, humidex, rh, wind_speed) %>%
+  cor(use = "complete.obs") %>%
+  round(2)
+
+cor_long <- as.data.frame(as.table(cor_matrix))
+names(cor_long) <- c("x", "y", "r")
+
+ggplot(cor_long, aes(x, y, fill = r)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = r, color = abs(r) > 0.5), size = 3.5, show.legend = FALSE) +
+  scale_fill_gradient2(low = "#3498DB", high = "#E74C3C", limits = c(-1, 1)) +
+  scale_color_manual(values = c("black", "white")) +
+  labs(title = "Correlation matrix", x = NULL, y = NULL) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), panel.grid = element_blank()) +
+  coord_fixed()
+```
+
+
