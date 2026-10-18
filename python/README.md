@@ -1,12 +1,12 @@
 # Varunayan
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/saketlab/varunayan/main/docs/_static/varunayan_logo.png" alt="Varunayan Logo" width="200"/>
+  <img src="https://raw.githubusercontent.com/saketlab/varunayan/main/python/docs/_static/varunayan_logo.png" alt="Varunayan Logo" width="200"/>
 </p>
 
 Python package for downloading and processing climate data from ERA5, IMD, HadEX3, and CRU TS. Includes heat stress index calculations (UTCI, WBGT, Heat Index, Humidex) and country-level temperature aggregation.
 
-Also available in R: [varunayanR](https://github.com/saketlab/varunayanR)
+Also available in R: [varunayan for R](https://varunayan.saketlab.org/R/)
 
 ## Data sources
 
@@ -141,7 +141,7 @@ Also supports `varunayan geojson` and `varunayan point` subcommands.
 
 ## Documentation
 
-[varunayan.saketlab.org](https://varunayan.saketlab.org)
+[varunayan.saketlab.org/python](https://varunayan.saketlab.org/python/)
 
 ## Contributing
 

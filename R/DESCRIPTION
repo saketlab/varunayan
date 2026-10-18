@@ -33,8 +33,8 @@ Description: Download and process climate data for custom geographical
     and diurnal temperature range.
 License: MIT + file LICENSE
 URL: https://varunayan.saketlab.org/R/,
-    https://github.com/saketlab/varunayanR
-BugReports: https://github.com/saketlab/varunayanR/issues
+    https://github.com/saketlab/varunayan
+BugReports: https://github.com/saketlab/varunayan/issues
 Depends:
     R (>= 4.1.0)
 Imports:

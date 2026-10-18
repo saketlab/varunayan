@@ -50,7 +50,7 @@ template:
           "url": "https://saketlab.org"
         },
         "url": "https://varunayan.saketlab.org/R/",
-        "downloadUrl": "https://github.com/saketlab/varunayanR",
+        "downloadUrl": "https://github.com/saketlab/varunayan",
         "softwareVersion": "0.1.1",
         "programmingLanguage": "R"
       }
@@ -65,9 +65,9 @@ home:
 
   links:
   - text: Browse source code
-    href: https://github.com/saketlab/varunayanR
+    href: https://github.com/saketlab/varunayan
   - text: Report a bug
-    href: https://github.com/saketlab/varunayanR/issues
+    href: https://github.com/saketlab/varunayan/issues
 
 navbar:
   structure:
@@ -103,7 +103,7 @@ navbar:
 
     github:
       icon: fab fa-github fa-lg
-      href: https://github.com/saketlab/varunayanR
+      href: https://github.com/saketlab/varunayan
       aria-label: GitHub
 
 reference:

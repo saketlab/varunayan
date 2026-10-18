@@ -3,8 +3,14 @@ name: CI
 on:
   push:
     branches: [ master, main, develop ]
+    paths: ['python/**', '.github/workflows/ci.yml']
   pull_request:
-    branches: [ master, main ]
+    branches: [ master, main, develop ]
+    paths: ['python/**', '.github/workflows/ci.yml']
+
+defaults:
+  run:
+    working-directory: python
 
 jobs:
   test:
@@ -33,7 +39,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('python/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-pip-
 
@@ -86,7 +92,7 @@ jobs:
       if: always()
       with:
         name: bandit-report
-        path: bandit-report.json
+        path: python/bandit-report.json
 
   notebooks:
     runs-on: ubuntu-latest
@@ -102,7 +108,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-notebooks-${{ hashFiles('**/pyproject.toml') }}
+        key: ${{ runner.os }}-pip-notebooks-${{ hashFiles('python/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-pip-notebooks-
           ${{ runner.os }}-pip-
@@ -163,4 +169,4 @@ jobs:
       if: always()
       with:
         name: executed-notebooks
-        path: docs/tutorials/*.ipynb
+        path: python/docs/tutorials/*.ipynb

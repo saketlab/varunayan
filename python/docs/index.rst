@@ -17,7 +17,7 @@ Download and process climate reanalysis and observational data from ERA5, IMD, H
 
 .. note::
 
-   **R users**: See `varunayanR <https://varunayanr.saketlab.org>`_, the R companion package.
+   **R users**: See `varunayan for R <https://varunayan.saketlab.org/R/>`_, the R companion package.
 
 Data Sources
 ------------

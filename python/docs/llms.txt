@@ -268,7 +268,7 @@ IMD, HadEX3, and CRU TS do not have CLI subcommands; use them via the Python API
 
 ## Links
 
-- Docs: https://varunayan.saketlab.org/
+- Docs: https://varunayan.saketlab.org/python/
 - GitHub: https://github.com/saketlab/varunayan
 - PyPI: https://pypi.org/project/varunayan/
 - R companion: https://varunayanr.saketlab.org/

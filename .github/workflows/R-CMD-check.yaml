@@ -2,8 +2,10 @@
 on:
   push:
     branches: [main]
+    paths: ['R/**', '.github/workflows/R-CMD-check.yaml']
   pull_request:
     branches: [main]
+    paths: ['R/**', '.github/workflows/R-CMD-check.yaml']
 
 name: R-CMD-check
 
@@ -56,12 +58,14 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+          working-directory: R
 
       # Full CRAN check: vignettes built, manual built, Suggests required
       - uses: r-lib/actions/check-r-package@v2
         env:
           _R_CHECK_FORCE_SUGGESTS_: true
         with:
+          working-directory: R
           upload-snapshots: true
           build_args: 'character()'
           args: 'c("--as-cran")'

@@ -1,6 +1,6 @@
 # varunayanR <img src="man/figures/logo.png" align="right" height="139" alt="varunayanR logo" />
 
-[![R-CMD-check](https://github.com/saketlab/varunayanR/workflows/R-CMD-check/badge.svg)](https://github.com/saketlab/varunayanR/actions)
+[![R-CMD-check](https://github.com/saketlab/varunayan/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/saketlab/varunayan/actions/workflows/R-CMD-check.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 `varunayan` is an R package. It downloads and processes ERA5 reanalysis data from the [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/). It also downloads and processes IMD gridded climate data from the [Indian Meteorological Department](https://mausam.imd.gov.in/).
@@ -12,7 +12,7 @@ You can specify the region with a bounding box, a GeoJSON polygon, or point coor
 ```r
 # Install from GitHub
 # install.packages("devtools")
-devtools::install_github("saketlab/varunayanR")
+devtools::install_github("saketlab/varunayan", subdir = "R")
 ```
 
 ## Quick Start

@@ -86,7 +86,7 @@ html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
 html_title = "varunayan — Climate Data Toolkit"
-html_baseurl = "https://varunayan.saketlab.org/"
+html_baseurl = "https://varunayan.saketlab.org/python/"
 
 html_logo = "assets/varunayan.png"
 
@@ -145,10 +145,10 @@ smv_rename_latest_version = "latest"
 
 smv_prefer_remote_refs = True
 
-html_extra_path = ["robots.txt", "llms.txt"]
+html_extra_path = ["llms.txt"]
 
-ogp_site_url = "https://varunayan.saketlab.org/"
+ogp_site_url = "https://varunayan.saketlab.org/python/"
 ogp_site_name = "varunayan"
-ogp_image = "https://varunayan.saketlab.org/_static/varunayan_og.png"
+ogp_image = "https://varunayan.saketlab.org/python/_static/varunayan_og.png"
 ogp_description_length = 200
 ogp_type = "website"

@@ -162,7 +162,7 @@ varunayan = "varunayan.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/saketlab/varunayan"
-Documentation = "https://saketlab.github.io/varunayan"
+Documentation = "https://varunayan.saketlab.org/python/"
 Repository = "https://github.com/saketlab/varunayan"
 Issues = "https://github.com/saketlab/varunayan/issues"
 

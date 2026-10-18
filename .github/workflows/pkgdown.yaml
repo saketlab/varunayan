@@ -2,8 +2,10 @@
 on:
   push:
     branches: [main]
+    paths: ['R/**', '.github/workflows/pkgdown.yaml']
   pull_request:
     branches: [main]
+    paths: ['R/**', '.github/workflows/pkgdown.yaml']
   release:
     types: [published]
   workflow_dispatch:
@@ -23,6 +25,8 @@ jobs:
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # varunayan.saketlab.org serves /var/www/r-pkgdown/varunayan/docs; the
+      # Python docs (docs-hostinger.yml) deploy to its python/ folder
       SITE_ROOT: /var/www/r-pkgdown/varunayan/docs/R
 
     steps:
@@ -38,6 +42,7 @@ jobs:
         with:
           extra-packages: any::pkgdown, local::.
           needs: website
+          working-directory: R
 
       - name: Set up CDS credentials
         if: env.CDS_API_KEY != ''
@@ -48,6 +53,7 @@ jobs:
           CDS_API_KEY: ${{ secrets.CDS_API_KEY }}
 
       - name: Build site
+        working-directory: R
         run: pkgdown::build_site(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
         env:
@@ -60,7 +66,7 @@ jobs:
         uses: burnett01/rsync-deployments@7.0.1
         with:
           switches: -avzr --delete --rsync-path="mkdir -p ${{ env.SITE_ROOT }} && rsync"
-          path: docs/
+          path: R/docs/
           remote_path: ${{ env.SITE_ROOT }}/
           remote_host: ${{ secrets.DEPLOY_HOST }}
           remote_port: ${{ secrets.DEPLOY_PORT || 22 }}

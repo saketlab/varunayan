@@ -2,8 +2,10 @@
 on:
   push:
     branches: [main]
+    paths: ['R/**', '.github/workflows/test-coverage.yaml']
   pull_request:
     branches: [main]
+    paths: ['R/**', '.github/workflows/test-coverage.yaml']
 
 name: test-coverage
 
@@ -27,8 +29,10 @@ jobs:
         with:
           extra-packages: any::covr, any::xml2
           needs: coverage
+          working-directory: R
 
       - name: Test coverage
+        working-directory: R
         run: |
           cov <- covr::package_coverage(
             quiet = FALSE,
@@ -42,7 +46,7 @@ jobs:
         if: env.CODECOV_TOKEN != ''
         with:
           fail_ci_if_error: false
-          file: ./cobertura.xml
+          file: ./R/cobertura.xml
           plugin: noop
           disable_search: true
           token: ${{ env.CODECOV_TOKEN }}
