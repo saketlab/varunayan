@@ -1,4 +1,4 @@
-# varunayan
+# varunayan <img src="R/man/figures/logo.png" align="right" height="139" alt="varunayan logo" />
 
 Download and process climate data (ERA5, IMD, HadEX3, CRU TS) for a bounding box, GeoJSON region or point, with heat stress indices (UTCI, WBGT, Heat Index, Humidex).
 

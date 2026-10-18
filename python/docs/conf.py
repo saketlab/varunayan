@@ -89,6 +89,7 @@ html_title = "varunayan — Climate Data Toolkit"
 html_baseurl = "https://varunayan.saketlab.org/python/"
 
 html_logo = "assets/varunayan.png"
+html_favicon = "_static/favicon.ico"
 
 html_sidebars = {
     "**": [
