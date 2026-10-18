@@ -1,10 +1,10 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths: ['R/**', '.github/workflows/test-coverage.yaml']
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths: ['R/**', '.github/workflows/test-coverage.yaml']
 
 name: test-coverage

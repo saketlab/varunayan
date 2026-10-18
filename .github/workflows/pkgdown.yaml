@@ -4,7 +4,7 @@ on:
     branches: [main]
     paths: ['R/**', '.github/workflows/pkgdown.yaml']
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths: ['R/**', '.github/workflows/pkgdown.yaml']
   release:
     types: [published]
