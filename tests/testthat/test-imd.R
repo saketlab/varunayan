@@ -320,13 +320,18 @@ test_that("download_imd_year writes response body on success", {
 test_that("download_imd_year retries server errors and reports the last one", {
   local_mocked_bindings(Sys.sleep = function(...) NULL, .package = "base")
   imd_fx_mock_httr(imd_fx_response(status = 503L))
-  expect_warning(
-    expect_error(
+  warns <- character()
+  expect_error(
+    withCallingHandlers(
       varunayan:::download_imd_year(2023, "a.php", "a", "https://example.invalid/", tempfile(), max_retries = 2),
-      "Failed after 2 attempts. Last error: Server returned status 503"
+      warning = function(w) {
+        warns <<- c(warns, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
     ),
-    "Attempt 1/2 failed: Server returned status 503"
+    "Failed after 2 attempts. Last error: Server returned status 503"
   )
+  expect_equal(warns, sprintf("Attempt %d/2 failed: Server returned status 503", 1:2))
 })
 
 test_that("download_imd_year fails at once on a response without data", {
