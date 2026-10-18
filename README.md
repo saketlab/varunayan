@@ -141,7 +141,8 @@ Also supports `varunayan geojson` and `varunayan point` subcommands.
 
 ## Documentation
 
-[varunayan.saketlab.org](https://varunayan.saketlab.org)
+- Python: [varunayan.saketlab.org/python](https://varunayan.saketlab.org/python/)
+- R: [varunayan.saketlab.org/R](https://varunayan.saketlab.org/R/)
 
 ## Contributing
 

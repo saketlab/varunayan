@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>varunayan: climate data for India and the world</title>
+  <meta name="description" content="varunayan downloads and processes climate data from ERA5, IMD, HadEX3 and CRU TS, with heat stress indices and country-level aggregation. Packages for Python and R.">
+  <link rel="canonical" href="https://varunayan.saketlab.org/">
+  <link rel="icon" href="/favicon.ico">
+  <meta property="og:image" content="https://varunayan.saketlab.org/python/_static/varunayan_og.png">
+  <style>
+    :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --card: #f5f5f7; --accent: #0071e3; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #111113; --fg: #f5f5f7; --muted: #a1a1a6; --card: #1d1d1f; --accent: #4ba3ff; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg);
+      font: 17px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 64px 16px; }
+    h1 { font-size: 2.4rem; margin: 0 0 8px; }
+    .logo { display: block; height: 160px; width: auto; margin: 0 0 24px; }
+    p.lead { color: var(--muted); margin: 0 0 40px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    a.card { display: block; padding: 24px; border-radius: 12px; background: var(--card);
+      color: inherit; text-decoration: none; border: 2px solid transparent; }
+    a.card:hover, a.card:focus-visible { border-color: var(--accent); }
+    .card h2 { margin: 0 0 4px; font-size: 1.3rem; color: var(--accent); }
+    .card code { font-size: 0.9rem; overflow-wrap: anywhere; }
+    .card p { margin: 8px 0 0; color: var(--muted); font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="logo" src="/logo.png" alt="varunayan logo" width="235" height="160">
+    <h1>varunayan</h1>
+    <p class="lead">Climate data from ERA5, IMD, HadEX3 and CRU TS, filtered to a region
+      and aggregated in time, with heat stress indices (UTCI, WBGT, Heat Index, Humidex).</p>
+    <div class="cards">
+      <a class="card" href="/python/">
+        <h2>Python</h2>
+        <code>pip install varunayan</code>
+        <p>Python package and command-line tool.</p>
+      </a>
+      <a class="card" href="/R/">
+        <h2>R</h2>
+        <code>devtools::install_github("saketlab/varunayanR")</code>
+        <p>R package with the same data sources.</p>
+      </a>
+    </div>
+  </main>
+</body>
+</html>
