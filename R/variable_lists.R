@@ -1,6 +1,7 @@
 #' ERA5 variable aggregation rules
 #'
 #' @name variable_lists
+#' @noRd
 NULL
 
 #' Variables to sum over time

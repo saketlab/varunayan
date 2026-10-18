@@ -1,6 +1,7 @@
 #' Calculations for heat stress indices
 #'
 #' @name heat_stress
+#' @noRd
 NULL
 
 #' Calculate relative humidity from temperature and dewpoint

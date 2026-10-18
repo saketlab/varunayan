@@ -1,11 +1,15 @@
 Type: Package
 Package: varunayan
-Title: Download and Process ERA5, IMD, HadEX3 and CRU TS Climate Data
+Title: Download and Process 'ERA5', IMD, 'HadEX3' and 'CRU TS' Data
 Version: 0.2.0
 Authors@R: c(
     person("Saket", "Choudhary", , "saketc@iitb.ac.in", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-5202-7633")),
-    person("Darakhshan", "Nehal", role = "aut")
+    person("Darakhshan", "Nehal", role = "aut"),
+    person("James C.", "Liljegren", role = "ctb",
+           comment = "Author of the original WBGT C code translated in R/wbgt_liljegren.R"),
+    person("UChicago Argonne, LLC", role = "cph",
+           comment = "Copyright holder of the original WBGT C code")
   )
 Description: Download and process climate data for custom geographical
     regions defined by bounding boxes, 'GeoJSON' polygons, or point
@@ -70,6 +74,7 @@ VignetteBuilder:
     knitr
 Config/roxygen2/version: 8.1.1
 Config/testthat/edition: 3
+Copyright: See file inst/COPYRIGHTS
 Encoding: UTF-8
 Language: en-US
 Roxygen: list(markdown = TRUE)

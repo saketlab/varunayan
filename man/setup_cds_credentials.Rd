@@ -28,8 +28,7 @@ for ERA5 downloads. The function examines the credentials in this order:
 }
 }
 \examples{
-# setup_cds_credentials(key = "your-cds-api-key-here")
-if (nzchar(Sys.getenv("CDS_API_KEY"))) {
-  setup_cds_credentials()
-}
+\dontshow{if (interactive() && nzchar(Sys.getenv("CDS_API_KEY"))) withAutoprint(\{ # examplesIf}
+setup_cds_credentials()
+\dontshow{\}) # examplesIf}
 }

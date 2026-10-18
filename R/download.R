@@ -58,11 +58,8 @@ signal_if_too_large <- function(err_msg, start_date, end_date) {
 #' @param ... Arguments passed to the main function (used by aliases).
 #' @return Invisibly, `TRUE` once the key has been registered with 'ecmwfr'. Errors if no key can be found.
 #' @export
-#' @examples
-#' # setup_cds_credentials(key = "your-cds-api-key-here")
-#' if (nzchar(Sys.getenv("CDS_API_KEY"))) {
-#'   setup_cds_credentials()
-#' }
+#' @examplesIf interactive() && nzchar(Sys.getenv("CDS_API_KEY"))
+#' setup_cds_credentials()
 setup_cds_credentials <- function(key = NULL) {
   if (is.null(key)) {
     env_key <- Sys.getenv("CDS_API_KEY", unset = "")

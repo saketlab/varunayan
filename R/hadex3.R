@@ -7,7 +7,7 @@
 #' Dunn et al. (2020) Development of an updated global land in-situ-based dataset
 #' of temperature and precipitation extremes: HadEX3. J. Geophys. Res. Atmos.
 #' \doi{10.1029/2019JD032263}
-#' @name hadex3
+#' @noRd
 
 # Annual indices (the baseline period controls the availability of some indices)
 .HADEX3_ANNUAL_INDICES <- c(
@@ -44,7 +44,7 @@
 #' @param frequency "annual" or "monthly".
 #' @param baseline Baseline period: "61-90" or "81-10" (annual only).
 #' @return Character URL.
-#' @keywords internal
+#' @noRd
 .hadex3_url <- function(index, frequency, baseline = "61-90") {
   if (frequency == "monthly") {
     sprintf("%s/HadEX3_%s_MON.nc.gz", .HADEX3_BASE_URL, index)
@@ -62,7 +62,7 @@
 #' @param baseline Baseline period for annual data.
 #' @param output_dir Directory for temporary files.
 #' @return Path to the decompressed .nc file.
-#' @keywords internal
+#' @noRd
 .download_hadex3_file <- function(index, frequency, baseline, output_dir) {
   url <- .hadex3_url(index, frequency, baseline)
   gz_file <- file.path(output_dir, basename(url))
@@ -95,7 +95,7 @@
 }
 
 #' Decompress a .gz file
-#' @keywords internal
+#' @noRd
 .decompress_gz <- function(gz_file, dest_file) {
   if (requireNamespace("R.utils", quietly = TRUE)) {
     R.utils::gunzip(gz_file, destname = dest_file, overwrite = TRUE, remove = FALSE)
@@ -124,7 +124,7 @@
 #' @param index ETCCDI index name.
 #' @param frequency "annual" or "monthly".
 #' @return A data.frame with the columns year (and month for monthly data), latitude, longitude, value.
-#' @keywords internal
+#' @noRd
 .read_hadex3_nc <- function(nc_file, index, frequency) {
   nc <- ncdf4::nc_open(nc_file)
   on.exit(ncdf4::nc_close(nc), add = TRUE)
@@ -165,7 +165,7 @@
 #' Parse the year values from the annual HadEX3 time coordinate
 #'
 #' HadEX3 annual files use the unit "years" (integers 1901-2018).
-#' @keywords internal
+#' @noRd
 .parse_hadex3_years <- function(time_var, time_units) {
   if (grepl("^years$", trimws(time_units), ignore.case = TRUE)) {
     # Integer years (for example, 1901, 1902, ...)
@@ -183,7 +183,7 @@
 }
 
 #' Parse the year and month from the monthly HadEX3 time coordinate
-#' @keywords internal
+#' @noRd
 .parse_hadex3_months <- function(time_var, time_units) {
   if (grepl("months since", time_units, ignore.case = TRUE)) {
     base_match <- regmatches(time_units, regexpr("\\d{4}-\\d{2}", time_units))
@@ -204,7 +204,7 @@
 }
 
 #' Expand the annual NetCDF array to a data.frame
-#' @keywords internal
+#' @noRd
 .expand_hadex3_annual <- function(vals, lat, lon, years, fill_val) {
   n_lon <- length(lon)
   n_lat <- length(lat)
@@ -232,7 +232,7 @@
 }
 
 #' Expand the monthly NetCDF array to a data.frame
-#' @keywords internal
+#' @noRd
 .expand_hadex3_monthly <- function(vals, lat, lon, year_months, fill_val) {
   n_lon <- length(lon)
   n_lat <- length(lat)
@@ -261,7 +261,7 @@
 }
 
 #' Make sure that the HadEX3 inputs are valid
-#' @keywords internal
+#' @noRd
 .validate_hadex3_inputs <- function(index, frequency, baseline, start_year, end_year) {
   frequency <- match.arg(frequency, c("annual", "monthly"))
 
@@ -295,7 +295,7 @@
 }
 
 #' Get HadEX3 index data and use the cache
-#' @keywords internal
+#' @noRd
 .fetch_hadex3 <- function(index, frequency, baseline, use_cache, output_dir) {
   cache_key <- .source_cache_key(list(source = "hadex3", index = index, frequency = frequency, baseline = baseline))
 

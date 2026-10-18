@@ -426,7 +426,7 @@ imd_temperature_geojson <- function(request_id, start_year, end_year, geojson_fi
 #' @param resolution Resolution
 #' @param frequency Frequency
 #' @param output_dir Output directory
-#' @keywords internal
+#' @noRd
 save_imd_results <- function(data, request_id, var_type, resolution, frequency, output_dir) {
   imd_output_dir <- file.path(output_dir, paste0(request_id, "_imd_output"))
   ensure_output_dir(imd_output_dir)

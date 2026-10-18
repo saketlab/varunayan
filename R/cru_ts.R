@@ -9,7 +9,7 @@
 #' Harris et al. (2020) Version 4 of the CRU TS monthly high-resolution
 #' gridded multivariate climate dataset. Sci. Data 7:109.
 #' \doi{10.1038/s41597-020-0453-3}
-#' @name cru_ts
+#' @noRd
 
 .CRU_TS_VERSION <- "4.07"
 .CRU_TS_SUBDIR <- "cruts.2304141047.v4.07"
@@ -94,7 +94,7 @@ list_cru_ts_variables <- function(...) {
 #' @param decade_start Start year of the decade file.
 #' @param decade_end End year of the decade file.
 #' @return Character URL.
-#' @keywords internal
+#' @noRd
 .cru_ts_url <- function(variable, decade_start, decade_end) {
   filename <- sprintf(
     "cru_ts%s.%d.%d.%s.dat.nc.gz",
@@ -104,7 +104,7 @@ list_cru_ts_variables <- function(...) {
 }
 
 #' Find the decade files that overlap a range of years
-#' @keywords internal
+#' @noRd
 .cru_ts_needed_decades <- function(start_year, end_year) {
   Filter(
     function(d) d[2] >= start_year && d[1] <= end_year,
@@ -113,7 +113,7 @@ list_cru_ts_variables <- function(...) {
 }
 
 #' Download and decompress a single CRU TS decade file
-#' @keywords internal
+#' @noRd
 .download_cru_ts_decade <- function(variable, decade_start, decade_end,
                                     output_dir, use_cache) {
   cache_key <- .source_cache_key(list(
@@ -171,7 +171,7 @@ list_cru_ts_variables <- function(...) {
 #' @param nc_file Path to the decompressed .nc file.
 #' @param variable CRU TS variable code.
 #' @return A data.frame with the columns year, month, latitude, longitude, value, variable.
-#' @keywords internal
+#' @noRd
 .read_cru_ts_nc <- function(nc_file, variable) {
   nc <- ncdf4::nc_open(nc_file)
   on.exit(ncdf4::nc_close(nc), add = TRUE)
@@ -222,7 +222,7 @@ list_cru_ts_variables <- function(...) {
 }
 
 #' Parse the CRU TS time coordinate to a Date vector
-#' @keywords internal
+#' @noRd
 .parse_cru_ts_time <- function(time_var, time_units) {
   if (grepl("days since", time_units, ignore.case = TRUE)) {
     base_date <- as.Date(sub("days since ", "", trimws(time_units)))
@@ -239,7 +239,7 @@ list_cru_ts_variables <- function(...) {
 }
 
 #' Make sure that the CRU TS inputs are valid
-#' @keywords internal
+#' @noRd
 .validate_cru_ts_inputs <- function(variable, start_year, end_year) {
   valid_vars <- list_cru_ts_variables()$variable
   if (!variable %in% valid_vars) {
@@ -258,7 +258,7 @@ list_cru_ts_variables <- function(...) {
 }
 
 #' Get CRU TS data for a variable and a range of years
-#' @keywords internal
+#' @noRd
 .fetch_cru_ts <- function(variable, start_year, end_year, use_cache, output_dir) {
   decades <- .cru_ts_needed_decades(start_year, end_year)
 

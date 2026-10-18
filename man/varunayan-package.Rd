@@ -4,7 +4,7 @@
 \name{varunayan-package}
 \alias{varunayan}
 \alias{varunayan-package}
-\title{varunayan: Download and Process ERA5, IMD, HadEX3 and CRU TS Climate Data}
+\title{varunayan: Download and Process 'ERA5', IMD, 'HadEX3' and 'CRU TS' Data}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
@@ -26,6 +26,12 @@ Authors:
 \itemize{
   \item Saket Choudhary \email{saketc@iitb.ac.in} (\href{https://orcid.org/0000-0001-5202-7633}{ORCID}) [copyright holder]
   \item Darakhshan Nehal
+}
+
+Other contributors:
+\itemize{
+  \item James C. Liljegren (Author of the original WBGT C code translated in R/wbgt_liljegren.R) [contributor]
+  \item UChicago Argonne, LLC (Copyright holder of the original WBGT C code) [copyright holder]
 }
 
 }

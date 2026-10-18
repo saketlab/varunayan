@@ -1,6 +1,7 @@
 #' Utility functions for the Varunayan R package
 #'
 #' @name varunayan-utils
+#' @noRd
 #' @importFrom stats aggregate as.formula complete.cases setNames
 #' @importFrom utils setTxtProgressBar txtProgressBar write.csv
 #' @importFrom graphics grid

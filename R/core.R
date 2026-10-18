@@ -285,7 +285,8 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
   }
 
   message(sprintf(fmt = "The package processes %d temporal chunks...", length(x = chunks)))
-  if (length(chunks) > 1) {
+  show_pb <- verbose && length(chunks) > 1
+  if (show_pb) {
     pb <- txtProgressBar(min = 0, max = length(x = chunks), style = 3)
   }
 
@@ -302,9 +303,9 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
     files <- download_chunk(chunk$start, chunk$end, as.character(i))
     all_files <- c(all_files, files)
 
-    if (length(chunks) > 1) setTxtProgressBar(pb, i)
+    if (show_pb) setTxtProgressBar(pb, i)
   }
-  if (length(chunks) > 1) close(pb)
+  if (show_pb) close(pb)
 
   all_files <- unlist(all_files)
 
