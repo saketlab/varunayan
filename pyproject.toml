@@ -59,7 +59,7 @@ dev = [
 ]
 docs = [
     # Core Sphinx dependencies
-    "sphinx>=4.0",
+    "sphinx>=4.0,<8.2",
     "furo>=2023.3.27",
     "sphinx-autoapi>=2.0",
     
@@ -97,7 +97,7 @@ notebooks = [
 ]
 docs-build = [
     # Minimal dependencies for CI/CD documentation building
-    "sphinx>=4.0",
+    "sphinx>=4.0,<8.2",
     "furo>=2023.3.27",
     "sphinx-book-theme>=1.0.0",
     "sphinx-autoapi>=2.0",

@@ -1,5 +1,5 @@
 # Documentation build requirements
-sphinx>=5.0.0
+sphinx>=5.0.0,<8.2  # sphinx-multiversion 0.2.4 breaks on 8.2 (Config.read kw-only)
 sphinx-book-theme>=1.0.0
 furo>=2023.9.10
 sphinx-autoapi>=2.0.0
