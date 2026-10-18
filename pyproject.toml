@@ -41,6 +41,7 @@ dependencies = [
     "geopandas>=0.10.0",
     "shapely>=1.8.0",
     "python-dateutil>=2.8.0",
+    "requests>=2.25.0",
     "matplotlib>=3.3.0",
     "tqdm>=4.60.0",
 ]
