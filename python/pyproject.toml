@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "varunayan"
 dynamic = ["version"]
-description = "Analysis-ready climate data downloader and processor for custom regions"
+description = "Download ERA5, IMD, HadEX3 and CRU TS climate data for a bounding box, polygon or point, and compute heat stress indices"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -17,7 +17,7 @@ maintainers = [
     { name = "Atharva Jagtap", email = "atharvajagtap1108@gmail.com" },
     { name = "Saket Choudhary", email = "saketc@iitb.ac.in" }
 ]
-keywords = ["climate", "era5", "weather", "atmospheric-science", "geospatial", "netcdf"]
+keywords = ["climate", "era5", "imd", "hadex3", "cru-ts", "heat-stress", "geospatial", "netcdf"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
