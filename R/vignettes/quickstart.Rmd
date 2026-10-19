@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 Varunayan = Varun + ayan. In Vedic mythology, Varun is the god of the sky, order, truth and water. In Sanskrit, ayan means path.
 
-The varunayan package downloads climate variables for any region of the globe from [ERA5](https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5). ERA5 is a reanalysis. It combines models and historical observations to estimate many atmospheric, land and ocean variables from 1940 to the present. The package gets the data from the [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/) (CDS).
+The varunayan package downloads climate variables for any region of the globe from [ERA5](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels). ERA5 is a reanalysis. It combines models and historical observations to estimate many atmospheric, land and ocean variables from 1940 to the present. The package gets the data from the [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/) (CDS).
 
 ```{r setup}
 library(varunayan)
@@ -65,7 +65,7 @@ head(bbox)
 
 ## Data for a GeoJSON region
 
-`era5ify_geojson()` takes a path or URL of a GeoJSON file. Here we use the [LGD state boundaries of India](https://geo.bharatviz.org/). With `level = "feature"`, the output has one row for each state, with the mean of the grid cells inside it. The default `level = "union"` keeps each grid cell.
+`era5ify_geojson()` takes a path or URL of a GeoJSON file. Here we use the [LGD state boundaries of India](https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson). With `level = "feature"`, the output has one row for each state, with the mean of the grid cells inside it. The default `level = "union"` keeps each grid cell.
 
 ```{r era5-geojson, eval = FALSE}
 states <- era5ify_geojson(
