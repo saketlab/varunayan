@@ -158,6 +158,25 @@ test_that("download_era5_single builds an hourly request and returns the file", 
   expect_equal(unlist(req$variable), "2m_temperature")
 })
 
+test_that("download_era5_single uses the monthly-means product for yearly data", {
+  d <- era5_tempdir()
+  on.exit(unlink(d, recursive = TRUE), add = TRUE)
+  log <- new.env()
+  local_mocked_bindings(
+    get_cds_credentials = function(...) TRUE,
+    wf_request = era5_fake_wf_request(log)
+  )
+
+  suppressMessages(do.call(download_era5_single, era5_dl_args(d,
+    frequency = "yearly", start_date = "2021-01-01", end_date = "2022-12-31"
+  )))
+  req <- log$requests[[1]]
+  expect_equal(req$dataset_short_name, "reanalysis-era5-single-levels-monthly-means")
+  expect_equal(unlist(req$year), c("2021", "2022"))
+  expect_length(unlist(req$month), 12)
+  expect_equal(unlist(req$grid), c(0.25, 0.25))
+})
+
 test_that("download_era5_single uses 12:00 for daily and monthly-means product", {
   d <- era5_tempdir()
   on.exit(unlink(d, recursive = TRUE), add = TRUE)

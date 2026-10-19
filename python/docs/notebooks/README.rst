@@ -1,152 +1,59 @@
 Jupyter Notebooks
 =================
 
-This directory contains interactive Jupyter notebooks demonstrating various use cases and features of varunayan.
+These notebooks show how to use varunayan for real analyses.
 
 Available Notebooks
 -------------------
 
-1. **Getting Started** (:doc:`01_quickstart`)
-   
-   Introduction to varunayan's basic functionality and core concepts.
+1. :doc:`01_quickstart`: Download ERA5 data for a bounding box, a GeoJSON region,
+   a point and pressure levels. Find variables.
+2. :doc:`02_climate_of_india`: See the temperature trend, the monsoon peak month,
+   climate extremes (HadEX3) and how India compares with other countries.
+3. :doc:`03_comparing_datasets`: Compare ERA5 with IMD (rainfall and temperature)
+   and with CRU TS, and see when to use each dataset.
+4. :doc:`04_spatial_aggregation`: Compare two methods to aggregate grid data to
+   districts.
+5. :doc:`05_heat_stress`: Calculate and compare the heat stress indices.
+6. :doc:`06_public_interest`: Compare rainfall and temperature with Google Trends
+   search interest.
 
-2. **ERA5 vs IMD Comparison** (:doc:`02_era5_imd_comparison`)
-   
-   Comparing ERA5 reanalysis data with Indian Meteorological Department observations.
-
-3. **Temperature Change Analysis** (:doc:`03_temperature_change_india`)
-   
-   Analyzing long-term temperature trends across India using ERA5 data.
-
-4. **Weather-dependent Sales Analysis** (:doc:`04_umbrella_sales_India`)
-   
-   Correlating umbrella sales with precipitation patterns in India.
-
-5. **Regional Climate Analysis** (:doc:`05_sunscreen_sales_California`)
-   
-   Analyzing UV radiation and temperature patterns in California.
-
-6. **Public Health Applications** (:doc:`06_malaria_dengue_public_interest_trend`)
-   
-   Exploring relationships between climate variables and disease patterns.
-
-7. **Seasonal Patterns** (:doc:`07_rainfall_peak_India`)
-   
-   Identifying rainfall peaks and monsoon patterns across Indian regions.
-
-8. **Comparative Analysis** (:doc:`08_era5_imd_temp_comparison`)
-   
-   Detailed temperature comparison between ERA5 and IMD datasets.
-
-9. **Pressure Level Data** (:doc:`09_pressure_level_data`)
-   
-   Working with atmospheric pressure level data for vertical profiles and multi-level analysis.
+The R package has the same six tutorials, with the same function calls.
 
 Running the Notebooks
-----------------------
+---------------------
 
-Prerequisites
-~~~~~~~~~~~~~
-
-Before running the notebooks, ensure you have:
-
-1. **varunayan installed** with notebook dependencies:
+1. Install varunayan with the notebook dependencies:
 
    .. code-block:: bash
-   
-      pip install varunayan[notebooks]
 
-2. **CDS API configured** with your Copernicus Climate Data Store credentials:
+      pip install "varunayan[notebooks]" jupyter
 
-   .. code-block:: bash
-   
-      # Create ~/.cdsapirc with your API key
-      echo "url: https://cds.climate.copernicus.eu/api/v2" > ~/.cdsapirc
-      echo "key: YOUR_API_KEY" >> ~/.cdsapirc
+2. Set up the CDS API key (see :doc:`../installation`).
 
-3. **Jupyter** installed:
+3. Start Jupyter in the notebooks directory:
 
    .. code-block:: bash
-   
-      pip install jupyter
 
-Local Execution
-~~~~~~~~~~~~~~~
+      cd python/notebooks
+      jupyter notebook
 
-To run the notebooks locally:
-
-.. code-block:: bash
-
-   # Navigate to the notebooks directory
-   cd docs/notebooks
-   
-   # Start Jupyter
-   jupyter notebook
-
-Then open any ``.ipynb`` file in your browser.
-
-Online Viewing
-~~~~~~~~~~~~~~
-
-You can also view the notebooks online without running them:
-
-- **GitHub**: View static versions on the `varunayan GitHub repository <https://github.com/saketlab/varunayan/tree/main/docs/tutorials>`_
-- **Documentation**: Pre-rendered versions are available in this documentation
+You can also see the notebooks on
+`GitHub <https://github.com/saketlab/varunayan/tree/develop/python/notebooks>`_.
 
 Common Issues
 -------------
 
-Data Download Timeouts
-~~~~~~~~~~~~~~~~~~~~~~
-
-If you encounter timeouts when downloading large datasets:
-
-- Reduce the temporal range of your requests
-- Use lower spatial resolution (higher ``resolution`` parameter values)
-- Process data in smaller chunks
-
-CDS API Errors
-~~~~~~~~~~~~~~
-
-Common CDS API issues:
-
-- **Invalid API key**: Check your ``~/.cdsapirc`` configuration
-- **Rate limiting**: Wait between large requests
-- **Service unavailable**: CDS maintenance periods
-
-Memory Issues
-~~~~~~~~~~~~~
-
-For large datasets:
-
-- Use chunked processing (automatically handled by varunayan)
-- Increase available RAM
-- Process data in smaller geographical regions
+- **Download timeouts**: Use a shorter time range or a smaller region.
+- **CDS API errors**: Check the key in ``~/.cdsapirc``, accept the dataset
+  licence on the CDS website, and wait if the CDS is busy or in maintenance.
+- **Memory**: Use a smaller region or a coarser ``resolution``. varunayan
+  already splits long requests into smaller parts.
 
 Getting Help
 ------------
 
-If you encounter issues with the notebooks:
-
-1. Check the `GitHub Issues <https://github.com/saketlab/varunayan/issues>`_ page
-2. Create a new issue with:
-   
-   - Notebook name and cell number
-   - Complete error message
-   - Your system information (OS, Python version, varunayan version)
-
-Contributing Notebooks
------------------------
-
-We welcome contributions of new notebooks! See our :doc:`../contributing` guide for details on:
-
-- Notebook structure and style guidelines
-- Documentation requirements
-- Submission process
-
-When contributing notebooks:
-
-- Include clear explanations and motivation
-- Use realistic but manageable dataset sizes
-- Provide expected outputs and runtime estimates
-- Test thoroughly before submission
+Open an issue on `GitHub <https://github.com/saketlab/varunayan/issues>`_.
+Include the notebook name, the cell number, the full error message, and your
+OS, Python and varunayan versions. See :doc:`../contributing` to add a
+notebook.

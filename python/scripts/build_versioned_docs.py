@@ -1,22 +1,5 @@
 #!/usr/bin/env python3
-"""
-Build versioned documentation using sphinx-multiversion.
-
-This script builds documentation for all tagged versions and the main branch,
-creating a version switcher that allows users to view changelog and docs
-for different versions.
-
-Usage:
-    python scripts/build_versioned_docs.py
-
-    # Or from the project root:
-    python -m scripts.build_versioned_docs
-
-Requirements:
-    - Git repository with tagged versions (format: v0.1.0, v1.0.0, etc.)
-    - sphinx-multiversion installed
-    - Documentation dependencies installed
-"""
+"""Build docs for every v* tag and main with sphinx-multiversion."""
 
 import os
 import subprocess

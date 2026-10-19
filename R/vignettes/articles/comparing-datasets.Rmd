@@ -1,0 +1,241 @@
+---
+title: "Comparing ERA5 with observed datasets"
+output:
+  rmarkdown::html_vignette:
+    self_contained: true
+vignette: >
+  %\VignetteIndexEntry{Comparing ERA5 with observed datasets}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+has_data <- requireNamespace("ggplot2", quietly = TRUE) &&
+  nzchar(system.file("extdata", "comparing_datasets.rds", package = "varunayan"))
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = has_data,
+  fig.width = 8,
+  fig.height = 5,
+  fig.dpi = 150,
+  warning = FALSE,
+  message = FALSE,
+  out.width = "100%"
+)
+```
+
+ERA5 is a reanalysis: a weather model that takes in observations. This article compares ERA5 with three gridded datasets made from observations:
+
+- [IMD gridded rainfall](https://www.imdpune.gov.in/cmpg/Griddata/Rainfall_25_NetCDF.html) (0.25°, daily), for monthly rainfall in each Indian state.
+- [IMD gridded temperature](https://www.imdpune.gov.in/cmpg/Griddata/Max_1_Bin.html) (1°, daily), for daily maximum and minimum temperature in Maharashtra.
+- [CRU TS v4.07](https://crudata.uea.ac.uk/cru/data/hrg/) (0.5°, monthly), for monthly temperature over India.
+
+Each section puts the two datasets on one grid or one set of regions. Then `compare()` calculates the number of values `n`, the Pearson correlation `r`, the bias (ERA5 - observed) and the RMSE. [ERA5](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels) needs a CDS account. IMD and CRU TS download without credentials. This article uses a cached copy of the merged data.
+
+```{r setup}
+library(varunayan)
+
+states <- load_india_boundaries("state")
+```
+
+```{r load_data, include = FALSE}
+saved <- readRDS(system.file("extdata", "comparing_datasets.rds", package = "varunayan"))
+```
+
+## Monthly rainfall in each state: ERA5 and IMD (2000-2024)
+
+`era5ify_geojson()` with `level = "feature"` gives one row for each state and month, with the mean of the ERA5 cells inside the state. `imd_rainfall_bbox()` adds the daily IMD values of each month. Both values are monthly totals in mm.
+
+```{r rain_download, eval = FALSE}
+era5_rain <- era5ify_geojson(
+  request_id = "era5_india_states_rain",
+  variables = "total_precipitation",
+  start_date = "2000-01-01",
+  end_date = "2024-12-31",
+  json_file = "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson",
+  frequency = "monthly",
+  resolution = 0.25,
+  level = "feature"
+)
+imd_rain <- imd_rainfall_bbox(
+  request_id = "imd_india_rain",
+  start_year = 2000, end_year = 2024,
+  north = 38.5, south = 6.5, east = 100, west = 66.5,
+  frequency = "monthly"
+)
+```
+
+`aggregate_to_polygons()` takes the mean of the IMD cells inside each state for each month. With `fill_empty = TRUE`, a state smaller than a grid cell gets the nearest cell, as in the ERA5 step.
+
+```{r rain_merge, eval = FALSE}
+imd_states <- aggregate_to_polygons(imd_rain, states, c(imd = "rainfall"),
+  method = "point_in_polygon", polygon_id_cols = "state_name",
+  by = "date", fill_empty = TRUE
+)
+era5_rain$date <- as.Date(era5_rain$datetime)
+era5_rain$era5 <- era5_rain$value
+rain <- merge(era5_rain[c("state_name", "date", "era5")], imd_states)
+```
+
+```{r rain_stats}
+rain <- saved$rain
+rain_stats <- compare(rain, "imd", "era5", by = "state_name")
+rain_stats[order(rain_stats$r), ]
+```
+
+```{r rain_r, fig.height = 7}
+plot_bars(rain_stats, "state_name", "r",
+  horizontal = TRUE, sort = TRUE,
+  title = "Correlation of monthly rainfall, IMD vs ERA5"
+)
+```
+
+```{r rain_bias, fig.height = 7}
+plot_map(merge(states, rain_stats), "bias",
+  cmap = "RdBu", center = 0,
+  title = "Mean bias of monthly rainfall, 2000-2024", legend_title = "ERA5 - IMD (mm)"
+)
+```
+
+In 31 of the 36 states, r is 0.85 or more. The agreement is best in Madhya Pradesh, Rajasthan and Maharashtra (r = 0.99). The agreement is worst in Andaman and Nicobar and in Ladakh (r = 0.59). These regions are islands and high mountains, with few IMD stations.
+
+In most states, ERA5 gives more rain than IMD (median bias +7.5 mm in each month). The largest positive bias is in Arunachal Pradesh (+142 mm) and Sikkim (+106 mm). The largest negative bias is in Dadra and Nagar Haveli and Daman and Diu (-88 mm) and in Goa (-77 mm).
+
+## Daily temperature extremes in Maharashtra: ERA5 and IMD (2020)
+
+ERA5 `mx2t` and `mn2t` are the maximum and the minimum temperature of the previous hour (°C). The daily maximum of `mx2t` and the daily minimum of `mn2t` give the daily extremes. We request hourly ERA5 at 0.25° in a box whose edges are on the edges of the IMD 1° cells. Then `regrid()` takes the mean of the 0.25° cells in each 1° cell. The 1° cell centers are at x.5°, the same as the IMD grid.
+
+```{r temp_download, eval = FALSE}
+era5_temp <- era5ify_bbox(
+  request_id = "era5_maharashtra_tmax_tmin",
+  variables = c(
+    "maximum_2m_temperature_since_previous_post_processing",
+    "minimum_2m_temperature_since_previous_post_processing"
+  ),
+  start_date = "2020-01-01", end_date = "2020-12-31",
+  north = 21.75, south = 15, east = 80.75, west = 72,
+  frequency = "hourly", resolution = 0.25
+)
+era5_temp$date <- as.Date(era5_temp$datetime)
+era5_tmax <- aggregate(era5 ~ date + latitude + longitude, max,
+  data = transform(era5_temp[era5_temp$variable == "mx2t", ], era5 = value)
+)
+era5_tmin <- aggregate(era5 ~ date + latitude + longitude, min,
+  data = transform(era5_temp[era5_temp$variable == "mn2t", ], era5 = value)
+)
+era5_tmax <- regrid(era5_tmax, "era5", 1, by = "date")
+era5_tmin <- regrid(era5_tmin, "era5", 1, by = "date")
+```
+
+`imd_temperature_bbox()` gives the IMD daily `tmax` or `tmin` (°C). We put the ERA5 daily maximum next to IMD `tmax`, and the ERA5 daily minimum next to IMD `tmin`.
+
+```{r temp_merge, eval = FALSE}
+imd_tmax <- imd_temperature_bbox("imd_mh_tmax", 2020, 2020,
+  var_type = "tmax",
+  north = 21.5, south = 15.5, east = 80.5, west = 72.5
+)
+imd_tmin <- imd_temperature_bbox("imd_mh_tmin", 2020, 2020,
+  var_type = "tmin",
+  north = 21.5, south = 15.5, east = 80.5, west = 72.5
+)
+tmax <- merge(era5_tmax, transform(imd_tmax, imd = temperature, temperature = NULL))
+tmin <- merge(era5_tmin, transform(imd_tmin, imd = temperature, temperature = NULL))
+```
+
+```{r temp_stats}
+tmax <- saved$tmax
+tmin <- saved$tmin
+grid <- c("latitude", "longitude")
+temp_stats <- merge(compare(tmax, "imd", "era5", by = grid), compare(tmin, "imd", "era5", by = grid),
+  by = grid, suffixes = c("_tmax", "_tmin")
+)
+head(temp_stats)
+```
+
+```{r temp_r, fig.height = 4}
+maharashtra <- states[states$state_name == "MAHARASHTRA", ]
+plot_map(temp_stats, c("r_tmax", "r_tmin"),
+  boundaries = maharashtra,
+  title = "Correlation of daily temperature, IMD vs ERA5 (2020)", legend_title = "Pearson r"
+)
+```
+
+```{r temp_bias, fig.height = 4}
+plot_map(temp_stats, c("bias_tmax", "bias_tmin"),
+  boundaries = maharashtra, cmap = "RdBu", center = 0,
+  title = "Mean bias of daily temperature (2020)", legend_title = "ERA5 - IMD (°C)"
+)
+```
+
+For both variables, the median r over the cells is 0.97. ERA5 tmax is colder than IMD in all cells (median bias -1.9 °C). ERA5 tmin is warmer than IMD in most cells (median bias +1.0 °C). Thus, the daily temperature range of ERA5 is smaller than the range of IMD. The agreement is worst in the coastal cells at 72.5° E near Mumbai (r = 0.51 for tmax). These 1° cells contain sea.
+
+## Monthly temperature over India: ERA5 and CRU TS (2000-2018)
+
+`cru_ts_bbox()` downloads CRU TS directly from UEA. `regrid()` averages the 0.25° ERA5 cells onto the 0.5° CRU TS grid. CRU TS has data only on land, so the merge also removes the ERA5 ocean cells.
+
+```{r cru_download, eval = FALSE}
+era5_t2m <- era5ify_bbox(
+  request_id = "india_era5_t2m_monthly", variables = "2m_temperature",
+  start_date = "2000-01-01", end_date = "2018-12-31",
+  north = 37, south = 6, east = 98, west = 68, frequency = "monthly"
+)
+cru <- cru_ts_bbox(
+  variable = "tmp", start_year = 2000, end_year = 2018,
+  north = 37, south = 6, east = 98, west = 68
+)
+cru_both <- merge(regrid(era5_t2m, "value", 0.5, by = c("year", "month")),
+  transform(cru, cru = value, value = NULL, variable = NULL),
+  by = c("year", "month", "latitude", "longitude")
+)
+names(cru_both)[names(cru_both) == "value"] <- "era5"
+```
+
+`spatial_mean()` gives the area-weighted mean over India for each month. The box includes the Himalaya and part of the Tibetan Plateau, so the means are lower than the means for India alone.
+
+```{r cru_monthly_code, eval = FALSE}
+monthly <- merge(spatial_mean(cru_both, "era5"), spatial_mean(cru_both, "cru"))
+```
+
+```{r cru_compare}
+monthly <- saved$cru_monthly
+compare(monthly, "cru", "era5")
+```
+
+```{r cru_series}
+series <- cbind(date = monthly$date, stack(monthly[c("era5", "cru")]))
+plot_series(series, "date", "values",
+  by = "ind", ylabel = "Mean temperature (°C)",
+  title = "India: monthly mean temperature, ERA5 and CRU TS"
+)
+```
+
+`seasonal_stat()` with all 12 months and `how = "mean"` gives the 2000-2018 mean in each cell. The map shows the difference ERA5 - CRU TS.
+
+```{r cru_cells_code, eval = FALSE}
+cru_both$bias <- cru_both$era5 - cru_both$cru
+cells <- seasonal_stat(cru_both, "bias", months = 1:12, how = "mean")
+```
+
+```{r cru_bias, fig.height = 7}
+cells <- saved$cru_cells
+plot_map(cells, "bias",
+  boundaries = states, cmap = "RdBu", center = 0,
+  title = "Mean temperature bias, 2000-2018", legend_title = "ERA5 - CRU TS (°C)"
+)
+```
+
+The two monthly series follow each other closely (r = 0.999), and ERA5 is approximately 0.9 °C colder than CRU TS. Over most of the plains, the difference is small. The largest differences are in the mountains, where the two datasets use different surface heights.
+
+## When to use which dataset
+
+| Feature | ERA5 | IMD gridded | CRU TS v4.07 |
+|---------|------|-------------|--------------|
+| Resolution | 0.25° (or coarser) | 0.25° rain, 1° temperature | 0.5° |
+| Coverage | Global, 1940 to present | India, rain from 1901, temperature from 1951 | Global land, 1901-2022 |
+| Frequency | Hourly, daily, monthly | Daily | Monthly |
+| Source | Reanalysis (model and observations, land and ocean) | Interpolated IMD stations (land) | Interpolated stations (land) |
+| Credentials | Yes (CDS account) | No | No |
+| Variables | 100+, including wind, radiation, soil moisture | Rainfall, tmax, tmin | tmp, tmx, tmn, pre, vap, cld, wet, frs, dtr, pet |
+
+Use IMD for observed rainfall and temperature in India. Use CRU TS for long historical land baselines without CDS credentials. Use ERA5 for sub-daily data, ocean coverage, regions outside India, or variables other than temperature and rainfall.

@@ -1,5 +1,4 @@
-# Live tests against the IMD Pune server (about 35 MB of downloads). They run
-# only with VARUNAYAN_LIVE_TESTS=true and never on CRAN.
+# Live IMD tests (~35 MB); run only with VARUNAYAN_LIVE_TESTS=true, never on CRAN.
 
 live_dir <- function() {
   d <- file.path(tempdir(), "imd-live")

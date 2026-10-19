@@ -1,7 +1,6 @@
 import datetime as dt
 import sys
 import unittest.mock as mock
-from calendar import monthrange
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock, patch
@@ -13,7 +12,6 @@ import xarray as xr
 
 from varunayan.core import (
     ProcessingParams,
-    adjust_sum_variables,
     aggregate_and_save,
     cleanup_temp_files,
     download_with_retry,
@@ -311,35 +309,6 @@ def test_process_time_chunks_with_chunking_mo_pr(
     assert isinstance(result, pd.DataFrame)
 
 
-@patch("varunayan.core.save_results")
-@patch("varunayan.core.aggregate_by_frequency")
-def test_aggregate_and_save(
-    mock_agg: MagicMock,
-    mock_save: MagicMock,
-    basic_params: ProcessingParams,
-    temp_dir: Path,
-    save_raw: bool = True,
-):
-    test_df = pd.DataFrame(
-        {
-            "valid_time": pd.to_datetime(["2020-01-01", "2020-01-02"]),  # type: ignore
-            "latitude": [37.75, 37.75],
-            "longitude": [-122.25, -122.25],
-            "t2m": [280, 281],
-            "tp": [0, 0.1],
-        }
-    )
-
-    # Mock aggregation to return the same dataframe
-    mock_agg.return_value = (test_df, pd.DataFrame())
-
-    result = aggregate_and_save(basic_params, test_df, save_raw)  # type: ignore
-
-    # Assertions
-    assert isinstance(result, pd.DataFrame)
-    mock_save.assert_called_once()
-
-
 @patch("varunayan.core.process_era5")
 def test_era5ify_geojson(mock_process: MagicMock, sample_geojson_file: str):
     mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
@@ -375,90 +344,6 @@ def test_era5ify_bbox(mock_process: MagicMock):
     mock_process.assert_called_once()
 
 
-@patch("varunayan.core.process_era5")
-def test_era5ify_point(mock_process: MagicMock):
-    mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
-
-    result = era5ify_point(
-        request_id="test",
-        variables=["t2m"],
-        start_date="2020-01-01",
-        end_date="2020-01-02",
-        latitude=37.75,
-        longitude=-122.25,
-    )
-
-    assert isinstance(result, pd.DataFrame)
-    mock_process.assert_called_once()
-
-
-def test_adjust_sum_variables_monthly():
-    """Test monthly adjustment of sum variables"""
-    # Create test DataFrame
-    test_df = pd.DataFrame(
-        {
-            "year": [2020, 2020, 2021],  # 2020 is a leap year
-            "month": [1, 2, 2],  # Jan, Feb (leap), Feb (non-leap)
-            "tp": [10, 15, 20],  # Sum variable (precipitation)
-            "t2m": [280, 281, 282],  # Non-sum variable (temperature)
-        }
-    )
-
-    # Make a copy for comparison
-    original_df = test_df.copy()
-
-    # Call the function
-    adjust_sum_variables(test_df, "monthly")
-
-    # Verify adjustments
-    jan_days = monthrange(2020, 1)[1]  # 31 days
-    feb_leap_days = monthrange(2020, 2)[1]  # 29 days (leap year)
-    feb_normal_days = monthrange(2021, 2)[1]  # 28 days
-    print(test_df)
-    assert test_df["tp"][0] == original_df["tp"][0] * jan_days
-    assert test_df["tp"][1] == (original_df["tp"][1] * feb_leap_days)
-    assert test_df["tp"][2] == original_df["tp"][2] * feb_normal_days
-    # Should remain unchanged
-    assert test_df["t2m"][0] == original_df["t2m"][0]
-    assert "days_in_month" not in test_df.columns  # Column should be removed
-
-
-def test_adjust_sum_variables_yearly():
-    """Test yearly adjustment of sum variables"""
-    test_df = pd.DataFrame(
-        {
-            "year": [2020, 2021],
-            "month": [1, 1],
-            "tp": [10, 15],
-            "ssr": [100, 150],  # Another sum variable (solar radiation)
-        }
-    )
-
-    original_df = test_df.copy()
-
-    adjust_sum_variables(test_df, "yearly")
-
-    # Verify yearly adjustment factor (30.4375 days/month average)
-    assert test_df["tp"][0] == original_df["tp"][0] * 30.4375
-    assert test_df["ssr"][0] == (original_df["ssr"][0] * 30.4375)
-    # Month column unchanged
-    assert test_df["month"][0] == original_df["month"][0]
-
-
-def test_adjust_sum_variables_no_sum_vars():
-    """Test with DataFrame containing no sum variables"""
-    test_df = pd.DataFrame(
-        {"year": [2020], "month": [1], "t2m": [280]}  # Not in SUM_VARS
-    )
-
-    original_df = test_df.copy()
-
-    adjust_sum_variables(test_df, "monthly")
-
-    # DataFrame should remain unchanged
-    pd.testing.assert_frame_equal(test_df, original_df)
-
-
 def test_load_and_validate_geojson():
     """Test loading and validating a GeoJSON file without file system operations"""
     # Mock the file reading and JSON loading
@@ -481,7 +366,6 @@ def test_load_and_validate_geojson():
         patch("varunayan.core.is_valid_geojson", return_value=True),
         patch("varunayan.core.logger") as mock_logger,
     ):
-
         # We don't need a real file path since we're mocking everything
         result = load_and_validate_geojson("dummy_path.json")
 
@@ -651,47 +535,6 @@ def test_process_era5(
     mock_header.assert_called_once()
     mock_process.assert_called_once()
     mock_footer.assert_called_once()
-
-
-@patch("varunayan.core.process_era5")
-def test_era5ify_point_edge_cases(mock_process: MagicMock):
-    """Test era5ify_point with edge case coordinates"""
-    mock_process.return_value = pd.DataFrame({"test": [1, 2, 3]})
-
-    # Test near North Pole
-    result = era5ify_point(
-        request_id="test",
-        variables=["t2m"],
-        start_date="2020-01-01",
-        end_date="2020-01-02",
-        latitude=89.9,
-        longitude=0,
-    )
-    assert isinstance(result, pd.DataFrame)
-
-    # Test near antimeridian
-    result = era5ify_point(
-        request_id="test",
-        variables=["t2m"],
-        start_date="2020-01-01",
-        end_date="2020-01-02",
-        latitude=0,
-        longitude=179.9,
-    )
-    assert isinstance(result, pd.DataFrame)
-
-
-def test_adjust_sum_variables_edge_cases():
-    """Test sum variable adjustment with edge cases"""
-    # Test with empty DataFrame
-    empty_df = pd.DataFrame()
-    adjust_sum_variables(empty_df, "monthly")  # Should not raise any errors
-
-    # Test with DataFrame containing only sum variables
-    sum_df = pd.DataFrame({"year": [2020], "month": [1], "tp": [10], "ssr": [100]})
-    original_sum_df = sum_df.copy()
-    adjust_sum_variables(sum_df, "monthly")
-    assert not sum_df.equals(original_sum_df)  # Values should have changed
 
 
 def test_print_processing_header_pressure():
@@ -1092,3 +935,297 @@ def test_process_era5_data_all_files_fail(
     # Should raise ValueError
     with pytest.raises(ValueError, match="No valid datasets were processed"):
         process_era5_data(basic_params)
+
+
+def test_processing_params_new_defaults(basic_params: ProcessingParams):
+    assert basic_params.convert_units is True
+    assert basic_params.level == "union"
+    assert not hasattr(basic_params, "dist_features")
+
+
+@patch("varunayan.core.save_results")
+def test_aggregate_and_save(mock_save: MagicMock, basic_params: ProcessingParams):
+    """Hourly grid becomes long output in Celsius and mm, then is saved."""
+    test_df = pd.DataFrame(
+        {
+            "valid_time": pd.to_datetime(["2020-01-01 00:00", "2020-01-01 01:00"]),
+            "latitude": [37.75, 37.75],
+            "longitude": [-122.25, -122.25],
+            "t2m": [280.0, 281.0],
+            "tp": [0.0, 0.001],
+            "number": [0, 0],
+            "expver": ["0001", "0001"],
+        }
+    )
+
+    result = aggregate_and_save(basic_params, test_df, True)
+
+    assert list(result.columns) == [
+        "datetime",
+        "latitude",
+        "longitude",
+        "variable",
+        "value",
+    ]
+    assert list(result["variable"]) == ["t2m", "tp", "t2m", "tp"]
+    np.testing.assert_allclose(result["value"], [6.85, 0.0, 7.85, 1.0])
+    mock_save.assert_called_once()
+    saved_params, saved_result, latlongs, raw, save_raw = mock_save.call_args[0]
+    assert saved_result is result
+    assert len(latlongs) == 1
+    assert raw is test_df
+    assert save_raw is True
+
+
+@patch("varunayan.core.save_results")
+def test_aggregate_and_save_no_unit_conversion(
+    mock_save: MagicMock, basic_params: ProcessingParams
+):
+    basic_params.convert_units = False
+    test_df = pd.DataFrame(
+        {
+            "valid_time": pd.to_datetime(["2020-01-01 00:00"]),
+            "latitude": [37.75],
+            "longitude": [-122.25],
+            "t2m": [280.0],
+            "tp": [0.001],
+        }
+    )
+    result = aggregate_and_save(basic_params, test_df, False)
+    np.testing.assert_allclose(result["value"], [280.0, 0.001])
+
+
+def _box(west: float, south: float, east: float, north: float) -> Dict[str, Any]:
+    return {
+        "type": "Polygon",
+        "coordinates": [
+            [[west, south], [east, south], [east, north], [west, north], [west, south]]
+        ],
+    }
+
+
+@patch("varunayan.core.save_results")
+def test_aggregate_and_save_level_feature(
+    mock_save: MagicMock, basic_params: ProcessingParams
+):
+    """level='feature' returns one row per feature with its properties."""
+    geojson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"name": "A", "code": 1},
+                "geometry": _box(79.9, 19.9, 80.4, 20.1),
+            },
+            {
+                "type": "Feature",
+                "properties": {"name": "B", "code": 2},
+                # Smaller than a cell: no grid point inside it
+                "geometry": _box(80.45, 20.45, 80.47, 20.47),
+            },
+        ],
+    }
+    basic_params.frequency = "daily"
+    basic_params.geojson_data = geojson
+    basic_params.level = "feature"
+
+    cells = [(20.0, 80.0, 290.0), (20.0, 80.25, 294.0), (20.5, 80.5, 300.0)]
+    rows = []
+    for hour in range(2):
+        for lat, lon, t in cells:
+            rows.append(
+                {
+                    "valid_time": pd.Timestamp("2020-01-01") + pd.Timedelta(hours=hour),
+                    "latitude": lat,
+                    "longitude": lon,
+                    "t2m": t + hour,
+                }
+            )
+    df = pd.DataFrame(rows)
+
+    result = aggregate_and_save(basic_params, df, False)
+
+    assert "latitude" not in result.columns and "longitude" not in result.columns
+    assert {"name", "code", "datetime", "variable", "value"} <= set(result.columns)
+    assert len(result) == 2
+    by_name = result.set_index("name")
+    # A: daily mean of each cell is t + 0.5; mean over its two cells, in Celsius
+    assert by_name.loc["A", "value"] == pytest.approx((290.5 + 294.5) / 2 - 273.15)
+    # B gets the nearest cell (20.5, 80.5)
+    assert by_name.loc["B", "value"] == pytest.approx(300.5 - 273.15)
+    assert by_name.loc["B", "code"] == 2
+    assert (result["variable"] == "t2m").all()
+    assert (result["datetime"] == pd.Timestamp("2020-01-01")).all()
+
+
+def test_era5ify_geojson_rejects_dist_features(sample_geojson_file: str):
+    with pytest.raises(ValueError, match="level='feature'"):
+        era5ify_geojson(
+            request_id="test",
+            variables=["t2m"],
+            start_date="2020-01-01",
+            end_date="2020-01-02",
+            json_file=sample_geojson_file,
+            dist_features=["state"],
+        )
+
+
+def test_era5ify_geojson_rejects_bad_level(sample_geojson_file: str):
+    with pytest.raises(ValueError, match="level must be"):
+        era5ify_geojson(
+            request_id="test",
+            variables=["t2m"],
+            start_date="2020-01-01",
+            end_date="2020-01-02",
+            json_file=sample_geojson_file,
+            level="district",
+        )
+
+
+@patch("varunayan.core.process_era5")
+def test_era5ify_geojson_passes_level_and_units(
+    mock_process: MagicMock, sample_geojson_file: str
+):
+    mock_process.return_value = pd.DataFrame()
+    era5ify_geojson(
+        request_id="test",
+        variables=["t2m"],
+        start_date="2020-01-01",
+        end_date="2020-01-02",
+        json_file=sample_geojson_file,
+        level="feature",
+        convert_units=False,
+    )
+    params = mock_process.call_args[0][0]
+    assert params.level == "feature"
+    assert params.convert_units is False
+    assert params.geojson_data is not None
+
+
+@patch("varunayan.core.process_era5")
+def test_era5ify_bbox_passes_convert_units(mock_process: MagicMock):
+    mock_process.return_value = pd.DataFrame()
+    era5ify_bbox(
+        request_id="test",
+        variables=["t2m"],
+        start_date="2020-01-01",
+        end_date="2020-01-02",
+        north=38.0,
+        south=37.5,
+        east=-122.0,
+        west=-122.5,
+        convert_units=False,
+    )
+    params = mock_process.call_args[0][0]
+    assert params.convert_units is False
+    assert params.level == "union"
+
+
+def _long_grid(lats: List[float], lons: List[float]) -> pd.DataFrame:
+    rows = []
+    for day in pd.date_range("2020-01-01", periods=2, freq="D"):
+        for lat in lats:
+            for lon in lons:
+                rows.append(
+                    {
+                        "datetime": day,
+                        "latitude": lat,
+                        "longitude": lon,
+                        "variable": "2m_temperature",
+                        "value": lat * 1000 + lon,
+                    }
+                )
+    return pd.DataFrame(rows)
+
+
+@patch("varunayan.core.era5ify_bbox")
+def test_era5ify_point_nearest_cell(mock_bbox: MagicMock):
+    lats = [37.25, 37.5, 37.75, 38.0, 38.25]
+    lons = [-122.75, -122.5, -122.25, -122.0, -121.75]
+    mock_bbox.return_value = _long_grid(lats, lons)
+
+    result = era5ify_point(
+        request_id="test",
+        variables=["2m_temperature"],
+        start_date="2020-01-01",
+        end_date="2020-01-02",
+        lat=37.8,
+        lon=-122.1,
+    )
+
+    kwargs = mock_bbox.call_args.kwargs
+    # The box is lat/lon +- 0.5, snapped outward to the 0.25 degree grid.
+    assert kwargs["north"] == pytest.approx(38.5)
+    assert kwargs["south"] == pytest.approx(37.25)
+    assert kwargs["east"] == pytest.approx(-121.5)
+    assert kwargs["west"] == pytest.approx(-122.75)
+    assert kwargs["resolution"] == 0.25
+    # Nearest cell to (37.8, -122.1) by hand: (37.75, -122.0)
+    assert len(result) == 2
+    assert (result["latitude"] == 37.75).all()
+    assert (result["longitude"] == -122.0).all()
+    assert list(result.index) == [0, 1]
+
+
+@patch("varunayan.core.era5ify_bbox")
+def test_era5ify_point_passes_options(mock_bbox: MagicMock):
+    mock_bbox.return_value = _long_grid([10.0], [20.0])
+    era5ify_point(
+        request_id="test",
+        variables=["t"],
+        start_date="2020-01-01",
+        end_date="2020-01-02",
+        lat=10.0,
+        lon=20.0,
+        dataset_type="pressure",
+        pressure_levels=["850"],
+        frequency="daily",
+        save_raw=True,
+        convert_units=False,
+    )
+    kwargs = mock_bbox.call_args.kwargs
+    assert kwargs["dataset_type"] == "pressure"
+    assert kwargs["pressure_levels"] == ["850"]
+    assert kwargs["frequency"] == "daily"
+    assert kwargs["save_raw"] is True
+    assert kwargs["convert_units"] is False
+
+
+@patch("varunayan.core.era5ify_bbox")
+def test_era5ify_point_edge_cases(mock_bbox: MagicMock):
+    """Boxes are clamped at the poles and the antimeridian."""
+    mock_bbox.return_value = _long_grid([89.75, 90.0], [0.0])
+    result = era5ify_point(
+        request_id="test",
+        variables=["t2m"],
+        start_date="2020-01-01",
+        end_date="2020-01-02",
+        lat=89.9,
+        lon=0,
+    )
+    assert mock_bbox.call_args.kwargs["north"] == 90
+    assert (result["latitude"] == 90.0).all()
+
+    mock_bbox.return_value = _long_grid([0.0], [179.75, 180.0])
+    era5ify_point(
+        request_id="test",
+        variables=["t2m"],
+        start_date="2020-01-01",
+        end_date="2020-01-02",
+        lat=0,
+        lon=179.9,
+    )
+    assert mock_bbox.call_args.kwargs["east"] == 180
+
+
+@pytest.mark.parametrize("lat,lon", [(91, 0), (-91, 0), (0, 181), (0, -181)])
+def test_era5ify_point_invalid_coordinates(lat: float, lon: float):
+    with pytest.raises(ValueError, match="Invalid"):
+        era5ify_point(
+            request_id="test",
+            variables=["t2m"],
+            start_date="2020-01-01",
+            end_date="2020-01-02",
+            lat=lat,
+            lon=lon,
+        )

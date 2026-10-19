@@ -1,12 +1,4 @@
-"""IMD station registry with coordinates.
-Example
--------
->>> import varunayan
->>> stations = varunayan.get_imd_stations()
->>> row = stations[stations["name"].str.contains("Shimla")].iloc[0]
->>> varunayan.era5ify_point("shimla", ["2t"], "2024-01-01", "2024-01-07",
-...                         latitude=row.latitude, longitude=row.longitude)
-"""
+"""IMD station registry with coordinates."""
 
 from __future__ import annotations
 
@@ -80,8 +72,8 @@ def get_imd_stations(
         max_workers: concurrent requests when resolving coordinates.
 
     Returns:
-        DataFrame with columns ``station_id``, ``name`` and — when
-        ``with_coordinates`` — ``latitude``, ``longitude`` (NaN where IMD has
+        DataFrame with columns ``station_id``, ``name`` and, when
+        ``with_coordinates``, ``latitude``, ``longitude`` (NaN where IMD has
         no coordinate for a station).
     """
     stations = _fetch_station_list()

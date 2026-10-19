@@ -6,11 +6,11 @@ import os
 import shutil
 import tempfile
 import time
-from calendar import monthrange
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+import geopandas as gpd
 import pandas as pd
 import xarray as xr
 from shapely.geometry import Point, shape
@@ -23,8 +23,6 @@ from .download import (
     set_v_downloader,
 )
 from .processing import (
-    aggregate_by_frequency,
-    aggregate_pressure_levels,
     extract_download,
     filter_netcdf_by_shapefile,
     set_v_data_agg,
@@ -32,6 +30,7 @@ from .processing import (
     set_v_file_han,
     sum_vars,
 )
+from .processing.grid_output import to_long_grid
 from .util import (
     Colors,
     convert_to_geojson,
@@ -66,7 +65,8 @@ class ProcessingParams:
     west: Optional[float] = None
     geojson_file: Optional[str] = None
     geojson_data: Optional[Dict[str, Any]] = None
-    dist_features: Optional[List[str]] = None
+    convert_units: bool = True
+    level: str = "union"
 
 
 def set_verbosity(verbosity: int) -> None:
@@ -92,6 +92,10 @@ def set_verbosity(verbosity: int) -> None:
     set_v_geoj_utl(verbosity)
     set_v_config(verbosity)
     set_v_downloader(verbosity)
+    # Banners, the mini map and the results summary only at verbosity 1 or 2.
+    always_logger.setLevel(logging.INFO if verbosity in (1, 2) else logging.WARNING)
+    for handler in always_logger.handlers:
+        handler.setLevel(always_logger.level)
 
 
 def download_with_retry(
@@ -210,8 +214,9 @@ def process_time_chunks(
         chunk_params.start_date = current_date
         chunk_params.end_date = chunk_end
 
+        start_time = time.time()
+        elapsed = 0.0
         try:
-            start_time = time.time()
             chunk_data = process_func(chunk_params, chunk_number, total_chunks)
             elapsed = time.time() - start_time
             logger.info(
@@ -286,11 +291,18 @@ def process_era5_data(
     merged_ds: xr.Dataset = xr.merge(datasets) if len(datasets) > 1 else datasets[0]
 
     if params.geojson_data:
-        df = filter_netcdf_by_shapefile(
-            merged_ds, params.geojson_data, params.dist_features
-        )
+        df = filter_netcdf_by_shapefile(merged_ds, params.geojson_data, None)
     else:
         df = merged_ds.to_dataframe().reset_index()
+        # The download area is snapped outward to the grid; keep the bbox.
+        north, south = params.north, params.south
+        east, west = params.east, params.west
+        if None not in (north, south, east, west):
+            eps = 1e-6
+            df = df[
+                df["latitude"].between(float(south) - eps, float(north) + eps)  # type: ignore[arg-type]
+                & df["longitude"].between(float(west) - eps, float(east) + eps)  # type: ignore[arg-type]
+            ]
 
     dup_cols = ["valid_time", "latitude", "longitude"]
     if params.pressure_levels:
@@ -315,57 +327,48 @@ def process_era5_data(
 def aggregate_and_save(
     params: ProcessingParams, df: pd.DataFrame, save_raw: bool
 ) -> pd.DataFrame:
-    """Handle aggregation and saving of results"""
+    """Aggregate each grid cell in time, convert units and save the results."""
     logger.info(
         f"{Colors.BLUE}AGGREGATING DATA ({params.frequency.upper()}){Colors.RESET}"
     )
-
     start_time = time.time()
-    agg_func: Callable[
-        [pd.DataFrame, str, bool, Optional[List[str]]],
-        Tuple[pd.DataFrame, pd.DataFrame],
-    ] = (
-        aggregate_pressure_levels if params.pressure_levels else aggregate_by_frequency
+    result = to_long_grid(df, params.frequency, params.convert_units)
+    logger.info(f"Aggregation completed in:   {time.time() - start_time:.2f} seconds")
+
+    if params.level == "feature" and params.geojson_data:
+        result = aggregate_to_features(result, params.geojson_data)
+
+    unique_latlongs = pd.DataFrame(
+        df[["latitude", "longitude"]].drop_duplicates().reset_index(drop=True)
     )
-    aggregated_df, unique_latlongs = agg_func(
-        df, params.frequency, False, params.dist_features
+    save_results(params, result, unique_latlongs, df, save_raw)
+    return result
+
+
+def aggregate_to_features(
+    data: pd.DataFrame, geojson_data: Dict[str, Any]
+) -> pd.DataFrame:
+    """Mean of the grid cells in each GeoJSON feature, with its properties.
+
+    A feature smaller than a grid cell gets the nearest cell, as in R.
+    """
+    from .spatial import aggregate_to_polygons
+
+    features = gpd.GeoDataFrame.from_features(geojson_data["features"], crs="EPSG:4326")
+    features["feature_id"] = range(1, len(features) + 1)
+    by = [c for c in data.columns if c not in ("latitude", "longitude", "value")]
+    agg = aggregate_to_polygons(
+        data,
+        features,
+        "value",
+        method="point_in_polygon",
+        polygon_id_col="feature_id",
+        by=by,
+        fill_empty=True,
     )
-    elapsed = time.time() - start_time
-    logger.info(f"Aggregation completed in:   {elapsed:.2f} seconds")
-
-    if params.frequency in ["monthly", "yearly"]:
-        adjust_sum_variables(aggregated_df, params.frequency)
-
-    save_results(params, aggregated_df, unique_latlongs, df, save_raw)
-
-    return aggregated_df
-
-
-def adjust_sum_variables(df: pd.DataFrame, frequency: str) -> None:
-    """Adjust sum variables based on temporal frequency"""
-    sum_vars_present = [col for col in df.columns if col in SUM_VARS]
-
-    if not sum_vars_present:
-        return
-
-    try:
-        if frequency == "monthly":
-
-            def _days_in_month(row: pd.Series) -> int:
-                return monthrange(int(row["year"]), int(row["month"]))[1]
-
-            df["days_in_month"] = df.apply(_days_in_month, axis=1)
-            for var in sum_vars_present:
-                if var in df.columns:
-                    df[var] = df[var] * df["days_in_month"]
-            df.drop("days_in_month", axis=1, inplace=True)
-        elif frequency == "yearly":
-            for var in sum_vars_present:
-                if var in df.columns:
-                    df[var] = df[var] * 30.4375
-    except Exception as e:
-        error_msg = f"Error adjusting sum variables: {str(e)}"
-        logger.warning(error_msg)
+    props = pd.DataFrame(features.drop(columns="geometry"))
+    out = props.merge(pd.DataFrame(agg.drop(columns="geometry")), on="feature_id")
+    return out.drop(columns="feature_id").reset_index(drop=True)
 
 
 def save_results(
@@ -419,7 +422,7 @@ def process_era5(params: ProcessingParams, save_raw: bool) -> pd.DataFrame:
 
     print_bounding_box(params)
 
-    if params.geojson_data:
+    if params.geojson_data and always_logger.isEnabledFor(logging.INFO):
         print("\n\n--- GeoJSON Mini Map ---")
         draw_geojson_ascii(params.geojson_data)
 
@@ -448,11 +451,11 @@ def process_era5(params: ProcessingParams, save_raw: bool) -> pd.DataFrame:
 def print_processing_header(params: ProcessingParams) -> None:
     """Print processing header information"""
     dataset_type = "PRESSURE LEVEL" if params.pressure_levels else "SINGLE LEVEL"
-    always_logger.info(f"\n{'='*60}")
+    always_logger.info(f"\n{'=' * 60}")
     always_logger.info(
         f"{Colors.BLUE}STARTING ERA5 {dataset_type} PROCESSING{Colors.RESET}"
     )
-    always_logger.info(f"{'='*60}")
+    always_logger.info(f"{'=' * 60}")
     always_logger.info(f"Request ID: {params.request_id}")
     always_logger.info(f"Variables: {params.variables}")
     if params.pressure_levels:
@@ -500,7 +503,7 @@ def print_bounding_box(params: ProcessingParams) -> None:
     logger.info(f"  West:  {params.west:.4f}°")
     if params.north and params.south and params.east and params.west:
         logger.info(
-            f"  Area:  {abs(params.east-params.west):.4f}° × {abs(params.north-params.south):.4f}°"
+            f"  Area:  {abs(params.east - params.west):.4f}° × {abs(params.north - params.south):.4f}°"
         )
 
 
@@ -603,12 +606,12 @@ def print_processing_footer(
     params: ProcessingParams, result_df: pd.DataFrame, total_start_time: float
 ) -> None:
     """Print processing footer information"""
-    always_logger.info(f"\n{'='*60}")
+    always_logger.info(f"\n{'=' * 60}")
     always_logger.info(f"{Colors.GREEN}PROCESSING COMPLETE{Colors.RESET}")
-    always_logger.info(f"{'='*60}")
+    always_logger.info(f"{'=' * 60}")
 
     always_logger.info(f"\n{Colors.CYAN}RESULTS SUMMARY:{Colors.RESET}")
-    always_logger.info(f"{'-'*40}")
+    always_logger.info(f"{'-' * 40}")
     always_logger.info(f"Variables processed: {len(params.variables)}")
     always_logger.info(
         f"Time period:         {params.start_date.date()} to {params.end_date.date()}"
@@ -622,11 +625,22 @@ def print_processing_footer(
     always_logger.info(result_df.head())
 
     dataset_type = "PRESSURE LEVEL" if params.pressure_levels else "SINGLE LEVEL"
-    always_logger.info(f"\n{'='*60}")
+    always_logger.info(f"\n{'=' * 60}")
     always_logger.info(
         f"{Colors.BLUE}ERA5 {dataset_type} PROCESSING COMPLETED SUCCESSFULLY{Colors.RESET}"
     )
-    always_logger.info(f"{'='*60}")
+    always_logger.info(f"{'=' * 60}")
+
+
+_OUTPUT_DOC = """
+    Returns:
+        DataFrame in long format, the same as the R package: ``datetime``,
+        ``latitude``, ``longitude`` (and ``pressure_level`` for pressure-level
+        data), ``variable`` and ``value``. Monthly data also has ``year`` and
+        ``month``; yearly data has ``year``. Accumulated variables such as
+        precipitation are totals for the period. When ``convert_units`` is
+        True, temperatures are in Celsius and precipitation is in mm.
+"""
 
 
 # Public functions
@@ -636,44 +650,49 @@ def era5ify_geojson(
     start_date: str,
     end_date: str,
     json_file: str,
-    dist_features: Optional[List[str]] = None,
     dataset_type: str = "single",
     pressure_levels: Optional[List[str]] = None,
     frequency: str = "hourly",
     resolution: float = 0.25,
     verbosity: int = 0,
-    save_raw: bool = True,
+    save_raw: bool = False,
+    convert_units: bool = True,
+    level: str = "union",
+    dist_features: Optional[List[str]] = None,
 ) -> pd.DataFrame:
-    """
-    Public function for querying data for a GeoJSON.
+    """Download ERA5 data for the grid cells inside a GeoJSON region.
 
     Args:
-        request_id (str): Unique identifier for the request.
-        variables (List[str]): List of variables to download.
-        start_date (str): Start date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
-        end_date (str): End date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
-        json_file (str): Path to the GeoJSON file.
-        dist_features (List[str] | None, optional): List of feature properties to distinguish different areas in the GeoJSON. Defaults to None.
-        dataset_type (str, optional): Type of dataset. Either 'single' (single level) or 'pressure' (pressure level). Defaults to 'single'.
-        pressure_levels (List[str] | None, optional): List of pressure levels to download (e.g., ["1000", "925", "850"]). Defaults to None.
-        frequency (str, optional): Frequency of the data ('hourly', 'daily', 'weekly', 'monthly', 'yearly'). Defaults to 'hourly'.
-        resolution (float, optional): Spatial resolution in degrees (0.25, 0.1, 0.5, etc.). Defaults to 0.25, minimum is 0.1.
-        verbosity (int, optional): Verbosity level (0 for no output, 1 for info output, 2 for debug/complete output). Defaults to 0.
-        save_raw (bool, optional): Whether to save the raw data. Defaults to True.
-
-    Returns:
-        DataFrame: A DataFrame containing the processed data for the region described by GeoJSON.
+        request_id: Unique identifier for the request.
+        variables: Variables to download.
+        start_date: Start date, 'YYYY-M-D' or 'YYYY-MM-DD'.
+        end_date: End date, 'YYYY-M-D' or 'YYYY-MM-DD'.
+        json_file: Path or URL of the GeoJSON file.
+        dataset_type: 'single' (single level) or 'pressure' (pressure level).
+        pressure_levels: Pressure levels, for example ["1000", "850"].
+        frequency: 'hourly', 'daily', 'weekly', 'monthly' or 'yearly'.
+        resolution: Grid resolution in degrees (minimum 0.1).
+        verbosity: 0 (quiet), 1 (info) or 2 (debug).
+        save_raw: Also save the downloaded grid as a CSV file.
+        convert_units: Return Celsius and mm in place of Kelvin and metres.
+        level: 'union' gives one row for each grid cell inside the union of
+            the features. 'feature' gives one row for each feature (for
+            example each district), with the mean of the cells inside it and
+            the feature properties in place of latitude and longitude.
+        dist_features: Removed. Use ``level="feature"``.
     """
+    if dist_features:
+        raise ValueError(
+            "dist_features was removed: use level='feature', which returns one "
+            "row for each feature with all its properties"
+        )
+    if level not in ("union", "feature"):
+        raise ValueError("level must be 'union' or 'feature'")
+
     start_dt = parse_date(start_date)
     end_dt = parse_date(end_date)
-
     set_verbosity(verbosity)
-
-    dataset_type = dataset_type.lower()
-    if dataset_type not in ["single", "pressure"]:
-        raise ValueError(
-            f"Invalid dataset_type: {dataset_type}. Must be 'single' or 'pressure'"
-        )
+    dataset_type = _check_dataset_type(dataset_type)
 
     json_data = load_json_with_encoding(json_file)
     geojson_data = (
@@ -693,10 +712,10 @@ def era5ify_geojson(
             pressure_levels=pressure_levels if dataset_type == "pressure" else None,
             geojson_file=temp_geojson_file,
             geojson_data=geojson_data,
-            dist_features=dist_features,
+            convert_units=convert_units,
+            level=level,
         )
         return process_era5(params, save_raw)
-
     finally:
         cleanup_temp_files(request_id, temp_geojson_file)
 
@@ -715,40 +734,32 @@ def era5ify_bbox(
     frequency: str = "hourly",
     resolution: float = 0.25,
     verbosity: int = 0,
-    save_raw: bool = True,
+    save_raw: bool = False,
+    convert_units: bool = True,
 ) -> pd.DataFrame:
-    """
-    Public function for querying data for a defined bounding box (north, south, east, west bounds).
+    """Download ERA5 data for the grid cells in a bounding box.
 
     Args:
-        request_id (str): Unique identifier for the request.
-        variables (List[str]): List of variables to download.
-        start_date (str): Start date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
-        end_date (str): End date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
-        north (float): Northern bound of the bounding box.
-        south (float): Southern bound of the bounding box.
-        east (float): Eastern bound of the bounding box.
-        west (float): Western bound of the bounding box.
-        dataset_type (str, optional): Type of dataset. Either 'single' (single level) or 'pressure' (pressure level). Defaults to 'single'.
-        pressure_levels (List[str] | None, optional): List of pressure levels to download (e.g., ["1000", "925", "850"]). Defaults to None.
-        frequency (str, optional): Frequency of the data ('hourly', 'daily', 'weekly', 'monthly', 'yearly'). Defaults to 'hourly'.
-        resolution (float, optional): Spatial resolution in degrees (0.25, 0.1, 0.5, etc.). Defaults to 0.25, minimum is 0.1.
-        verbosity (int, optional): Verbosity level (0 for no output, 1 for info output, 2 for debug/complete output). Defaults to 0.
-        save_raw (bool, optional): Whether to save the raw data. Defaults to True.
-
-    Returns:
-        DataFrame: A DataFrame containing the processed data for the specified bbox.
+        request_id: Unique identifier for the request.
+        variables: Variables to download.
+        start_date: Start date, 'YYYY-M-D' or 'YYYY-MM-DD'.
+        end_date: End date, 'YYYY-M-D' or 'YYYY-MM-DD'.
+        north: Northern bound.
+        south: Southern bound.
+        east: Eastern bound.
+        west: Western bound.
+        dataset_type: 'single' (single level) or 'pressure' (pressure level).
+        pressure_levels: Pressure levels, for example ["1000", "850"].
+        frequency: 'hourly', 'daily', 'weekly', 'monthly' or 'yearly'.
+        resolution: Grid resolution in degrees (minimum 0.1).
+        verbosity: 0 (quiet), 1 (info) or 2 (debug).
+        save_raw: Also save the downloaded grid as a CSV file.
+        convert_units: Return Celsius and mm in place of Kelvin and metres.
     """
     start_dt = parse_date(start_date)
     end_dt = parse_date(end_date)
-
     set_verbosity(verbosity)
-
-    dataset_type = dataset_type.lower()
-    if dataset_type not in ["single", "pressure"]:
-        raise ValueError(
-            f"Invalid dataset_type: {dataset_type}. Must be 'single' or 'pressure'"
-        )
+    dataset_type = _check_dataset_type(dataset_type)
 
     if north <= south or east <= west:
         raise ValueError("Invalid bounding box coordinates")
@@ -770,10 +781,9 @@ def era5ify_bbox(
             south=south,
             east=east,
             west=west,
-            dist_features=None,
+            convert_units=convert_units,
         )
         return process_era5(params, save_raw)
-
     finally:
         cleanup_temp_files(request_id, temp_geojson_file)
 
@@ -783,126 +793,74 @@ def era5ify_point(
     variables: List[str],
     start_date: str,
     end_date: str,
-    latitude: float,
-    longitude: float,
+    lat: float,
+    lon: float,
     dataset_type: str = "single",
     pressure_levels: Optional[List[str]] = None,
     frequency: str = "hourly",
     verbosity: int = 0,
-    save_raw: bool = True,
+    save_raw: bool = False,
+    convert_units: bool = True,
 ) -> pd.DataFrame:
-    """
-    Public function for querying data for a single geographical point (latitude, longitude).
+    """Download ERA5 data for the grid cell nearest to a point.
+
+    The function downloads a 1 degree box at 0.25 degrees around the point
+    and keeps the cell nearest to it, as the R package does.
 
     Args:
-        request_id (str): Unique identifier for the request.
-        variables (List[str]): List of variables to download.
-        start_date (str): Start date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
-        end_date (str): End date of the data in 'YYYY-M-D' or 'YYYY-MM-DD' format.
-        latitude (float): Latitude of the point of interest.
-        longitude (float): Longitude of the point of interest.
-        dataset_type (str, optional): Type of dataset. Either 'single' (single level) or 'pressure' (pressure level). Defaults to 'single'.
-        pressure_levels (List[str] | None, optional): List of pressure levels to download (e.g., ["1000", "925", "850"]). Defaults to None.
-        frequency (str, optional): Frequency of the data ('hourly', 'daily', 'weekly', 'monthly', 'yearly'). Defaults to 'hourly'.
-        verbosity (int, optional): Verbosity level (0 for no output, 1 for info output, 2 for debug/complete output). Defaults to 0.
-        save_raw (bool, optional): Whether to save the raw data. Defaults to True.
-
-    Returns:
-        DataFrame: A DataFrame containing the processed data for the specified point.
+        request_id: Unique identifier for the request.
+        variables: Variables to download.
+        start_date: Start date, 'YYYY-M-D' or 'YYYY-MM-DD'.
+        end_date: End date, 'YYYY-M-D' or 'YYYY-MM-DD'.
+        lat: Latitude of the point.
+        lon: Longitude of the point.
+        dataset_type: 'single' (single level) or 'pressure' (pressure level).
+        pressure_levels: Pressure levels, for example ["1000", "850"].
+        frequency: 'hourly', 'daily', 'weekly', 'monthly' or 'yearly'.
+        verbosity: 0 (quiet), 1 (info) or 2 (debug).
+        save_raw: Also save the downloaded grid as a CSV file.
+        convert_units: Return Celsius and mm in place of Kelvin and metres.
     """
+    if not -90 <= lat <= 90:
+        raise ValueError(f"Invalid latitude: {lat}. Must be between -90 and 90")
+    if not -180 <= lon <= 180:
+        raise ValueError(f"Invalid longitude: {lon}. Must be between -180 and 180")
 
-    # Validate coordinates
-    if not (-90 <= latitude <= 90):
-        raise ValueError(f"Invalid latitude: {latitude}. Must be between -90 and 90")
-    if not (-180 <= longitude <= 180):
+    # CDS aligns the output grid to the corner of the box, so snap the box to
+    # the 0.25 degree grid: the nearest cell is then a true ERA5 grid point.
+    buffer = 0.5
+    data = era5ify_bbox(
+        request_id=request_id,
+        variables=variables,
+        start_date=start_date,
+        end_date=end_date,
+        north=min(math.ceil((lat + buffer) * 4) / 4, 90),
+        south=max(math.floor((lat - buffer) * 4) / 4, -90),
+        east=min(math.ceil((lon + buffer) * 4) / 4, 180),
+        west=max(math.floor((lon - buffer) * 4) / 4, -180),
+        dataset_type=dataset_type,
+        pressure_levels=pressure_levels,
+        frequency=frequency,
+        resolution=0.25,
+        verbosity=verbosity,
+        save_raw=save_raw,
+        convert_units=convert_units,
+    )
+    dist = (data["latitude"] - lat) ** 2 + (data["longitude"] - lon) ** 2
+    return pd.DataFrame(data[dist == dist.min()].reset_index(drop=True))
+
+
+for _fn in (era5ify_geojson, era5ify_bbox, era5ify_point):
+    _fn.__doc__ = (_fn.__doc__ or "") + _OUTPUT_DOC
+
+
+def _check_dataset_type(dataset_type: str) -> str:
+    dataset_type = dataset_type.lower()
+    if dataset_type not in ("single", "pressure"):
         raise ValueError(
-            f"Invalid longitude: {longitude}. Must be between -180 and 180"
+            f"Invalid dataset_type: {dataset_type}. Must be 'single' or 'pressure'"
         )
-
-    set_verbosity(verbosity)
-
-    radius_degrees = 0.06
-    num_points = 16
-    circle_coords: List[List[float]] = []
-
-    working_longitude = longitude
-    if abs(longitude) > 179.9:
-        if longitude > 0:
-            working_longitude = 179.9
-        else:
-            working_longitude = -179.9
-
-    if abs(latitude) > 89.0:
-        lat_offset = radius_degrees
-        lon_offset = radius_degrees * 2
-
-        square_coords = [
-            [longitude - lon_offset, latitude - lat_offset],
-            [longitude + lon_offset, latitude - lat_offset],
-            [longitude + lon_offset, min(latitude + lat_offset, 90.0)],
-            [longitude - lon_offset, min(latitude + lat_offset, 90.0)],
-            [longitude - lon_offset, latitude - lat_offset],
-        ]
-
-        circle_coords = []
-        for lon, lat in square_coords:
-            while lon > 180:
-                lon -= 360
-            while lon < -180:
-                lon += 360
-            lat = max(-90, min(90, lat))
-            circle_coords.append([lon, lat])
-    else:
-        for i in range(num_points + 1):
-            angle = 2 * math.pi * i / num_points
-            lat_offset = radius_degrees * math.cos(angle)
-            lon_offset = (
-                radius_degrees * math.sin(angle) / math.cos(math.radians(latitude))
-            )
-
-            circle_lat = max(-90, min(90, latitude + lat_offset))
-            circle_lon = working_longitude + lon_offset
-
-            while circle_lon > 180:
-                circle_lon -= 360
-            while circle_lon < -180:
-                circle_lon += 360
-
-            circle_coords.append([circle_lon, circle_lat])
-
-    geojson_data: Dict[str, Any] = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {
-                    "id": f"point_{request_id}",
-                    "center_lat": latitude,
-                    "center_lon": longitude,
-                },
-                "geometry": {"type": "Polygon", "coordinates": [circle_coords]},
-            }
-        ],
-    }
-
-    temp_geojson_file = create_temp_geojson(geojson_data, f"{request_id}_point")
-
-    try:
-        return era5ify_geojson(
-            request_id=f"{request_id}",
-            variables=variables,
-            start_date=start_date,
-            end_date=end_date,
-            json_file=temp_geojson_file,
-            dataset_type=dataset_type,
-            pressure_levels=pressure_levels,
-            frequency=frequency,
-            resolution=0.1,
-            verbosity=verbosity,
-            save_raw=save_raw,
-        )
-    finally:
-        pass
+    return dataset_type
 
 
 def parse_date(date_str: str) -> dt.datetime:

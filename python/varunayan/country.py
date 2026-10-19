@@ -6,11 +6,10 @@ import re
 from typing import List, Optional, Union
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
 
 from ._geo_utils import filter_by_geojson
-from .convenience import _convert_era5_units
+from .analysis import spatial_mean
 from .core import era5ify_bbox
 
 logger = logging.getLogger(__name__)
@@ -161,23 +160,12 @@ def get_era5_country_temperature(
         save_raw=False,
     )
 
-    raw = _convert_era5_units(raw)
     raw = filter_by_geojson(raw, polygon[["geometry"]])
+    raw["variable"] = raw["variable"].map(lambda v: _COL_RENAME.get(v, v))
 
-    dt = pd.to_datetime(raw["datetime"])
-    raw["year"] = dt.dt.year
-    raw["month"] = dt.dt.month
-    raw["_weight"] = np.cos(np.radians(raw["latitude"]))
-
-    rename = {old: new for old, new in _COL_RENAME.items() if old in raw.columns}
-    raw = raw.rename(columns=rename)
-    value_cols = list(rename.values())
-
-    def _weighted_agg(g: pd.DataFrame) -> pd.Series:
-        w = g["_weight"].values
-        return pd.Series(
-            {col: np.average(g[col].values, weights=w) for col in value_cols}
-        )
-
-    result = raw.groupby(["year", "month"]).apply(_weighted_agg).reset_index()
-    return result.sort_values(["year", "month"]).reset_index(drop=True)
+    means = spatial_mean(raw, "value", by=["year", "month", "variable"])
+    wide = means.pivot_table(
+        index=["year", "month"], columns="variable", values="value"
+    ).reset_index()
+    wide.columns.name = None
+    return pd.DataFrame(wide.sort_values(["year", "month"]).reset_index(drop=True))

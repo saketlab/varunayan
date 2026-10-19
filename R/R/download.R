@@ -118,7 +118,8 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
                                  timeout = 3600, retry_attempts = 5, use_cache = TRUE,
                                  verbose = FALSE) {
   # The monthly-means product is faster. It does not use per-day chunks.
-  use_monthly_means <- (frequency == "monthly") &&
+  # Yearly values also come from the monthly-means product, as in Python.
+  use_monthly_means <- (frequency %in% c("monthly", "yearly")) &&
     !any(variables %in% .MONTHLY_MEANS_UNSUPPORTED)
 
   if (use_cache) {
@@ -181,6 +182,7 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
   if (!is.null(area)) {
     request$area <- area
   }
+  request$grid <- list(resolution, resolution)
 
   request$dataset_short_name <- if (use_monthly_means) {
     "reanalysis-era5-single-levels-monthly-means"
@@ -371,6 +373,7 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
     "hourly" = sprintf(fmt = "%02d:00", 0:23),
     "daily" = "12:00",
     "monthly" = "12:00",
+    "yearly" = "12:00",
     sprintf(fmt = "%02d:00", 0:23)
   )
 
@@ -387,6 +390,7 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
   if (!is.null(area)) {
     request$area <- area
   }
+  request$grid <- list(resolution, resolution)
 
   request$dataset_short_name <- "reanalysis-era5-pressure-levels"
   request$target <- basename(path = output_file)

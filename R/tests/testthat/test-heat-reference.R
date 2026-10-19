@@ -1,7 +1,4 @@
-# Heat stress formulas checked against independent physics: the Goff-Gratch
-# saturation vapour pressure over water (WMO 1988) and a psychrometric
-# wet-bulb solve. These are oracles, so tolerances state each approximation's
-# known error and are not fitted to the package output.
+# Heat formulas vs independent physics (Goff-Gratch, psychrometric wet bulb).
 
 # Goff-Gratch (1946) over water, WMO Technical Regulations (1988), hPa.
 goff_gratch <- function(t_c) {

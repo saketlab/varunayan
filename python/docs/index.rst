@@ -1,7 +1,7 @@
 varunayan: Climate Data Toolkit
 ================================
 
-Download and process climate reanalysis and observational data from ERA5, IMD, HadEX3, and CRU TS. Compute heat stress indices (UTCI, WBGT, Heat Index, Humidex). Aggregate country-level temperature series. Built with a focus on India, but works globally wherever the underlying datasets have coverage.
+Download and process climate reanalysis and observational data from ERA5, IMD, HadEX3 and CRU TS. Calculate heat stress indices (UTCI, WBGT, Heat Index, Humidex). Get country-level temperature series. The package has a focus on India, but it works for all regions that the datasets cover.
 
 .. image:: https://img.shields.io/pypi/v/varunayan.svg
    :target: https://pypi.org/project/varunayan/
@@ -17,7 +17,7 @@ Download and process climate reanalysis and observational data from ERA5, IMD, H
 
 .. note::
 
-   **R users**: See `varunayan for R <https://varunayan.saketlab.org/R/>`_, the R companion package.
+   **R users**: See `varunayan for R <https://varunayan.saketlab.org/R/>`_. The R package has the same functions and gives the same output.
 
 Data Sources
 ------------
@@ -53,14 +53,19 @@ Quick Start
 
    import varunayan
 
-   # ERA5 temperature for a bounding box
-   varunayan.era5ify_bbox(
+   # ERA5 daily temperature for each grid cell in a bounding box
+   df = varunayan.era5ify_bbox(
        request_id="demo",
        variables=["2m_temperature"],
        start_date="2023-06-01",
        end_date="2023-06-30",
        north=28.7, south=28.5, east=77.3, west=77.0,
+       frequency="daily",
    )
+   # Columns: datetime, latitude, longitude, variable, value (°C)
+
+   # Regional mean, weighted by cos(latitude)
+   daily = varunayan.spatial_mean(df, "value", by="datetime")
 
    # IMD gridded rainfall
    varunayan.imd_rainfall_bbox(
@@ -73,7 +78,7 @@ Quick Start
        north=35, south=8, east=90, west=68)
 
    # UTCI heat stress index
-   varunayan.utci(temp_c=35.0, rh=60.0, wind_ms=2.0, mrt_c=50.0)
+   varunayan.utci(temp_c=35.0, wind_speed=2.0, dewpoint_c=25.0, tmrt=50.0)
 
 CLI
 ~~~
@@ -102,14 +107,11 @@ Jupyter Notebooks
 
    notebooks/README
    notebooks/01_quickstart
-   notebooks/02_era5_imd_comparison
-   notebooks/03_temperature_change_india
-   notebooks/04_umbrella_sales_India
-   notebooks/05_sunscreen_sales_California
-   notebooks/06_malaria_dengue_public_interest_trend
-   notebooks/07_rainfall_peak_India
-   notebooks/08_era5_imd_temp_comparison
-   notebooks/09_pressure_level_data
+   notebooks/02_climate_of_india
+   notebooks/03_comparing_datasets
+   notebooks/04_spatial_aggregation
+   notebooks/05_heat_stress
+   notebooks/06_public_interest
 
 API Reference
 =============

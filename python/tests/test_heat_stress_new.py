@@ -21,9 +21,9 @@ UTCI_SPARSE_CASES = [
 @pytest.mark.parametrize("ta,tmrt,va,rh,expected", UTCI_SPARSE_CASES)
 def test_utci_sparse_vs_r(ta, tmrt, va, rh, expected):
     result = utci_sparse(ta, tmrt, va, rh)
-    assert (
-        abs(result - expected) < 0.01
-    ), f"utci_sparse({ta},{tmrt},{va},{rh})={result}, R={expected}"
+    assert abs(result - expected) < 0.01, (
+        f"utci_sparse({ta},{tmrt},{va},{rh})={result}, R={expected}"
+    )
 
 
 def test_utci_sparse_vectorized():
@@ -52,9 +52,9 @@ WET_BULB_CASES = [
 @pytest.mark.parametrize("temp,dp,expected", WET_BULB_CASES)
 def test_wet_bulb_from_dewpoint_vs_r(temp, dp, expected):
     result = wet_bulb_from_dewpoint(temp, dp)
-    assert (
-        abs(result - expected) < 0.01
-    ), f"wet_bulb_from_dewpoint({temp},{dp})={result}, R={expected}"
+    assert abs(result - expected) < 0.01, (
+        f"wet_bulb_from_dewpoint({temp},{dp})={result}, R={expected}"
+    )
 
 
 HEAT_INDEX_CASES = [
@@ -67,6 +67,6 @@ HEAT_INDEX_CASES = [
 @pytest.mark.parametrize("temp,dp,expected", HEAT_INDEX_CASES)
 def test_heat_index_from_dewpoint_vs_r(temp, dp, expected):
     result = heat_index_from_dewpoint(temp, dp)
-    assert (
-        abs(result - expected) < 0.01
-    ), f"heat_index_from_dewpoint({temp},{dp})={result}, R={expected}"
+    assert abs(result - expected) < 0.01, (
+        f"heat_index_from_dewpoint({temp},{dp})={result}, R={expected}"
+    )

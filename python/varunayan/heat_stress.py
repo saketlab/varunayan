@@ -34,6 +34,34 @@ def relative_humidity_from_dewpoint(
     return result  # type: ignore[no-any-return]
 
 
+def dewpoint_from_relative_humidity(
+    temp_c: Union[float, np.ndarray, pd.Series],
+    rh: Union[float, np.ndarray, pd.Series],
+) -> Union[float, np.ndarray, pd.Series]:
+    """
+    Calculate dewpoint from temperature and relative humidity.
+
+    This is the inverse of ``relative_humidity_from_dewpoint`` (same Magnus
+    constants), so the two functions give back the input.
+
+    Args:
+        temp_c: Air temperature in Celsius
+        rh: Relative humidity as percentage (0-100]
+
+    Returns:
+        Dewpoint temperature in Celsius
+    """
+    a = 17.625
+    b = 243.04
+    gamma = np.log(np.asarray(rh, dtype=float) / 100) + a * np.asarray(temp_c) / (
+        b + np.asarray(temp_c)
+    )
+    result = b * gamma / (a - gamma)
+    if isinstance(temp_c, pd.Series):
+        return pd.Series(result, index=temp_c.index)
+    return result  # type: ignore[no-any-return]
+
+
 def vapor_pressure_from_dewpoint(
     dewpoint_c: Union[float, np.ndarray, pd.Series],
 ) -> Union[float, np.ndarray, pd.Series]:
@@ -135,7 +163,9 @@ def heat_index(
     # Steadman simple form for cooler conditions (temp_f < 80).
     hi_simple = 0.5 * (temp_f + 61.0 + (temp_f - 68.0) * 1.2 + rh * 0.094)
 
-    hi_f = np.where(temp_f < 80, hi_simple, hi_full)
+    # NWS: use the Rothfusz regression once the simple estimate averaged with
+    # the temperature reaches 80F (same rule as the R package).
+    hi_f = np.where((hi_simple + temp_f) / 2 < 80, hi_simple, hi_full)
     hi_c = (hi_f - 32) * 5 / 9
 
     # Preserve scalar-in / scalar-out behaviour.
@@ -236,10 +266,9 @@ def humidex(
     Returns:
         Humidex value (unitless, but interpreted like temperature)
     """
-    # Masterson & Richardson (1979) vapor pressure (hPa). Uses the published
-    # 273.16/273.15 mix verbatim; kept separate from vapor_pressure_from_dewpoint
-    # so humidex matches its original definition exactly.
-    e = 6.11 * np.exp(5417.7530 * (1.0 / 273.16 - 1.0 / (273.15 + dewpoint_c)))
+    # Vapor pressure (hPa) as in the ECCC technical documentation for hourly
+    # climate data, which uses 1/273.15 (some older copies print 273.16).
+    e = 6.11 * np.exp(5417.7530 * (1.0 / 273.15 - 1.0 / (273.15 + dewpoint_c)))
     h = temp_c + 0.5555 * (e - 10)
     return h  # type: ignore[no-any-return]
 
@@ -254,8 +283,8 @@ _PROJECTED_AREA_FACTOR = 0.25  # rotationally-averaged projected area factor
 
 def mean_radiant_temperature(
     temp_c: Union[float, np.ndarray, pd.Series],
-    solar_rad_wm2: Union[float, np.ndarray, pd.Series],
-    wind_ms: Optional[Union[float, np.ndarray, pd.Series]] = None,
+    solar_radiation: Optional[Union[float, np.ndarray, pd.Series]] = None,
+    wind_speed: Optional[Union[float, np.ndarray, pd.Series]] = None,
 ) -> Union[float, np.ndarray, pd.Series]:
     """
     Estimate mean radiant temperature from global horizontal solar radiation.
@@ -270,15 +299,18 @@ def mean_radiant_temperature(
 
     Args:
         temp_c: Air temperature in Celsius
-        solar_rad_wm2: Global horizontal solar radiation in W/m²
-        wind_ms: Unused; kept for backward-compatible signature. Wind enters the
-            convective terms of UTCI/WBGT, not this radiant estimate.
+        solar_radiation: Global horizontal solar radiation in W/m². If None,
+            the function returns ``temp_c`` (no solar load), as in R.
+        wind_speed: Unused. Wind enters the convective terms of UTCI/WBGT,
+            not this radiant estimate. Kept for the same signature as R.
 
     Returns:
         Estimated mean radiant temperature in Celsius
     """
+    if solar_radiation is None:
+        return temp_c
     ta_k = temp_c + 273.15
-    extra = (_ABSORPTIVITY_PERSON * _PROJECTED_AREA_FACTOR * solar_rad_wm2) / (
+    extra = (_ABSORPTIVITY_PERSON * _PROJECTED_AREA_FACTOR * solar_radiation) / (
         _EMISSIVITY_PERSON * _SIGMA_SB
     )
     mrt = (ta_k**4 + extra) ** 0.25 - 273.15
@@ -312,9 +344,9 @@ def _utci_saturation_kpa(
 
 def utci(
     temp_c: Union[float, np.ndarray, pd.Series],
-    rh: Union[float, np.ndarray, pd.Series],
-    wind_ms: Union[float, np.ndarray, pd.Series],
-    mrt_c: Optional[Union[float, np.ndarray, pd.Series]] = None,
+    wind_speed: Union[float, np.ndarray, pd.Series],
+    dewpoint_c: Union[float, np.ndarray, pd.Series],
+    tmrt: Optional[Union[float, np.ndarray, pd.Series]] = None,
 ) -> Union[float, np.ndarray, pd.Series]:
     """Calculate Universal Thermal Climate Index (UTCI) using polynomial approximation.
 
@@ -323,24 +355,24 @@ def utci(
 
     Args:
         temp_c: Air temperature in Celsius (-50 to 50°C)
-        rh: Relative humidity as percentage (0-100)
-        wind_ms: Wind speed at 10m height in m/s (0.5 to 17 m/s)
-        mrt_c: Mean radiant temperature in Celsius. If None, assumes mrt = temp_c
+        wind_speed: Wind speed at 10m height in m/s (0.5 to 17 m/s)
+        dewpoint_c: Dewpoint temperature in Celsius
+        tmrt: Mean radiant temperature in Celsius. If None, assumes tmrt = temp_c
 
     Returns:
         UTCI in Celsius
     """
-    if mrt_c is None:
-        mrt_c = temp_c
+    if tmrt is None:
+        tmrt = temp_c
 
-    wind_ms = np.clip(wind_ms, 0.5, 17.0)
-    rh = np.clip(rh, 0, 100)
+    wind_ms = np.clip(wind_speed, 0.5, 17.0)
+    rh = relative_humidity_from_dewpoint(temp_c, dewpoint_c)
 
     # Water-vapor pressure in kPa from the UTCI reference saturation routine.
     e_kpa = (rh / 100.0) * _utci_saturation_kpa(temp_c)
 
     # Bröde (2012) is defined for delta-MRT in [-30, 70] K.
-    d_mrt = np.clip(mrt_c - temp_c, -30.0, 70.0)
+    d_mrt = np.clip(tmrt - temp_c, -30.0, 70.0)
     ta = temp_c
     va = wind_ms
     pa = e_kpa
@@ -830,20 +862,20 @@ _WBGT_BANDS = [
     (25.5556, "Low"),
     (27.7778, "Moderate"),
     (29.4444, "High"),
-    (31.1111, "Very High"),
+    (31.1111, "Very high"),
     (None, "Extreme"),
 ]
 _UTCI_BANDS = [
-    (-40, "Extreme Cold Stress"),
-    (-27, "Very Strong Cold Stress"),
-    (-13, "Strong Cold Stress"),
-    (0, "Moderate Cold Stress"),
-    (9, "Slight Cold Stress"),
-    (26, "No Thermal Stress"),
-    (32, "Moderate Heat Stress"),
-    (38, "Strong Heat Stress"),
-    (46, "Very Strong Heat Stress"),
-    (None, "Extreme Heat Stress"),
+    (-40, "Extreme cold stress"),
+    (-27, "Very strong cold stress"),
+    (-13, "Strong cold stress"),
+    (0, "Moderate cold stress"),
+    (9, "Slight cold stress"),
+    (26, "No thermal stress"),
+    (32, "Moderate heat stress"),
+    (38, "Strong heat stress"),
+    (46, "Very strong heat stress"),
+    (None, "Extreme heat stress"),
 ]
 
 
@@ -873,9 +905,9 @@ def heat_index_risk_category(
     Categories:
     - Normal: < 27°C
     - Caution: 27-32°C
-    - Extreme Caution: 32-39°C
+    - Extreme caution: 32-39°C
     - Danger: 39-51°C
-    - Extreme Danger: >= 51°C
+    - Extreme danger: >= 51°C
 
     Args:
         hi: Heat index in Celsius
@@ -896,7 +928,7 @@ def wbgt_risk_category(
     - Low: < 25°C
     - Moderate: 25-28°C
     - High: 28-30°C
-    - Very High: 30-32°C
+    - Very high: 30-32°C
     - Extreme: >= 32°C
 
     Args:
@@ -915,16 +947,16 @@ def utci_category(
     Categorize UTCI into thermal stress categories.
 
     Categories (10-level scale):
-    - Extreme Cold Stress: < -40°C
-    - Very Strong Cold Stress: -40 to -27°C
-    - Strong Cold Stress: -27 to -13°C
-    - Moderate Cold Stress: -13 to 0°C
-    - Slight Cold Stress: 0 to 9°C
-    - No Thermal Stress: 9 to 26°C
-    - Moderate Heat Stress: 26 to 32°C
-    - Strong Heat Stress: 32 to 38°C
-    - Very Strong Heat Stress: 38 to 46°C
-    - Extreme Heat Stress: >= 46°C
+    - Extreme cold stress: < -40°C
+    - Very strong cold stress: -40 to -27°C
+    - Strong cold stress: -27 to -13°C
+    - Moderate cold stress: -13 to 0°C
+    - Slight cold stress: 0 to 9°C
+    - No thermal stress: 9 to 26°C
+    - Moderate heat stress: 26 to 32°C
+    - Strong heat stress: 32 to 38°C
+    - Very strong heat stress: 38 to 46°C
+    - Extreme heat stress: >= 46°C
 
     Args:
         utci_val: UTCI in Celsius
@@ -938,52 +970,29 @@ def utci_category(
 def calc_heat_indices(
     temp_c: Union[float, np.ndarray, pd.Series],
     dewpoint_c: Union[float, np.ndarray, pd.Series],
-    wind_ms: Optional[Union[float, np.ndarray, pd.Series]] = None,
-    solar_rad_wm2: Optional[Union[float, np.ndarray, pd.Series]] = None,
-) -> Dict[str, Union[float, str, np.ndarray, pd.Series]]:
+) -> pd.DataFrame:
     """
-    Calculate all heat stress indices at once.
+    Calculate the main heat stress indices at once (same as the R package).
 
     Args:
         temp_c: Air temperature in Celsius
         dewpoint_c: Dewpoint temperature in Celsius
-        wind_ms: Wind speed in m/s (optional, needed for UTCI)
-        solar_rad_wm2: Solar radiation in W/m² (optional, for outdoor MRT)
 
     Returns:
-        Dictionary with all calculated indices:
-        - rh: Relative humidity (%)
-        - wet_bulb: Wet bulb temperature (°C)
-        - heat_index: Heat index (°C)
-        - wbgt: Wet Bulb Globe Temperature (°C)
-        - humidex: Humidex value
-        - utci: Universal Thermal Climate Index (°C) - if wind provided
-        - heat_index_risk: Risk category for heat index
-        - wbgt_risk: Risk category for WBGT
-        - utci_stress: Stress category for UTCI - if wind provided
+        DataFrame with temp_c, dewpoint_c, rh (1 decimal), and wet_bulb,
+        heat_index, wbgt and humidex (2 decimals).
     """
-    rh = relative_humidity_from_dewpoint(temp_c, dewpoint_c)
-    wet_bulb = wet_bulb_temperature(temp_c, rh)
-    hi = heat_index(temp_c, rh)
-    wbgt = wbgt_simple(temp_c, dewpoint_c)
-    hx = humidex(temp_c, dewpoint_c)
-
-    result: Dict[str, Union[float, str, np.ndarray, pd.Series]] = {
-        "rh": rh,
-        "wet_bulb": wet_bulb,
-        "heat_index": hi,
-        "wbgt": wbgt,
-        "humidex": hx,
-        "heat_index_risk": heat_index_risk_category(hi),
-        "wbgt_risk": wbgt_risk_category(wbgt),
-    }
-
-    if wind_ms is not None:
-        mrt = None
-        if solar_rad_wm2 is not None:
-            mrt = mean_radiant_temperature(temp_c, solar_rad_wm2, wind_ms)
-        utci_val = utci(temp_c, rh, wind_ms, mrt)
-        result["utci"] = utci_val
-        result["utci_stress"] = utci_category(utci_val)
-
-    return result
+    t = np.atleast_1d(np.asarray(temp_c, dtype=float))
+    td = np.atleast_1d(np.asarray(dewpoint_c, dtype=float))
+    rh = relative_humidity_from_dewpoint(t, td)
+    return pd.DataFrame(
+        {
+            "temp_c": t,
+            "dewpoint_c": td,
+            "rh": np.round(rh, 1),
+            "wet_bulb": np.round(wet_bulb_temperature(t, rh), 2),
+            "heat_index": np.round(heat_index(t, rh), 2),
+            "wbgt": np.round(wbgt_simple(t, td), 2),
+            "humidex": np.round(humidex(t, td), 2),
+        }
+    )

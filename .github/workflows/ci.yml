@@ -134,7 +134,7 @@ jobs:
 
     #- name: Execute notebooks
     #  run: |
-    #    cd docs/tutorials
+    #    cd notebooks
     #    for notebook in *.ipynb; do
     #      echo "Executing $notebook..."
     #      jupyter nbconvert --to notebook --execute --inplace "$notebook" --ExecutePreprocessor.timeout=300
@@ -142,7 +142,7 @@ jobs:
 
     - name: Check for notebook execution errors
       run: |
-        cd docs/tutorials
+        cd notebooks
         cat > check_notebook.py << 'EOF'
         import json
         import sys
@@ -169,4 +169,4 @@ jobs:
       if: always()
       with:
         name: executed-notebooks
-        path: python/docs/tutorials/*.ipynb
+        path: python/notebooks/*.ipynb

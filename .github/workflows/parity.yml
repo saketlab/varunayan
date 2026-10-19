@@ -1,0 +1,40 @@
+name: Python-R parity
+
+# Both packages run the cases in parity/. R CMD check tests a
+# built package without parity/, so this job runs the R cases from source.
+on:
+  push:
+    branches: [main, develop]
+    paths: ['python/**', 'R/**', 'parity/**', '.github/workflows/parity.yml']
+  pull_request:
+    branches: [main, develop]
+    paths: ['python/**', 'R/**', 'parity/**', '.github/workflows/parity.yml']
+
+permissions: read-all
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python parity cases
+        run: |
+          pip install -e "python[dev]"
+          pytest --no-cov python/tests/test_parity.py
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::devtools
+          working-directory: R
+
+      - name: R parity cases
+        run: Rscript -e 'devtools::load_all("R"); testthat::test_file("R/tests/testthat/test-parity.R", stop_on_failure = TRUE)'

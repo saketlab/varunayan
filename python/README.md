@@ -26,7 +26,7 @@ pip install varunayan
 For development:
 
 ```bash
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ## Quick start
@@ -36,19 +36,32 @@ pip install -e .
 ```python
 import varunayan
 
-# Bounding box query
+# Bounding box: one row for each grid cell, time step and variable
 df = varunayan.era5ify_bbox(
     request_id="mumbai",
     variables=["2m_temperature", "total_precipitation"],
-    start_date="2024-01-01", end_date="2024-01-31",
-    north=19.2, south=18.9, east=72.9, west=72.8,
-    frequency="daily"
+    start_date="2024-01-01",
+    end_date="2024-01-31",
+    north=19.2,
+    south=18.9,
+    east=72.9,
+    west=72.8,
+    frequency="daily",
 )
+# Columns: datetime, latitude, longitude, variable, value
+# Units: temperature in °C, precipitation in mm (convert_units=True)
 
-# Single point
+# Regional mean for each day, weighted by cos(latitude)
+daily = varunayan.spatial_mean(df, "value", by=["variable", "datetime"])
+
+# Single point: the nearest grid cell
 df = varunayan.era5ify_point(
-    "shimla", ["2t"], "2024-01-01", "2024-01-07",
-    latitude=31.1, longitude=77.2
+    "shimla",
+    ["2m_temperature"],
+    "2024-01-01",
+    "2024-01-07",
+    lat=31.1,
+    lon=77.2,
 )
 ```
 
@@ -57,15 +70,24 @@ df = varunayan.era5ify_point(
 ```python
 # Rainfall for a bounding box
 rain = varunayan.imd_rainfall_bbox(
-    "maharashtra", start_year=2020, end_year=2023,
-    north=22, south=16, east=80, west=73,
-    resolution=0.25, frequency="monthly"
+    "maharashtra",
+    start_year=2020,
+    end_year=2023,
+    north=22,
+    south=16,
+    east=80,
+    west=73,
+    resolution=0.25,
+    frequency="monthly",
 )
 
 # Temperature with GeoJSON filter
 tmax = varunayan.imd_temperature_geojson(
-    "karnataka", start_year=2022, end_year=2023,
-    geojson_file="karnataka.geojson", var_type="tmax"
+    "karnataka",
+    start_year=2022,
+    end_year=2023,
+    geojson_file="karnataka.geojson",
+    var_type="tmax",
 )
 
 # IMD station lookup
@@ -77,8 +99,7 @@ stations = varunayan.get_imd_stations()
 ```python
 # Hottest-day trend over India
 txx = varunayan.hadex3_bbox(
-    "TXx", start_year=1951, end_year=2018,
-    north=38, south=6, east=98, west=68
+    "TXx", start_year=1951, end_year=2018, north=38, south=6, east=98, west=68
 )
 
 # All 29 ETCCDI indices
@@ -90,8 +111,7 @@ varunayan.list_hadex3_indices()
 ```python
 # Mean temperature for a bounding box
 tmp = varunayan.cru_ts_bbox(
-    "tmp", start_year=2000, end_year=2020,
-    north=38, south=6, east=98, west=68
+    "tmp", start_year=2000, end_year=2020, north=38, south=6, east=98, west=68
 )
 
 # All 10 variables with ERA5/HadEX3 equivalents
@@ -103,8 +123,7 @@ varunayan.list_cru_ts_variables()
 ```python
 # Cosine-latitude weighted national average
 df = varunayan.get_era5_country_temperature(
-    "India", "2000-01-01", "2023-12-31",
-    variables=["mean", "max", "min"]
+    "India", "2000-01-01", "2023-12-31", variables=["mean", "max", "min"]
 )
 ```
 
@@ -112,12 +131,12 @@ df = varunayan.get_era5_country_temperature(
 
 ```python
 # Individual indices
-utci = varunayan.utci(temp_c=35, rh=60, wind_ms=2, mrt_c=50)
+utci = varunayan.utci(temp_c=35, wind_speed=2, dewpoint_c=25, tmrt=50)
 hi = varunayan.heat_index(temp_c=35, rh=60)
 wbgt = varunayan.wbgt_simple(temp_c=35, dewpoint_c=25)
 
-# All indices at once
-indices = varunayan.calc_heat_indices(temp_c=35, dewpoint_c=25, wind_ms=2)
+# RH, wet bulb, Heat Index, WBGT and Humidex as one DataFrame
+indices = varunayan.calc_heat_indices(temp_c=35, dewpoint_c=25)
 
 # UTCI sparse Legendre polynomial (Roman et al. 2025, wider wind range)
 utci_s = varunayan.utci_sparse(temp_c=35, tmrt=50, wind_speed=2, rh=60)
@@ -126,6 +145,27 @@ utci_s = varunayan.utci_sparse(temp_c=35, tmrt=50, wind_speed=2, rh=60)
 varunayan.heat_index_risk_category(hi)
 varunayan.utci_category(utci)
 ```
+
+### Analysis and plots
+
+```python
+rain = varunayan.era5ify_bbox(
+    "kerala_rain",
+    ["total_precipitation"],
+    "1991-01-01",
+    "2020-12-31",
+    north=12.8,
+    south=8.2,
+    east=77.4,
+    west=74.9,
+    frequency="monthly",
+)
+monthly = varunayan.spatial_mean(rain, "value", by=["year", "month"])
+monthly["anomaly"] = varunayan.anomaly(monthly, "value", baseline=(1991, 2020))
+varunayan.plot_series(monthly, x="date", y="anomaly")
+```
+
+See the [API reference](https://varunayan.saketlab.org/python/api_reference/index.html) for `compare`, `cross_correlation`, `seasonal_cycle`, `peak_month`, `regrid`, `plot_map` and the other functions.
 
 ## CLI
 
@@ -137,7 +177,7 @@ varunayan bbox --request-id "test" --variables "temperature,relative_humidity" \
   --freq daily --res 0.25
 ```
 
-Also supports `varunayan geojson` and `varunayan point` subcommands.
+Use `varunayan geojson --geojson FILE [--level union|feature]` for a GeoJSON region and `varunayan point --lat LAT --lon LON` for a point. Output goes to `{request_id}_output/`.
 
 ## Documentation
 

@@ -1,9 +1,4 @@
-"""
-Caching system for varunayan downloads.
-
-This module provides functions for managing cached climate data downloads
-to avoid redundant API calls.
-"""
+"""Disk cache for downloaded climate data."""
 
 import hashlib
 import json
@@ -225,7 +220,7 @@ def show_cache_info() -> None:
     stats = cache_stats()
 
     print(f"\nCache Directory: {cache_dir}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Total files:     {stats['n_files']}")
     print(f"Total size:      {stats['total_size_mb']:.2f} MB")
     print(f"ERA5 files:      {stats.get('era5_files', 0)}")

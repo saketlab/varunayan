@@ -9,4 +9,6 @@ Complete reference for all Varunayan functions and classes.
 
    core_functions
    search_functions
+   analysis_functions
+   plot_functions
    cli_reference

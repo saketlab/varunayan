@@ -1,7 +1,7 @@
 Type: Package
 Package: varunayan
 Title: Download and Process 'ERA5', IMD, 'HadEX3' and 'CRU TS' Data
-Version: 0.2.0
+Version: 0.4.0
 Authors@R: c(
     person("Saket", "Choudhary", , "saketc@iitb.ac.in", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-5202-7633")),

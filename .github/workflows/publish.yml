@@ -17,6 +17,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Check the tag matches the Python and R versions
+      run: |
+        tag="${GITHUB_REF_NAME#v}"
+        py=$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' python/varunayan/__init__.py)
+        r=$(sed -n 's/^Version: *//p' R/DESCRIPTION)
+        echo "tag=$tag python=$py R=$r"
+        if [ "$tag" != "$py" ] || [ "$tag" != "$r" ]; then
+          echo "::error::tag $GITHUB_REF_NAME does not match python $py and R $r"
+          exit 1
+        fi
     - name: Set up Python
       uses: actions/setup-python@v5
       with:

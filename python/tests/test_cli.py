@@ -89,14 +89,64 @@ class TestCLIMain:
             start_date="2023-01-01",
             end_date="2023-01-31",
             json_file="test.geojson",
-            dist_features=[],
+            level="union",
             dataset_type="single",
             pressure_levels=[],
             frequency="daily",
             resolution=0.1,
             verbosity=0,
-            save_raw=True,
+            save_raw=False,
         )
+
+    @patch("varunayan.cli.era5ify_geojson")
+    @patch("varunayan.cli.get_logger")
+    def test_geojson_mode_level_feature(
+        self, mock_logger: MagicMock, mock_era5ify_geojson: MagicMock
+    ):
+        """--level feature is passed through to era5ify_geojson"""
+        mock_era5ify_geojson.return_value = self.mock_df
+        test_args = [
+            "geojson",
+            "--request-id",
+            "test-123",
+            "--variables",
+            "2m_temperature",
+            "--start",
+            "2023-01-01",
+            "--end",
+            "2023-01-31",
+            "--geojson",
+            "test.geojson",
+            "--level",
+            "feature",
+        ]
+        with patch("sys.argv", ["cli.py"] + test_args):
+            main()
+        assert mock_era5ify_geojson.call_args.kwargs["level"] == "feature"
+        assert "dist_features" not in mock_era5ify_geojson.call_args.kwargs
+
+    @pytest.mark.parametrize(
+        "extra", [["--level", "district"], ["--dist-features", "state"]]
+    )
+    def test_geojson_mode_rejects_bad_level_and_dist_features(self, extra: List[str]):
+        """Unknown --level values and the removed --dist-features fail to parse"""
+        test_args = [
+            "geojson",
+            "--request-id",
+            "x",
+            "--variables",
+            "2m_temperature",
+            "--start",
+            "2023-01-01",
+            "--end",
+            "2023-01-31",
+            "--geojson",
+            "test.geojson",
+        ] + extra
+        with patch("sys.argv", ["cli.py"] + test_args):
+            with pytest.raises(SystemExit) as exc:
+                main()
+        assert exc.value.code == 2
 
     @patch("varunayan.cli.era5ify_bbox")
     @patch("varunayan.cli.get_logger")
@@ -149,7 +199,7 @@ class TestCLIMain:
             frequency="hourly",
             resolution=0.25,
             verbosity=0,
-            save_raw=True,
+            save_raw=False,
         )
 
     @patch("varunayan.cli.era5ify_point")
@@ -188,13 +238,13 @@ class TestCLIMain:
             variables=["temperature"],
             start_date="2023-1-1",
             end_date="2023-1-31",
-            latitude=35.5,
-            longitude=-78.5,
+            lat=35.5,
+            lon=-78.5,
             dataset_type="single",
             pressure_levels=[],
             frequency="monthly",
             verbosity=0,
-            save_raw=True,
+            save_raw=False,
         )
 
     @patch("varunayan.cli.logger")  # Patch the actual logger instance

@@ -26,6 +26,24 @@ relative_humidity_from_dewpoint <- function(temp_c, dewpoint_c) {
   pmin(pmax(rh, 0), 100)
 }
 
+#' Calculate dewpoint from temperature and relative humidity
+#'
+#' This is the inverse of [relative_humidity_from_dewpoint()] (same Magnus
+#' constants), so the two functions give back the input.
+#'
+#' @param temp_c Air temperature in Celsius
+#' @param rh Relative humidity as a percentage (0-100]
+#' @return Dewpoint temperature in Celsius
+#' @export
+#' @examples
+#' dewpoint_from_relative_humidity(30, 60)
+dewpoint_from_relative_humidity <- function(temp_c, rh) {
+  a <- 17.625
+  b <- 243.04
+  gamma <- log(rh / 100) + a * temp_c / (b + temp_c)
+  b * gamma / (a - gamma)
+}
+
 #' Calculate wet bulb temperature
 #'
 #' This function uses the Stull (2011) empirical formula to calculate the wet bulb

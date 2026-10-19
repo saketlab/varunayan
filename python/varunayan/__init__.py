@@ -14,6 +14,7 @@ from .search_and_desc import (
 
 from .heat_stress import (
     calc_heat_indices,
+    dewpoint_from_relative_humidity,
     heat_index,
     heat_index_from_dewpoint,
     heat_index_risk_category,
@@ -100,6 +101,28 @@ from .cru_ts import cru_ts_bbox, cru_ts_geojson, list_cru_ts_variables
 
 from .country import get_era5_country_temperature
 
+from .analysis import (
+    anomaly,
+    compare,
+    cross_correlation,
+    load_india_boundaries,
+    peak_month,
+    regrid,
+    seasonal_cycle,
+    seasonal_stat,
+    spatial_mean,
+)
+
+from .plot import (
+    plot_bars,
+    plot_ccf,
+    plot_dual_axis,
+    plot_heatmap,
+    plot_map,
+    plot_scatter,
+    plot_series,
+)
+
 ensure_cdsapi_config()
 
 __all__ = [
@@ -184,6 +207,23 @@ __all__ = [
     "cru_ts_bbox",
     "cru_ts_geojson",
     "get_era5_country_temperature",
+    "dewpoint_from_relative_humidity",
+    "load_india_boundaries",
+    "spatial_mean",
+    "compare",
+    "cross_correlation",
+    "anomaly",
+    "seasonal_cycle",
+    "peak_month",
+    "seasonal_stat",
+    "regrid",
+    "plot_map",
+    "plot_series",
+    "plot_dual_axis",
+    "plot_ccf",
+    "plot_scatter",
+    "plot_bars",
+    "plot_heatmap",
 ]
 
-__version__ = "0.2.0"
+__version__ = "0.4.0"

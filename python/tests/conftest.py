@@ -64,11 +64,11 @@ def basic_params():
         end_date=dt.datetime(2020, 1, 2),
         frequency="hourly",
         resolution=0.25,
-        north=21.0,
-        south=20.5,
-        east=80.0,
-        west=80.5,
-        dist_features=None,
+        # Covers the coordinates of the mocked NetCDF data in test_core.py.
+        north=38.0,
+        south=37.5,
+        east=-122.0,
+        west=-122.5,
     )
 
 
@@ -86,7 +86,6 @@ def basic_params_mo():
         south=20.5,
         east=80.0,
         west=80.5,
-        dist_features=None,
     )
 
 
@@ -106,7 +105,6 @@ def pressure_params():
         south=37.5,
         east=-122.0,
         west=-122.5,
-        dist_features=None,
     )
 
 
@@ -261,6 +259,6 @@ def assert_dataframe_called_with_args(
 
     for key, expected_value in expected_args.items():
         assert key in call_args, f"Expected argument '{key}' not found in call"
-        assert (
-            call_args[key] == expected_value
-        ), f"Expected {key}={expected_value}, got {call_args[key]}"
+        assert call_args[key] == expected_value, (
+            f"Expected {key}={expected_value}, got {call_args[key]}"
+        )

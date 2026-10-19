@@ -1,6 +1,4 @@
-# IMD readers and pipelines on full-size synthetic grids. Each cell holds a
-# value that encodes its own longitude, latitude and day, so any transposed
-# axis, shifted day or misplaced mask shows up as a wrong value.
+# IMD readers on synthetic grids where each value encodes its lon, lat and day.
 
 # Value for a temperature cell: integer part from longitude, fraction from
 # latitude and day. All terms are exact in float32 and stay below 99.

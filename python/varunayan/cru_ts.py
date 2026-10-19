@@ -1,7 +1,4 @@
-"""CRU TS v4.07 monthly climate grids (0.5 deg, 1901-2022).
-
-Harris et al. (2020) https://doi.org/10.1038/s41597-020-0453-3
-"""
+"""CRU TS v4.07 monthly 0.5 deg grids, 1901-2022 (Harris et al. 2020)."""
 
 import logging
 import os
@@ -79,7 +76,7 @@ def _parse_time(time_var: np.ndarray, time_units: str) -> List[datetime]:
     """Parse CRU TS time coordinate to a list of datetime objects."""
     units_lower = time_units.strip().lower()
     if "days since" in units_lower:
-        base_str = time_units.strip().split("days since")[-1].strip()[:10]
+        base_str = time_units.strip().split("days since")[-1].split()[0]
         base = datetime.strptime(base_str, "%Y-%m-%d")
         return [base + timedelta(days=float(d)) for d in time_var]
     if "months since" in units_lower:
@@ -107,7 +104,10 @@ def _read_nc(nc_path: str, variable: str) -> pd.DataFrame:
             available = list(ds.variables.keys())
             raise KeyError(f"Variable '{variable}' not found. Available: {available}")
 
-        vals = ds.variables[variable][:]
+        var = ds.variables[variable]
+        # The files store (time, lat, lon); index as (lon, lat, time).
+        order = [var.dimensions.index(d) for d in ("lon", "lat", "time")]
+        vals = np.ma.filled(np.ma.transpose(var[:], order).astype(float), np.nan)
         fill_val = getattr(ds.variables[variable], "_FillValue", None)
 
         time_var = ds.variables["time"][:]

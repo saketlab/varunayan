@@ -1,5 +1,6 @@
 import datetime as dt
 import logging
+import math
 import os
 import tempfile
 from typing import Dict, List
@@ -29,6 +30,24 @@ def set_v_downloader(verbosity: int) -> None:
     else:
         logger.addFilter(BlockInfoFilter())
         sup_log = True
+
+
+def _grid_area(
+    north: float, west: float, south: float, east: float, resolution: float
+) -> List[float]:
+    """Snap the area outward to multiples of the resolution.
+
+    CDS aligns the output grid to the corner of the area, so an area such as
+    north=37.1 gives cells at 37.1, 36.85, ... Snapping keeps the cells on
+    the standard ERA5 grid (the R package does the same).
+    """
+    k = 1 / resolution
+    return [
+        min(math.ceil(north * k - 1e-9) / k, 90.0),
+        max(math.floor(west * k + 1e-9) / k, -180.0),
+        max(math.floor(south * k + 1e-9) / k, -90.0),
+        min(math.ceil(east * k - 1e-9) / k, 180.0),
+    ]
 
 
 def download_era5_single_lvl(
@@ -85,7 +104,7 @@ def download_era5_single_lvl(
             "month": months,
             "time": ["00:00"],
             "variable": variables,
-            "area": [north, west, south, east],
+            "area": _grid_area(north, west, south, east, resolution),
             "data_format": "netcdf",
             "download_format": "zip",
             "grid": [resolution, resolution],
@@ -101,11 +120,11 @@ def download_era5_single_lvl(
             "data_format": "netcdf",
             "download_format": "zip",
             "variable": variables,
-            "area": [north, west, south, east],
+            "area": _grid_area(north, west, south, east, resolution),
             "grid": [resolution, resolution],
         }
 
-    client = cdsapi.Client()
+    client = cdsapi.Client(quiet=sup_log, progress=not sup_log)
     client.retrieve(dataset, request, output_file)
 
     return output_file
@@ -167,7 +186,7 @@ def download_era5_pressure_lvl(
             "year": years,
             "month": months,
             "time": ["00:00"],
-            "area": [north, west, south, east],
+            "area": _grid_area(north, west, south, east, resolution),
             "grid": [resolution, resolution],
             "format": "netcdf",
         }
@@ -181,12 +200,12 @@ def download_era5_pressure_lvl(
             "month": months,
             "day": days,
             "time": hours,
-            "area": [north, west, south, east],
+            "area": _grid_area(north, west, south, east, resolution),
             "grid": [resolution, resolution],
             "format": "netcdf",
         }
 
-    client = cdsapi.Client()
+    client = cdsapi.Client(quiet=sup_log, progress=not sup_log)
     client.retrieve(dataset, request, output_file)
 
     return output_file

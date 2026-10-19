@@ -1,12 +1,10 @@
-"""HadEX3 ETCCDI climate extremes (1901-2018, 1.25x1.875 deg).
-
-Dunn et al. (2020) https://doi.org/10.1029/2019JD032263
-"""
+"""HadEX3 ETCCDI extremes, 1901-2018, 1.25x1.875 deg (Dunn et al. 2020)."""
 
 import logging
 import os
 import re
 import tempfile
+import warnings
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -115,7 +113,7 @@ def _parse_time(time_var: np.ndarray, time_units: str, frequency: str) -> tuple:
             base_year = int(m.group(1)) if m else 0
             return ((base_year + np.round(time_var)).astype(int),)
         if "days since" in u:
-            base_str = time_units.split("days since")[-1].strip()[:10]
+            base_str = time_units.split("days since")[-1].split()[0]
             base_dt = datetime.strptime(base_str, "%Y-%m-%d")
             return (
                 np.array([(base_dt + timedelta(days=float(d))).year for d in time_var]),
@@ -130,7 +128,7 @@ def _parse_time(time_var: np.ndarray, time_units: str, frequency: str) -> tuple:
         total = by * 12 + (bm - 1) + np.round(time_var).astype(int)
         return total // 12, total % 12 + 1
     if "days since" in u:
-        base_str = time_units.split("days since")[-1].strip()[:10]
+        base_str = time_units.split("days since")[-1].split()[0]
         base_dt = datetime.strptime(base_str, "%Y-%m-%d")
         dates = [base_dt + timedelta(days=float(d)) for d in time_var]
         return np.array([d.year for d in dates]), np.array([d.month for d in dates])
@@ -154,7 +152,14 @@ def _read_nc(nc_path: str, index: str, frequency: str) -> pd.DataFrame:
             raise KeyError(
                 f"Variable '{var_name}' not found. Available: {list(ds.variables.keys())}"
             )
-        vals = ds.variables[var_name][:]
+        var = ds.variables[var_name]
+        # The files store (time, latitude, longitude); index as (lon, lat, time).
+        order = [var.dimensions.index(d) for d in ("longitude", "latitude", "time")]
+        with warnings.catch_warnings():
+            # missing_value is float64 on a float32 variable; _FillValue masks.
+            warnings.simplefilter("ignore", UserWarning)
+            raw = var[:]
+        vals = np.ma.filled(np.ma.transpose(raw, order).astype(float), np.nan)
         fill_val = getattr(ds.variables[var_name], "_FillValue", None)
         parsed = _parse_time(
             ds.variables["time"][:], ds.variables["time"].units, frequency

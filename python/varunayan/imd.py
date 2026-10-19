@@ -179,7 +179,11 @@ def download_imd_temperature(
 
 
 def read_imd_temperature(file_path: str, var_type: str, year: int) -> pd.DataFrame:
-    """Read an IMD binary .grd temperature file (32-bit LE floats, nlon x nlat x ndays)."""
+    """Read an IMD binary .grd temperature file.
+
+    The file holds 32-bit little-endian floats. Longitude varies fastest,
+    then latitude, then day (GrADS order).
+    """
     n_days = 366 if calendar.isleap(year) else 365
     specs = IMD_GRID_SPECS[f"{var_type}_1.0"]
 
@@ -188,7 +192,7 @@ def read_imd_temperature(file_path: str, var_type: str, year: int) -> pd.DataFra
 
     n_values = n_days * specs["nlat"] * specs["nlon"]
     data_array = raw[:n_values].reshape(
-        (specs["nlon"], specs["nlat"], n_days), order="C"
+        (specs["nlon"], specs["nlat"], n_days), order="F"
     )
 
     lats = np.arange(

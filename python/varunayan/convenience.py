@@ -1,11 +1,6 @@
-"""
-Convenience wrapper functions for common climate data workflows.
+"""One-call wrappers that download ERA5 and compute derived metrics."""
 
-These functions combine data download with derived metric calculations,
-reducing user code from ~30 lines to a single function call.
-"""
-
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -33,30 +28,18 @@ _HEAT_INDEX_VARIABLES = [
 ]
 
 
-def _convert_era5_units(df: pd.DataFrame) -> pd.DataFrame:
-    """Convert ERA5 units to user-friendly units."""
-    df = df.copy()
-
-    temp_cols = [
-        "t2m",
-        "d2m",
-        "2m_temperature",
-        "2m_dewpoint_temperature",
-        "maximum_2m_temperature_since_previous_post_processing",
-        "minimum_2m_temperature_since_previous_post_processing",
-    ]
-    for col in temp_cols:
-        if col in df.columns:
-            if df[col].mean() > 100:
-                df[col] = df[col] - 273.15
-
-    precip_cols = ["tp", "total_precipitation"]
-    for col in precip_cols:
-        if col in df.columns:
-            if df[col].max() < 1:
-                df[col] = df[col] * 1000
-
-    return df
+def _wide(df: pd.DataFrame) -> pd.DataFrame:
+    """One column per variable, as the R convenience functions return."""
+    keys = [c for c in df.columns if c not in ("variable", "value")]
+    # groupby keeps rows whose keys are missing (a feature with a null property).
+    out = (
+        df.groupby(keys + ["variable"], dropna=False, sort=False)["value"]
+        .first()
+        .unstack("variable")
+        .reset_index()
+    )
+    out.columns.name = None
+    return pd.DataFrame(out.rename(columns={"datetime": "date"}))
 
 
 def _calculate_wind_speed(df: pd.DataFrame) -> pd.Series:
@@ -92,7 +75,6 @@ def _apply_heat_index_calculations(
     Returns the DataFrame with temp_c/dewpoint_c, wind_speed, rh, wet_bulb,
     heat_index, wbgt, humidex, utci and their risk categories populated.
     """
-    df = _convert_era5_units(df)
 
     if "t2m" in df.columns:
         df = df.rename(columns={"t2m": "temp_c"})
@@ -114,7 +96,7 @@ def _apply_heat_index_calculations(
             mrt = mean_radiant_temperature(df["temp_c"], solar_wm2, df["wind_speed"])
             df["mrt"] = mrt
 
-        df["utci"] = utci(df["temp_c"], df["rh"], df["wind_speed"], mrt)
+        df["utci"] = utci(df["temp_c"], df["wind_speed"], df["dewpoint_c"], mrt)
 
         df["heat_index_risk"] = heat_index_risk_category(df["heat_index"])
         df["wbgt_risk"] = wbgt_risk_category(df["wbgt"])
@@ -153,22 +135,22 @@ def get_era5_daily_temperature(
     """
     variables = ["2m_temperature"]
 
-    df = era5ify_bbox(
-        request_id=request_id,
-        variables=variables,
-        start_date=start_date,
-        end_date=end_date,
-        north=north,
-        south=south,
-        east=east,
-        west=west,
-        frequency="daily",
-        resolution=resolution,
-        verbosity=verbosity,
-        save_raw=False,
+    df = _wide(
+        era5ify_bbox(
+            request_id=request_id,
+            variables=variables,
+            start_date=start_date,
+            end_date=end_date,
+            north=north,
+            south=south,
+            east=east,
+            west=west,
+            frequency="daily",
+            resolution=resolution,
+            verbosity=verbosity,
+            save_raw=False,
+        )
     )
-
-    df = _convert_era5_units(df)
 
     if "t2m" in df.columns:
         df = df.rename(columns={"t2m": "temp_c"})
@@ -206,22 +188,22 @@ def get_era5_daily_humidity(
     """
     variables = ["2m_temperature", "2m_dewpoint_temperature"]
 
-    df = era5ify_bbox(
-        request_id=request_id,
-        variables=variables,
-        start_date=start_date,
-        end_date=end_date,
-        north=north,
-        south=south,
-        east=east,
-        west=west,
-        frequency="daily",
-        resolution=resolution,
-        verbosity=verbosity,
-        save_raw=False,
+    df = _wide(
+        era5ify_bbox(
+            request_id=request_id,
+            variables=variables,
+            start_date=start_date,
+            end_date=end_date,
+            north=north,
+            south=south,
+            east=east,
+            west=west,
+            frequency="daily",
+            resolution=resolution,
+            verbosity=verbosity,
+            save_raw=False,
+        )
     )
-
-    df = _convert_era5_units(df)
 
     if "t2m" in df.columns:
         df = df.rename(columns={"t2m": "temp_c"})
@@ -264,19 +246,21 @@ def get_era5_daily_wind(
     """
     variables = ["10m_u_component_of_wind", "10m_v_component_of_wind"]
 
-    df = era5ify_bbox(
-        request_id=request_id,
-        variables=variables,
-        start_date=start_date,
-        end_date=end_date,
-        north=north,
-        south=south,
-        east=east,
-        west=west,
-        frequency="daily",
-        resolution=resolution,
-        verbosity=verbosity,
-        save_raw=False,
+    df = _wide(
+        era5ify_bbox(
+            request_id=request_id,
+            variables=variables,
+            start_date=start_date,
+            end_date=end_date,
+            north=north,
+            south=south,
+            east=east,
+            west=west,
+            frequency="daily",
+            resolution=resolution,
+            verbosity=verbosity,
+            save_raw=False,
+        )
     )
 
     df["wind_speed"] = _calculate_wind_speed(df)
@@ -331,19 +315,21 @@ def get_era5_daily_heat_index_data(
         - utci_stress: Thermal stress category
         - If solar_load=True: ssrd (solar radiation) and mrt (mean radiant temp)
     """
-    df = era5ify_bbox(
-        request_id=request_id,
-        variables=_heat_index_variables(solar_load),
-        start_date=start_date,
-        end_date=end_date,
-        north=north,
-        south=south,
-        east=east,
-        west=west,
-        frequency="daily",
-        resolution=resolution,
-        verbosity=verbosity,
-        save_raw=False,
+    df = _wide(
+        era5ify_bbox(
+            request_id=request_id,
+            variables=_heat_index_variables(solar_load),
+            start_date=start_date,
+            end_date=end_date,
+            north=north,
+            south=south,
+            east=east,
+            west=west,
+            frequency="daily",
+            resolution=resolution,
+            verbosity=verbosity,
+            save_raw=False,
+        )
     )
 
     return _apply_heat_index_calculations(df, solar_load)
@@ -382,19 +368,21 @@ def get_era5_monthly_heat_index_data(
         DataFrame with same columns as get_era5_daily_heat_index_data,
         aggregated to monthly means.
     """
-    df = era5ify_bbox(
-        request_id=request_id,
-        variables=_heat_index_variables(solar_load),
-        start_date=start_date,
-        end_date=end_date,
-        north=north,
-        south=south,
-        east=east,
-        west=west,
-        frequency="monthly",
-        resolution=resolution,
-        verbosity=verbosity,
-        save_raw=False,
+    df = _wide(
+        era5ify_bbox(
+            request_id=request_id,
+            variables=_heat_index_variables(solar_load),
+            start_date=start_date,
+            end_date=end_date,
+            north=north,
+            south=south,
+            east=east,
+            west=west,
+            frequency="monthly",
+            resolution=resolution,
+            verbosity=verbosity,
+            save_raw=False,
+        )
     )
 
     return _apply_heat_index_calculations(df, solar_load)
@@ -405,7 +393,7 @@ def get_era5_daily_heat_index_geojson(
     start_date: str,
     end_date: str,
     geojson_file: str,
-    dist_features: Optional[List[str]] = None,
+    level: str = "union",
     solar_load: bool = False,
     resolution: float = 0.25,
     verbosity: int = 0,
@@ -418,7 +406,8 @@ def get_era5_daily_heat_index_geojson(
         start_date: Start date in 'YYYY-MM-DD' format
         end_date: End date in 'YYYY-MM-DD' format
         geojson_file: Path to GeoJSON file defining the region
-        dist_features: List of GeoJSON properties to distinguish features
+        level: 'union' (one row per grid cell) or 'feature' (one row per
+            GeoJSON feature, with its properties)
         solar_load: If True, also download solar radiation for outdoor UTCI
         resolution: Spatial resolution in degrees (default 0.25)
         verbosity: Logging verbosity level (0-2)
@@ -426,17 +415,19 @@ def get_era5_daily_heat_index_geojson(
     Returns:
         DataFrame with heat stress indices for points within the GeoJSON region
     """
-    df = era5ify_geojson(
-        request_id=request_id,
-        variables=_heat_index_variables(solar_load),
-        start_date=start_date,
-        end_date=end_date,
-        json_file=geojson_file,
-        dist_features=dist_features,
-        frequency="daily",
-        resolution=resolution,
-        verbosity=verbosity,
-        save_raw=False,
+    df = _wide(
+        era5ify_geojson(
+            request_id=request_id,
+            variables=_heat_index_variables(solar_load),
+            start_date=start_date,
+            end_date=end_date,
+            json_file=geojson_file,
+            level=level,
+            frequency="daily",
+            resolution=resolution,
+            verbosity=verbosity,
+            save_raw=False,
+        )
     )
 
     return _apply_heat_index_calculations(df, solar_load)
@@ -466,16 +457,18 @@ def get_era5_daily_heat_index_point(
     Returns:
         DataFrame with heat stress indices for the specified point
     """
-    df = era5ify_point(
-        request_id=request_id,
-        variables=_heat_index_variables(solar_load),
-        start_date=start_date,
-        end_date=end_date,
-        latitude=latitude,
-        longitude=longitude,
-        frequency="daily",
-        verbosity=verbosity,
-        save_raw=False,
+    df = _wide(
+        era5ify_point(
+            request_id=request_id,
+            variables=_heat_index_variables(solar_load),
+            start_date=start_date,
+            end_date=end_date,
+            lat=latitude,
+            lon=longitude,
+            frequency="daily",
+            verbosity=verbosity,
+            save_raw=False,
+        )
     )
 
     return _apply_heat_index_calculations(df, solar_load)

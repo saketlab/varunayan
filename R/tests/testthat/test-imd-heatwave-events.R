@@ -1,5 +1,4 @@
-# IMD bulletin heatwaves checked against the 1 degree grid; bulletins cover the 24 h before issue
-# VARUNAYAN_LIVE_CACHE keeps the 1991-2025 downloads between runs
+# IMD bulletin heatwaves (24 h before issue) vs the 1 degree grid.
 
 fixture <- function(name) {
   d <- utils::read.delim(test_path("fixtures", name), encoding = "UTF-8")

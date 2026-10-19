@@ -2,19 +2,22 @@
 
 import importlib
 import os
+import re
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(".."))
 
-try:
-    from varunayan import __version__ as package_version
-except Exception:
-    package_version = "0.2.0"
+# Read the version without importing varunayan, before autodoc_mock_imports is set
+release = re.search(
+    r'^__version__ = "(.+)"',
+    Path(__file__).parent.joinpath("../varunayan/__init__.py").read_text(),
+    re.M,
+).group(1)
 
 project = "varunayan"
 copyright = "2026, Atharva Jagtap and Saket Choudhary"
 author = "Atharva Jagtap and Saket Choudhary"
-release = package_version
 version = os.environ.get("SMV_CURRENT_VERSION") or os.environ.get(
     "READTHEDOCS_VERSION_NAME",
     release,
@@ -61,7 +64,7 @@ for _module in _OPTIONAL_LIBS:
     try:
         importlib.import_module(_module)
     except Exception:
-        autodoc_mock_imports.append(_module)  # type:ignore
+        autodoc_mock_imports.append(_module)  # type: ignore
 
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
@@ -85,7 +88,7 @@ html_theme = "furo"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
-html_title = "varunayan — Climate Data Toolkit"
+html_title = "varunayan: Climate Data Toolkit"
 html_baseurl = "https://varunayan.saketlab.org/python/"
 
 html_logo = "assets/varunayan.png"

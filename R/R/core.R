@@ -82,6 +82,17 @@ PRECIP_VARS <- c(
   "tp", "cp", "lsp", "sf", "e"
 )
 
+# CDS aligns the output grid to the corner of the area, so snap the area
+# (north, west, south, east) outward to multiples of the resolution. The cells
+# then lie on the standard ERA5 grid, as in the Python package.
+grid_area <- function(area, resolution) {
+  k <- 1 / resolution
+  c(
+    min(ceiling(area[[1]] * k - 1e-9) / k, 90), max(floor(area[[2]] * k + 1e-9) / k, -180),
+    max(floor(area[[3]] * k + 1e-9) / k, -90), min(ceiling(area[[4]] * k - 1e-9) / k, 180)
+  )
+}
+
 #' Convert ERA5 units to user-friendly units
 #'
 #' This function converts temperature from Kelvin to Celsius. It converts precipitation from meters to mm.
@@ -137,6 +148,8 @@ download_era5_data <- function(dataset_type, variables, start_dt, end_dt, area,
                                verbose = FALSE) {
   n_vars <- length(variables)
   n_plevels <- if (!is.null(pressure_levels)) length(pressure_levels) else 1L
+  # Yearly data comes from the monthly-means product, so use the monthly chunks.
+  if (frequency == "yearly") frequency <- "monthly"
 
   # Estimate the total fields. Calculate the optimal chunk size before the download.
   total_fields <- estimate_cds_fields(n_vars, start_dt, end_dt, frequency, n_plevels)
@@ -378,7 +391,7 @@ era5ify_geojson <- function(request_id, variables, start_date, end_date, json_fi
 
   regions <- st_read(json_file, quiet = TRUE)
   bbox <- st_bbox(regions)
-  area <- c(bbox[["ymax"]], bbox[["xmin"]], bbox[["ymin"]], bbox[["xmax"]])
+  area <- grid_area(c(bbox[["ymax"]], bbox[["xmin"]], bbox[["ymin"]], bbox[["xmax"]]), resolution)
 
   if (verbose) {
     message("The ERA5 data download for the GeoJSON region starts")
@@ -399,11 +412,7 @@ era5ify_geojson <- function(request_id, variables, start_date, end_date, json_fi
     if (!save_raw && file.exists(result$file)) unlink(result$file)
   }
 
-  if (frequency != "hourly") processed_data <- aggregate_by_frequency(processed_data, frequency)
-
-  if (convert_units) {
-    processed_data <- convert_era5_units(processed_data)
-  }
+  processed_data <- era5_grid_output(processed_data, frequency, convert_units)
 
   if (level == "feature") {
     regions$feature_id <- seq_len(nrow(regions))
@@ -480,7 +489,7 @@ era5ify_bbox <- function(request_id, variables, start_date, end_date,
   }
 
   validated <- validate_era5_inputs(dataset_type, variables, start_date, end_date)
-  area <- c(north, west, south, east)
+  area <- grid_area(c(north, west, south, east), resolution)
 
   if (verbose) {
     message("The ERA5 data download for the bounding box starts")
@@ -501,19 +510,7 @@ era5ify_bbox <- function(request_id, variables, start_date, end_date,
     if (!save_raw && file.exists(result$file)) unlink(result$file)
   }
 
-  if (frequency == "monthly") {
-    time_col <- intersect(c("datetime", "time"), colnames(processed_data))[1]
-    if (!"year" %in% colnames(processed_data) && !is.na(time_col)) {
-      processed_data$year <- as.integer(format(processed_data[[time_col]], "%Y"))
-      processed_data$month <- as.integer(format(processed_data[[time_col]], "%m"))
-    }
-  } else if (frequency != "hourly") {
-    processed_data <- aggregate_by_frequency(processed_data, frequency, verbose = verbose)
-  }
-
-  if (convert_units) {
-    processed_data <- convert_era5_units(processed_data)
-  }
+  processed_data <- era5_grid_output(processed_data, frequency, convert_units)
 
   if (verbose) message("The package processed all the data.")
   message(sprintf(fmt = "Downloaded %s data points", nrow(x = processed_data)))
@@ -605,15 +602,16 @@ era5ify_point <- function(request_id, variables, start_date, end_date, lat, lon,
       }
     )
     if (!is.null(x = timeseries_data)) {
-      if (convert_units) timeseries_data <- convert_era5_units(timeseries_data)
-      return(timeseries_data)
+      return(era5_grid_output(timeseries_data, "hourly", convert_units))
     }
   }
 
+  # CDS aligns the output grid to the corner of the area, so snap the area to
+  # the 0.25 degree grid: the nearest cell is then a true ERA5 grid point.
   buffer <- 0.5
   area <- c(
-    min(lat + buffer, 90), max(lon - buffer, -180),
-    max(lat - buffer, -90), min(lon + buffer, 180)
+    min(ceiling((lat + buffer) * 4) / 4, 90), max(floor((lon - buffer) * 4) / 4, -180),
+    max(floor((lat - buffer) * 4) / 4, -90), min(ceiling((lon + buffer) * 4) / 4, 180)
   )
 
   message("The ERA5 data download for the point location starts")
@@ -675,11 +673,7 @@ era5ify_point <- function(request_id, variables, start_date, end_date, lat, lon,
     if (!save_raw && file.exists(downloaded_file)) unlink(downloaded_file)
   }
 
-  if (frequency != "hourly") processed_data <- aggregate_by_frequency(processed_data, frequency)
-
-  if (convert_units) {
-    processed_data <- convert_era5_units(processed_data)
-  }
+  processed_data <- era5_grid_output(processed_data, frequency, convert_units)
 
   message("The package processed all the data.")
   message(sprintf(fmt = "Final dataset: %s data points", nrow(x = processed_data)))

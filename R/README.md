@@ -111,9 +111,12 @@ atmos_data <- era5ify_bbox(
 
 ## Documentation
 
-- [Quickstart Guide](https://varunayan.saketlab.org/R/articles/quickstart.html)
-- [Show data grids](https://varunayan.saketlab.org/R/articles/spatial-aggregation.html)
-- [ERA5 vs IMD Comparison](https://varunayan.saketlab.org/R/articles/era5-vs-imd-comparison.html)
+- [Quickstart](https://varunayan.saketlab.org/R/articles/quickstart.html)
+- [Climate of India](https://varunayan.saketlab.org/R/articles/climate-of-india.html)
+- [Comparing ERA5 with observed datasets](https://varunayan.saketlab.org/R/articles/comparing-datasets.html)
+- [Spatial aggregation](https://varunayan.saketlab.org/R/articles/spatial-aggregation.html)
+- [Heat stress](https://varunayan.saketlab.org/R/articles/heat-stress.html)
+- [Climate and public interest](https://varunayan.saketlab.org/R/articles/public-interest.html)
 - [Function Reference](https://varunayan.saketlab.org/R/reference/index.html)
 
 

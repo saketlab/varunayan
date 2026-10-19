@@ -4,20 +4,12 @@ Installation
 Requirements
 ------------
 
-varunayan requires Python 3.9 or higher and the following packages:
-
-- requests>=2.25.0
-- pandas>=1.3.0
-- xarray>=0.18.0
-- netCDF4>=1.5.0
-- cdsapi>=0.5.0
-- geopandas>=0.10.0 (optional, for GeoJSON support)
-- shapely>=1.7.0 (optional, for spatial operations)
+varunayan needs Python 3.10 or higher. pip installs these packages with it:
+cdsapi, xarray, netCDF4, numpy, pandas, geopandas, shapely,
+python-dateutil, requests, matplotlib and tqdm.
 
 Install from PyPI
 -----------------
-
-The recommended way to install varunayan is via pip:
 
 .. code-block:: bash
 
@@ -26,66 +18,54 @@ The recommended way to install varunayan is via pip:
 CDS API Setup
 -------------
 
-varunayan uses the Copernicus Climate Data Store (CDS) API to download ERA5 data. You need to:
+varunayan uses the Copernicus Climate Data Store (CDS) API to download ERA5
+data. IMD, HadEX3 and CRU TS data do not need an account.
 
-1. Create a free account at https://cds.climate.copernicus.eu/
-2. Install the CDS API key by creating a ``.cdsapirc`` file in your home directory:
+1. Create a free account at https://cds.climate.copernicus.eu/.
+2. Accept the ERA5 licence on the CDS website.
+3. Copy your API token from https://cds.climate.copernicus.eu/profile.
+4. Give the token to varunayan in one of these ways:
 
-.. code-block:: bash
+   - Set the ``CDS_API_KEY`` (or ``CDSAPI_KEY``) environment variable.
+     varunayan then writes ``~/.cdsapirc`` for you.
+   - Write ``~/.cdsapirc`` yourself:
 
-   # Create the configuration file
-   echo "url: https://cds.climate.copernicus.eu/api/v2" > ~/.cdsapirc
-   echo "key: YOUR_API_KEY" >> ~/.cdsapirc
+     .. code-block:: bash
 
-Replace ``YOUR_API_KEY`` with your actual API key from the CDS website.
+        echo "url: https://cds.climate.copernicus.eu/api" > ~/.cdsapirc
+        echo "key: YOUR_API_KEY" >> ~/.cdsapirc
+
+   - Do nothing. On the first import, varunayan asks for the token.
 
 Development Installation
 ------------------------
 
-Install the latest development version from GitHub:
+Install the latest version from GitHub:
 
 .. code-block:: bash
 
-   pip install git+https://github.com/saketlab/varunayan.git
+   pip install "git+https://github.com/saketlab/varunayan.git#subdirectory=python"
 
-Or if you want to contribute to varunayan:
+To contribute to varunayan:
 
 .. code-block:: bash
 
    git clone https://github.com/saketlab/varunayan.git
-   cd varunayan
+   cd varunayan/python
    pip install -e ".[dev]"
 
-This will install varunayan in development mode with all development dependencies including:
-
-- pytest (for testing)
-- black (for code formatting)
-- flake8 (for linting)
-- mypy (for type checking)
-- isort (for import sorting)
+The ``dev`` extra installs pytest, black, isort, flake8 and mypy.
 
 Verification
 ------------
-
-To verify your installation, run:
 
 .. code-block:: python
 
    import varunayan
    print(varunayan.__version__)
 
-Or test the command line interface:
+Test the command line interface:
 
 .. code-block:: bash
 
    varunayan --help
-
-Test your CDS API configuration:
-
-.. code-block:: python
-
-   import cdsapi
-   
-   # This should work without errors if CDS API is properly configured
-   c = cdsapi.Client()
-   print("CDS API configured successfully!")

@@ -1,16 +1,9 @@
-"""
-Spatial aggregation utilities for climate data.
-
-This module provides functions for aggregating gridded climate data
-to administrative boundaries or other polygons.
-"""
+"""Aggregate gridded climate data to polygons such as administrative boundaries."""
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
-from shapely.geometry import Point
 
 
 def aggregate_to_polygons(
@@ -22,9 +15,14 @@ def aggregate_to_polygons(
     lon_col: str = "longitude",
     polygon_id_col: Optional[str] = None,
     agg_func: str = "mean",
+    by: Optional[Union[str, List[str]]] = None,
+    fill_empty: bool = False,
 ) -> gpd.GeoDataFrame:
     """
     Aggregate gridded data to polygon boundaries.
+
+    Each distinct grid cell is matched to a polygon once. Thus a long daily
+    series does not make the spatial match slower.
 
     Args:
         data: DataFrame with gridded climate data (must have lat/lon columns)
@@ -37,63 +35,74 @@ def aggregate_to_polygons(
         lon_col: Name of longitude column in data
         polygon_id_col: Column in polygons to use as identifier (default: index)
         agg_func: Aggregation function ('mean', 'sum', 'max', 'min', 'median')
+        by: Optional extra group column(s) in ``data``, for example ``"date"``.
+            The result then has one row for each polygon and each value of ``by``.
+        fill_empty: For 'point_in_polygon': a polygon with no cell in it
+            (smaller than a cell) gets the cell nearest to a point on its surface.
 
     Returns:
-        GeoDataFrame with aggregated values for each polygon
+        GeoDataFrame with aggregated values for each polygon (and ``by`` value)
     """
     if isinstance(value_cols, str):
         value_cols = [value_cols]
+    by_cols = [by] if isinstance(by, str) else list(by or [])
 
     if polygon_id_col is None:
         polygons = polygons.copy()
         polygons["_polygon_id"] = polygons.index
         polygon_id_col = "_polygon_id"
 
-    points = gpd.GeoDataFrame(
-        data,
-        geometry=gpd.points_from_xy(data[lon_col], data[lat_col]),
-        crs="EPSG:4326",
-    )
-
     if polygons.crs != "EPSG:4326":
         polygons = polygons.to_crs("EPSG:4326")
 
-    if method == "point_in_polygon":
-        joined = gpd.sjoin(points, polygons, how="inner", predicate="within")
+    cells = data[[lat_col, lon_col]].drop_duplicates().reset_index(drop=True)
+    points = gpd.GeoDataFrame(
+        cells,
+        geometry=gpd.points_from_xy(cells[lon_col], cells[lat_col]),
+        crs="EPSG:4326",
+    )
 
-        agg_dict = {col: agg_func for col in value_cols}
-        aggregated = joined.groupby(polygon_id_col).agg(agg_dict).reset_index()
-
-        result = polygons[[polygon_id_col, "geometry"]].merge(
-            aggregated, on=polygon_id_col, how="left"
-        )
-
-    elif method == "nearest_centroid":
-        centroids = polygons.copy()
-        centroids["centroid"] = centroids.geometry.centroid
-
-        results = []
-        for idx, row in centroids.iterrows():
-            centroid = row["centroid"]
-            distances = np.sqrt(
-                (points[lon_col] - centroid.x) ** 2
-                + (points[lat_col] - centroid.y) ** 2
+    def nearest(polys: gpd.GeoDataFrame, anchors: gpd.GeoSeries) -> pd.DataFrame:
+        rows = []
+        for pid, pt in zip(polys[polygon_id_col], anchors):
+            dist = (cells[lon_col] - pt.x) ** 2 + (cells[lat_col] - pt.y) ** 2
+            cell = cells.loc[dist.idxmin()]
+            rows.append(
+                {lat_col: cell[lat_col], lon_col: cell[lon_col], polygon_id_col: pid}
             )
-            nearest_idx = distances.idxmin()
-            nearest_values = {col: points.loc[nearest_idx, col] for col in value_cols}
-            nearest_values[polygon_id_col] = row[polygon_id_col]
-            results.append(nearest_values)
+        return pd.DataFrame(rows, columns=[lat_col, lon_col, polygon_id_col])
 
-        aggregated = pd.DataFrame(results)
-        result = polygons[[polygon_id_col, "geometry"]].merge(
-            aggregated, on=polygon_id_col, how="left"
-        )
-
+    if method == "point_in_polygon":
+        key = gpd.sjoin(
+            points,
+            polygons[[polygon_id_col, "geometry"]],
+            how="inner",
+            predicate="within",
+        )[[lat_col, lon_col, polygon_id_col]]
+        if fill_empty:
+            empty = polygons[~polygons[polygon_id_col].isin(key[polygon_id_col])]
+            if len(empty):
+                key = pd.concat(
+                    [key, nearest(empty, empty.geometry.representative_point())]
+                )
+    elif method == "nearest_centroid":
+        key = nearest(polygons, polygons.geometry.centroid)
     else:
         raise ValueError(
             f"Unknown method: {method}. Use 'point_in_polygon' or 'nearest_centroid'"
         )
 
+    joined = data[[lat_col, lon_col] + by_cols + value_cols].merge(
+        key, on=[lat_col, lon_col]
+    )
+    aggregated = (
+        joined.groupby([polygon_id_col] + by_cols)[value_cols]
+        .agg(agg_func)
+        .reset_index()
+    )
+    result = polygons[[polygon_id_col, "geometry"]].merge(
+        aggregated, on=polygon_id_col, how="left"
+    )
     return gpd.GeoDataFrame(result, geometry="geometry", crs="EPSG:4326")
 
 
@@ -138,7 +147,9 @@ def check_grid_coverage(
     if polygons.crs != "EPSG:4326":
         polygons = polygons.to_crs("EPSG:4326")
 
-    joined = gpd.sjoin(points, polygons, how="right", predicate="within")
+    joined = gpd.sjoin(
+        points, polygons[[polygon_id_col, "geometry"]], how="inner", predicate="within"
+    )
 
     points_per_polygon = (
         joined.groupby(polygon_id_col).size().reset_index(name="n_points")

@@ -1,5 +1,4 @@
-# Expected values follow from the published definitions applied to series
-# whose baseline is constant, so normals and percentiles are known exactly.
+# Constant-baseline series make normals and percentiles known exactly.
 
 base_dates <- seq(as.Date("2001-01-01"), as.Date("2003-12-31"), by = "day")
 

@@ -89,8 +89,8 @@ def main() -> None:
         subparser.add_argument(
             "--save-raw",
             type=str2bool,
-            default=True,
-            help="Option to save raw data, True by default. Pass it as False if raw data is not needed.",
+            default=False,
+            help="Also save the downloaded grid as a CSV file (default: False).",
         )
 
     # GeoJSON/JSON file mode
@@ -102,8 +102,10 @@ def main() -> None:
         "--geojson", required=True, help="Path to GeoJSON or JSON file"
     )
     geojson_parser.add_argument(
-        "--dist-features",
-        help="Distinguishing feature name/s in GeoJSON (e.g., 'state' or 'region')",
+        "--level",
+        choices=["union", "feature"],
+        default="union",
+        help="'union': one row per grid cell; 'feature': one row per GeoJSON feature",
     )
 
     # Bounding box mode
@@ -149,10 +151,6 @@ def main() -> None:
 
     variables = [v.strip() for v in args.variables.split(",")]
 
-    dist_features: List[str] = []
-    if args.mode == "geojson" and args.dist_features and args.dist_features.strip():
-        dist_features = [feat.strip() for feat in args.dist_features.split(",")]
-
     # Parse pressure levels if provided
     pressure_levels: List[str] = []
     if args.pressure_levels and args.pressure_levels.strip():
@@ -167,7 +165,7 @@ def main() -> None:
             start_date=args.start,  # Pass as string to match function signature
             end_date=args.end,  # Pass as string to match function signature
             json_file=args.geojson,
-            dist_features=dist_features,
+            level=args.level,
             dataset_type=args.dataset_type,
             pressure_levels=pressure_levels,
             frequency=args.freq,
@@ -202,8 +200,8 @@ def main() -> None:
             variables=variables,
             start_date=args.start,
             end_date=args.end,
-            latitude=args.lat,
-            longitude=args.lon,
+            lat=args.lat,
+            lon=args.lon,
             dataset_type=args.dataset_type,
             pressure_levels=pressure_levels,
             frequency=args.freq,

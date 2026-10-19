@@ -9,198 +9,119 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
-# ponytail: eval=FALSE. No pre-built .rds file exists. The code must have live CDS and IMD access.
+```{r setup, include = FALSE}
+has_data <- requireNamespace("ggplot2", quietly = TRUE) &&
+  nzchar(system.file("extdata", "spatial_aggregation.rds", package = "varunayan"))
 knitr::opts_chunk$set(
-  collapse = TRUE, comment = "#>", eval = FALSE,
-  fig.width = 7, fig.height = 5, warning = FALSE, message = FALSE
+  collapse = TRUE, comment = "#>", eval = has_data,
+  fig.width = 7, fig.height = 6, fig.dpi = 150,
+  warning = FALSE, message = FALSE, out.width = "100%"
 )
 ```
+
+ERA5 and IMD give data on regular grids. When we aggregate a grid to districts, a small district can contain no grid point. Then that district has no value.
+
+This article compares two methods of `aggregate_to_polygons()`:
+
+- Point-in-polygon (`point_in_polygon`): the mean of all grid points inside each district.
+- Nearest centroid (`nearest_centroid`): the value of the grid point nearest to a point inside each district.
 
 ```{r libraries}
 library(varunayan)
-library(dplyr)
-library(ggplot2)
-library(sf)
-library(patchwork)
 ```
 
-## The problem
+## District boundaries and climate data
 
-ERA5 and IMD give data on regular grids (for example, 0.25° × 0.25°).
-We aggregate these data to administrative boundaries, for example districts.
-Some small districts contain no grid points.
-As a result, these districts have missing data.
+`load_india_boundaries("district")` gives the LGD district boundaries from [geo.bharatviz.org](https://geo.bharatviz.org). The function downloads the file one time and keeps it in a cache.
 
-```{r download_data}
-districts_url <- "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-districts.geojson"
-districts_file <- "indian_districts.geojson"
-if (!file.exists(districts_file)) {
-  options(timeout = max(600, getOption("timeout"))) # LGD GeoJSON is large
-  download.file(districts_url, districts_file, mode = "wb")
-}
-districts_sf <- sf::st_read(districts_file, quiet = TRUE)
+```{r boundaries}
+districts <- load_india_boundaries("district")
+head(sf::st_drop_geometry(districts))
+```
 
-imd_tmax <- imd_temperature_geojson(
-  request_id = "spatial_demo",
-  start_year = 2023, end_year = 2023,
-  geojson_file = districts_file,
-  var_type = "tmax"
+We use two datasets for January 2023. The IMD 1° grid gives the mean daily maximum temperature (column `temperature`, °C). The ERA5 0.25° grid gives the mean 2 m temperature (column `value`, °C). The ERA5 download needs a CDS API key (see the quickstart). This article uses a cached copy of the two datasets.
+
+```{r download, eval = FALSE}
+imd <- imd_temperature_bbox(
+  "india_tmax_2023", 2023, 2023,
+  north = 37.5, south = 7.5, east = 97.5, west = 67.5,
+  var_type = "tmax", frequency = "monthly"
 )
+imd <- imd[imd$date == as.Date("2023-01-01"), ]
 
-imd_spatial <- imd_tmax %>%
-  group_by(longitude, latitude) %>%
-  summarise(temp = mean(temperature, na.rm = TRUE), .groups = "drop")
-
-era5_temp <- era5ify_geojson(
-  request_id = "spatial_era5",
+era5 <- era5ify_geojson(
+  request_id = "era5_india_t2m_jan2023",
   variables = "2m_temperature",
-  start_date = "2023-01-01",
-  end_date = "2023-01-31",
-  json_file = districts_file,
-  frequency = "daily",
-  resolution = 0.25
+  start_date = "2023-01-01", end_date = "2023-01-31",
+  json_file = "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson",
+  frequency = "monthly", resolution = 0.25
 )
-
-era5_spatial <- era5_temp %>%
-  group_by(longitude, latitude) %>%
-  summarise(temp = mean(value, na.rm = TRUE), .groups = "drop")
+era5 <- era5[era5$month == 1, ]
 ```
 
-## Show the grid coverage
+```{r load_data}
+saved <- readRDS(system.file("extdata", "spatial_aggregation.rds", package = "varunayan"))
+imd <- saved$imd
+era5 <- saved$era5
+head(imd)
+```
 
-We use `compare_grids()` to show how the grid points align with the polygon boundaries.
+## Grid coverage
 
-```{r viz_imd, fig.width=10, fig.height=7}
+`compare_grids()` draws the grid points of each dataset on the district boundaries.
+
+```{r grids}
 compare_grids(
-  IMD = imd_spatial,
-  point_size = 1,
-  polygons = districts_sf,
-  title = "IMD grid vs district boundaries"
+  ERA5 = era5, IMD = imd, colors = c(ERA5 = "#3498DB", IMD = "#E74C3C"),
+  point_size = 0.6, polygons = districts, title = "ERA5 and IMD grid points"
 )
 ```
 
-```{r viz_era5, fig.width=10, fig.height=7}
-compare_grids(
-  ERA5 = era5_spatial,
-  colors = c(ERA5 = "#3498DB"),
-  point_size = 0.5,
-  polygons = districts_sf,
-  title = "ERA5 grid vs district boundaries"
-)
+`check_grid_coverage()` counts the grid points inside each district.
+
+```{r coverage}
+check_grid_coverage(imd, districts, c("state_name", "district_name"))$summary
+check_grid_coverage(era5, districts, c("state_name", "district_name"))$summary
 ```
 
-```{r viz_both, fig.width=10, fig.height=7}
-compare_grids(
-  IMD = imd_spatial,
-  ERA5 = era5_spatial,
-  point_size = 0.5,
-  polygons = districts_sf,
-  title = "IMD vs ERA5 grid points"
-)
-```
+## Aggregate IMD to districts with the two methods
 
-Red circles are IMD grid points.
-Blue circles are ERA5 grid points.
-Many small districts have no grid points in their boundaries.
-
-## Coverage statistics
-
-### IMD coverage
-
-```{r coverage_imd}
-imd_coverage <- check_grid_coverage(imd_spatial, districts_sf, c("state_name", "district_name"))
-cat("IMD Grid Coverage:\n")
-cat("  Total districts:", imd_coverage$total_polygons, "\n")
-cat("  Grid points:", imd_coverage$total_grid_points, "\n")
-cat("  Districts with data:", imd_coverage$polygons_with_points, "\n")
-cat("  Coverage:", imd_coverage$coverage_percent, "%\n")
-```
-
-### ERA5 coverage
-
-```{r coverage_era5}
-era5_coverage <- check_grid_coverage(era5_spatial, districts_sf, c("state_name", "district_name"))
-cat("ERA5 Grid Coverage:\n")
-cat("  Total districts:", era5_coverage$total_polygons, "\n")
-cat("  Grid points:", era5_coverage$total_grid_points, "\n")
-cat("  Districts with data:", era5_coverage$polygons_with_points, "\n")
-cat("  Coverage:", era5_coverage$coverage_percent, "%\n")
-```
-
-## Aggregation methods
-
-### Point-in-polygon
-
-We use a spatial join to find the grid points in each polygon:
-
-```{r pip}
-result_pip <- aggregate_to_polygons(
-  imd_spatial, districts_sf, c(value = "temp"),
+```{r aggregate}
+pip <- aggregate_to_polygons(imd, districts, c(pip = "temperature"),
   method = "point_in_polygon",
   polygon_id_cols = c("state_name", "district_name")
 )
-
-cat("Districts with data:", sum(!is.na(result_pip$value)), "/", nrow(result_pip), "\n")
-```
-
-### Nearest centroid
-
-This method gives each polygon the grid point that is nearest to a point on the surface of the polygon:
-```{r nearest}
-result_nearest <- aggregate_to_polygons(
-  imd_spatial, districts_sf, c(value = "temp"),
+nearest <- aggregate_to_polygons(imd, districts, c(nearest = "temperature"),
   method = "nearest_centroid",
   polygon_id_cols = c("state_name", "district_name")
 )
-
-cat("Districts with data:", sum(!is.na(result_nearest$value)), "/", nrow(result_nearest), "\n")
+both <- merge(districts, merge(pip, nearest))
+colSums(!is.na(sf::st_drop_geometry(both)[c("pip", "nearest")]))
 ```
 
-## Compare the results
+## Compare the maps
 
-```{r compare_maps, fig.width=10, fig.height=5}
-make_map <- function(data, title) {
-  map_sf <- districts_sf %>%
-    left_join(data, by = c("state_name", "district_name"))
+Gray districts have no value.
 
-  ggplot(map_sf) +
-    geom_sf(aes(fill = value), color = "white", linewidth = 0.05) +
-    scale_fill_viridis_c(option = "plasma", na.value = "grey80", name = "°C") +
-    labs(title = title) +
-    theme_void() +
-    theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 11))
-}
-
-p1 <- make_map(result_pip, "Point-in-Polygon")
-p2 <- make_map(result_nearest, "Nearest Centroid")
-
-p1 + p2 + plot_layout(guides = "collect")
+```{r maps, fig.height = 5}
+plot_map(both, c("pip", "nearest"),
+  cmap = "plasma", legend_title = "°C",
+  title = "IMD Tmax, January 2023"
+)
 ```
 
-## Value comparison
+## Compare the values
 
-This comparison uses only the districts that have data from the two methods:
+For districts with a value from both methods, the scatter plot shows the agreement.
 
-```{r scatter, fig.width=6, fig.height=6}
-comparison <- result_pip %>%
-  rename(pip = value) %>%
-  inner_join(
-    result_nearest %>% rename(nearest = value),
-    by = c("state_name", "district_name")
-  ) %>%
-  filter(!is.na(pip) & !is.na(nearest))
-
-cor_val <- cor(comparison$pip, comparison$nearest, use = "complete.obs")
-
-ggplot(comparison, aes(x = pip, y = nearest)) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey50") +
-  geom_point(alpha = 0.5, color = "#2C3E50") +
-  coord_fixed() +
-  labs(
-    x = "Point-in-polygon (°C)",
-    y = "Nearest centroid (°C)",
-    subtitle = sprintf("r = %.3f (n = %d districts)", cor_val, nrow(comparison))
-  ) +
-  theme_minimal()
+```{r scatter, fig.width = 5, fig.height = 5}
+plot_scatter(sf::st_drop_geometry(both), "pip", "nearest",
+  title = "Point-in-polygon vs nearest centroid (°C)"
+)
 ```
+
+## Conclusion
+
+The 1° IMD grid is much coarser than the 0.25° ERA5 grid. Only 250 of the 783 districts (32 %) contain an IMD grid point. ERA5 grid points are in 751 districts (96 %).
+
+With the point-in-polygon method, 533 districts have no IMD value. The nearest-centroid method gives a value to all 783 districts. Where both methods give a value, they agree closely, because most of these districts contain only one IMD grid point. With `fill_empty = TRUE`, the point-in-polygon method uses the nearest grid point for a district that has no grid point.

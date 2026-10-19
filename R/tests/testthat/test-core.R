@@ -317,7 +317,7 @@ test_that("era5ify_bbox (hourly) returns converted, bbox-filtered data", {
   expect_length(list.files(d, pattern = "\\.nc$"), 0)
 
   req <- log$requests[[1]]
-  expect_equal(req$area, c(20, 77, 19.9, 77.6))
+  expect_equal(req$area, c(20, 77, 19.75, 77.75)) # snapped outward to the 0.25 degree grid
   expect_equal(unlist(req$variable), c("2m_temperature", "total_precipitation"))
 })
 
@@ -399,7 +399,7 @@ test_that("era5ify_geojson filters to the polygon", {
   ))
   expect_equal(nrow(out), 4)
   expect_setequal(unique(out$longitude), c(77.25, 77.5))
-  expect_equal(log$requests[[1]]$area, c(20.1, 77.1, 19.9, 77.6))
+  expect_equal(log$requests[[1]]$area, c(20.25, 77, 19.75, 77.75)) # snapped outward to the 0.25 degree grid
   expect_length(list.files(d, pattern = "\\.nc$"), 0)
 
   daily <- suppressMessages(era5ify_geojson(
@@ -474,7 +474,8 @@ test_that("era5ify_point (pressure) returns the nearest cell", {
   expect_true(all(out$latitude == 19.75 & out$longitude == 77.25))
   expect_equal(sort(out$value), 280 + 19.75 + 7.725 + c(1, 2) - 273.15)
   req <- log$requests[[1]]
-  expect_equal(req$area, c(20.3, 76.8, 19.3, 77.8))
+  # lat/lon +- 0.5, snapped outward to the 0.25 degree grid
+  expect_equal(req$area, c(20.5, 76.75, 19.25, 78))
   expect_length(list.files(d, pattern = "\\.nc$"), 0)
 })
 

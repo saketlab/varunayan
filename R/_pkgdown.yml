@@ -82,20 +82,18 @@ navbar:
     articles:
       text: Articles
       menu:
-      - text: Quickstart Guide
+      - text: Quickstart
         href: articles/quickstart.html
-      - text: ERA5 vs IMD Comparison
-        href: articles/era5-vs-imd-comparison.html
-      - text: Visualising and aggregating grid data
+      - text: Climate of India
+        href: articles/climate-of-india.html
+      - text: Comparing ERA5 with observed datasets
+        href: articles/comparing-datasets.html
+      - text: Spatial aggregation
         href: articles/spatial-aggregation.html
-      - text: Heat stress indices comparison
-        href: articles/heat-stress-indices.html
-      - text: Country-level temperature trends
-        href: articles/country-temperature.html
-      - text: HadEX3 Climate Extremes
-        href: articles/hadex3-climate-extremes.html
-      - text: CRU TS vs ERA5 Comparison
-        href: articles/cru-ts-comparison.html
+      - text: Heat stress
+        href: articles/heat-stress.html
+      - text: Climate and public interest
+        href: articles/public-interest.html
 
     news:
       text: Changelog
@@ -148,6 +146,26 @@ reference:
   - wbgt_liljegren
   - ndvi
   - ndbi
+
+- title: "Analysis"
+  desc: "Summarize and compare the downloaded data. The Python package has the same functions."
+  contents:
+  - load_india_boundaries
+  - spatial_mean
+  - compare
+  - cross_correlation
+  - anomaly
+  - seasonal_cycle
+  - peak_month
+  - seasonal_stat
+  - regrid
+  - aggregate_to_polygons
+  - dewpoint_from_relative_humidity
+
+- title: "Plots"
+  desc: "ggplot2 plots for the analysis results. The Python package has the same functions."
+  contents:
+  - starts_with("plot_")
 
 - title: "Variable discovery"
   desc: "Search and explore available climate variables"

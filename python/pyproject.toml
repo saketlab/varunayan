@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "varunayan"
-version = "0.3.0"
+dynamic = ["version"]
 description = "Analysis-ready climate data downloader and processor for custom regions"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -57,6 +57,7 @@ dev = [
     "pre-commit>=2.15",
     "types-requests",
     "pandas-stubs",
+    "statsmodels>=0.13",
 ]
 docs = [
     # Core Sphinx dependencies
@@ -95,6 +96,7 @@ notebooks = [
     "nbclient>=0.8",
     "nbconvert>=7.0",
     "jupyter-client>=7.0",
+    "statsmodels>=0.13",
 ]
 docs-build = [
     # Minimal dependencies for CI/CD documentation building
@@ -173,14 +175,7 @@ path = "varunayan/__init__.py"
 packages = ["varunayan"]
 
 [tool.hatch.build.targets.sdist]
-exclude = [
-    "/.github",
-    "/docs",
-    "/tests",
-    "/scripts",
-    "/.gitignore",
-    "/.pre-commit-config.yaml",
-]
+include = ["/varunayan"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -239,6 +234,7 @@ show_error_codes = true
 module = [
     "cdsapi.*",
     "geopandas.*",
+    "statsmodels.*",
     "shapely.*",
 ]
 ignore_missing_imports = true

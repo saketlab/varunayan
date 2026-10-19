@@ -83,4 +83,3 @@ revdep/
 
 # downloaded IMD heat bulletin PDFs and extracted CSVs
 data-raw/imd_heat_bulletins/out/
-inst/extdata/india_era5_cru_comparison.rds
