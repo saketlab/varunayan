@@ -1,0 +1,180 @@
+---
+title: "Climate and public interest"
+output:
+  rmarkdown::html_vignette:
+    self_contained: true
+vignette: >
+  %\VignetteIndexEntry{Climate and public interest}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+has_data <- requireNamespace("ggplot2", quietly = TRUE) &&
+  nzchar(system.file("extdata", "public_interest.rds", package = "varunayan"))
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = has_data,
+  fig.width = 8,
+  fig.height = 3.5,
+  fig.dpi = 150,
+  warning = FALSE,
+  message = FALSE,
+  out.width = "100%"
+)
+```
+
+This article compares ERA5 climate data with Google Trends search interest from 2004 to 2024. It has three examples: umbrella searches and rainfall in India, sunscreen searches and temperature in California, and dengue and malaria searches and rainfall in India. The Google Trends series are monthly CSV files from [Google Trends](https://trends.google.com/). Sales data for a product can replace them.
+
+The ERA5 downloads need a CDS API key (see the quickstart). This article uses a cached copy of the ERA5 monthly means.
+
+```{r setup}
+library(varunayan)
+```
+
+```{r load_data, include = FALSE}
+saved <- readRDS(system.file("extdata", "public_interest.rds", package = "varunayan"))
+```
+
+## Rainfall in India
+
+Download monthly total precipitation (mm) for India at 0.25°. The [LGD state boundaries](https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson) set the region. Then take the area-weighted mean for each month.
+
+```{r rain_download, eval = FALSE}
+india <- era5ify_geojson(
+  request_id = "tp_india_2004_2024",
+  variables = "total_precipitation",
+  start_date = "2004-01-01",
+  end_date = "2024-12-31",
+  json_file = "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson",
+  frequency = "monthly",
+  resolution = 0.25
+)
+rain <- spatial_mean(india, "value", by = c("year", "month"))
+names(rain)[names(rain) == "value"] <- "rainfall_mm"
+```
+
+```{r rain_cached}
+rain <- saved$rain
+head(rain)
+```
+
+The map shows the mean June to August rainfall total for each grid cell.
+
+```{r jja_code, eval = FALSE}
+jja <- seasonal_stat(india, "value", months = 6:8, how = "sum")
+```
+
+```{r jja_map, fig.height = 7}
+jja <- saved$jja
+plot_map(jja, "value",
+  log = TRUE, boundaries = load_india_boundaries(),
+  legend_title = "June-August rainfall (mm)"
+)
+```
+
+## Umbrella searches and rainfall in India
+
+Load the search interest for "umbrella" in India and merge it with the rainfall series.
+
+```{r umbrella}
+umbrella <- utils::read.csv("https://gist.githubusercontent.com/JaggeryArray/490818f9cd19336d63f9942589a61bf0/raw/92273fc7c39c5dcc71acb27242a2dd3d6b72b4ed/multiTimeline_india_googletrends_umbrella_2004-now.csv")
+umbrella$date <- as.Date(paste0(umbrella$Month, "-01"))
+umbrella_rain <- merge(rain, umbrella, by = "date")
+plot_dual_axis(umbrella_rain, "date", "rainfall_mm", "umbrella", log_right = TRUE)
+```
+
+Calculate the cross-correlation. Rainfall is `x` and search interest is `y`. A peak at a negative lag means that rainfall changes first.
+
+```{r umbrella_ccf}
+plot_ccf(cross_correlation(umbrella_rain$rainfall_mm, umbrella_rain$umbrella))
+```
+
+Both series have one peak in each year. The largest correlation is at lag +1 (r = 0.45), and r = 0.43 at lag 0. A positive lag means that search interest changes first. Umbrella searches increase approximately one month before the rainfall peak, because people prepare for the monsoon before it arrives.
+
+## Sunscreen searches and temperature in California
+
+Download monthly 2 m temperature (°C) for [California](https://gist.githubusercontent.com/JaggeryArray/50ad17645a290ee4445e1113609de5e4/raw/91e97ec6ae6654093490df87a9802e359bf303b1/california.geojson) and take the area-weighted mean for each month.
+
+```{r temp_download, eval = FALSE}
+california <- era5ify_geojson(
+  request_id = "t2m_california_2004_2024",
+  variables = "2m_temperature",
+  start_date = "2004-01-01",
+  end_date = "2024-12-31",
+  json_file = "https://gist.githubusercontent.com/JaggeryArray/50ad17645a290ee4445e1113609de5e4/raw/91e97ec6ae6654093490df87a9802e359bf303b1/california.geojson",
+  frequency = "monthly",
+  resolution = 0.25
+)
+temp <- spatial_mean(california, "value", by = c("year", "month"))
+names(temp)[names(temp) == "value"] <- "t2m_c"
+```
+
+```{r temp_cached}
+temp <- saved$temp
+head(temp)
+```
+
+Load the search interest for "sunscreen" in California and merge it with the temperature series.
+
+```{r sunscreen}
+sunscreen <- utils::read.csv("https://gist.githubusercontent.com/JaggeryArray/05a2ffb206ae6ada04f5187c15d77d45/raw/99b5dac0efed5c3fa56c0221e2352aa2e358e17f/multiTimeline_california_googletrends_sunscreen_2004-now.csv")
+sunscreen$date <- as.Date(paste0(sunscreen$Month, "-01"))
+sunscreen_temp <- merge(temp, sunscreen, by = "date")
+plot_dual_axis(sunscreen_temp, "date", "t2m_c", "sunscreen", log_right = TRUE)
+```
+
+Temperature is `x` and search interest is `y`.
+
+```{r sunscreen_ccf}
+plot_ccf(cross_correlation(sunscreen_temp$t2m_c, sunscreen_temp$sunscreen))
+```
+
+The largest correlation is at lag +1 (r = 0.48). Sunscreen searches increase approximately one month before the temperature peak. Search interest also increases over the 20 years, but the temperature does not show the same increase.
+
+## Dengue and malaria searches and rainfall in India
+
+Load the search interest for "dengue symptoms" and "malaria symptoms" in India. Merge both with the same rainfall series.
+
+```{r disease}
+dengue <- utils::read.csv("https://gist.githubusercontent.com/JaggeryArray/fcc204d10f0b7acdd4813f1581ab18ef/raw/3589dea8be071f545b94f236db1b52f2efd11723/multiTimeline_india_googletrends_dengue_symptoms_2004-now.csv", check.names = FALSE)
+malaria <- utils::read.csv("https://gist.githubusercontent.com/JaggeryArray/5635a5654a0264d71b031fdd073cbf83/raw/8f8c760840507583d1b72a846ed76e3cdbc697ee/multiTimeline_india_googletrends_malaria_symptoms_2004-now.csv", check.names = FALSE)
+dengue$date <- as.Date(paste0(dengue$Month, "-01"))
+malaria$date <- as.Date(paste0(malaria$Month, "-01"))
+disease_rain <- merge(
+  merge(rain, dengue[c("date", "dengue symptoms")]),
+  malaria[c("date", "malaria symptoms")]
+)
+```
+
+```{r dengue_plot}
+plot_dual_axis(disease_rain, "date", "rainfall_mm", "dengue symptoms", log_right = TRUE)
+```
+
+```{r malaria_plot}
+plot_dual_axis(disease_rain, "date", "rainfall_mm", "malaria symptoms", log_right = TRUE)
+```
+
+Rainfall is `x` and search interest is `y`.
+
+```{r dengue_ccf}
+plot_ccf(cross_correlation(disease_rain$rainfall_mm, disease_rain$`dengue symptoms`),
+  title = "Dengue symptoms"
+)
+```
+
+```{r malaria_ccf}
+plot_ccf(cross_correlation(disease_rain$rainfall_mm, disease_rain$`malaria symptoms`),
+  title = "Malaria symptoms"
+)
+```
+
+For dengue, the largest correlation is at lag -2 and at lag +10 (r = 0.65 for both). The cycle repeats every 12 months, so the two lags show the same relation. Rainfall comes approximately two months before the peak in dengue searches. For malaria, the largest correlation is at lag -1 (r = 0.51). Rainfall comes approximately one month before the peak in malaria searches.
+
+## Conclusion
+
+- Umbrella searches in India and sunscreen searches in California increase approximately one month before the rainfall or temperature peak.
+- Dengue and malaria searches in India increase one to two months after the rainfall peak. This agrees with the time that mosquitoes need to breed after the rain.
+
+The same steps work for other regions, variables and search terms or sales data.

@@ -1,53 +1,86 @@
-# Python
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+
+.cursor/
+.cursorrules
+.codex/
+.gemini/
+GEMINI.md
+AGENTS.md
+.aider*
+.github/copilot-instructions.md
+
+.env
+.env.*
+!.env.example
+.cdsapirc
+.Renviron
+.Renviron.local
+.httr-oauth
+settings.json
+credentials.json
+*.pem
+*.key
+*_secret*
+*_token*
+
 .DS_Store
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environment
-venv/
-env/
-ENV/
-
-# IDE
-.idea/
-.vscode/
+Thumbs.db
+*~
 *.swp
 *.swo
+.idea/
+.vscode/
+*.code-workspace
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-
-# Distribution
-dist/
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
 build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.ipynb_checkpoints/
+bandit-report.json
 
-# Documentation
-docs/_build/
-docs/tutorials/*_files/
+.Rhistory
+.Rapp.history
+.RData
+.RDataTmp
+.Ruserdata
+.Rproj.user/
+*.Rcheck/
+*_cache/
+Rplots.pdf
 
-# Notebook outputs
-notebooks/*_output/
+python/docs/_build/
+python/docs/api/
+R/docs/
 
+*.nc
+*.nc.gz
+*.grib
+*.grib2
+*.grd
+python/notebooks/*_output/
+varunayan_cache/
+
+/varunayan/
+
+*.sqlite
+*.db
+*.log

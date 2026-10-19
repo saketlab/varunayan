@@ -3,12 +3,17 @@ name: docs-hostinger
 on:
   push:
     branches: [main, master]
+    paths: ['python/**', '.github/workflows/docs-hostinger.yml']
   release:
     types: [published]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+defaults:
+  run:
+    working-directory: python
 
 jobs:
   deploy:
@@ -17,7 +22,8 @@ jobs:
       group: docs-hostinger-${{ github.ref }}
       cancel-in-progress: true
     env:
-      # varunayan.saketlab.org serves this folder
+      # varunayan.saketlab.org serves this folder; the R docs (pkgdown.yaml)
+      # deploy to its R/ folder
       SITE_ROOT: /var/www/r-pkgdown/varunayan/docs
 
     steps:
@@ -33,17 +39,7 @@ jobs:
           pip install -e .[docs-build]
 
       - name: Generate API documentation
-        run: |
-          PKG=$(python -c "
-          import tomllib, sys
-          data = tomllib.load(open('pyproject.toml','rb'))
-          name = data.get('project', {}).get('name')
-          if not name:
-              print('ERROR: [project].name not found in pyproject.toml', file=sys.stderr)
-              sys.exit(1)
-          print(name)
-          ")
-          sphinx-apidoc -o docs/api "$PKG" --force --separate
+        run: sphinx-apidoc -o docs/api varunayan --force --separate
 
       - name: Build Sphinx site
         env:
@@ -68,21 +64,20 @@ jobs:
         uses: burnett01/rsync-deployments@7.0.1
         with:
           switches: -avzr --delete --rsync-path="mkdir -p ${{ env.SITE_ROOT }}/python && rsync"
-          path: docs/_build/html/
+          path: python/docs/_build/html/
           remote_path: ${{ env.SITE_ROOT }}/python/
-          remote_host: ${{ secrets.HOSTINGER_HOST }}
-          remote_port: ${{ secrets.HOSTINGER_PORT }}
-          remote_user: ${{ secrets.HOSTINGER_USER }}
-          remote_key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          remote_host: ${{ secrets.DEPLOY_HOST }}
+          remote_port: ${{ secrets.DEPLOY_PORT || 22 }}
+          remote_user: ${{ secrets.DEPLOY_USER }}
+          remote_key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      # R/ is deployed by saketlab/varunayanR's pkgdown workflow
       - name: Upload the site root
         uses: burnett01/rsync-deployments@7.0.1
         with:
           switches: -avzr --delete --exclude=/python/ --exclude=/R/
-          path: docs/_build/root/
+          path: python/docs/_build/root/
           remote_path: ${{ env.SITE_ROOT }}/
-          remote_host: ${{ secrets.HOSTINGER_HOST }}
-          remote_port: ${{ secrets.HOSTINGER_PORT }}
-          remote_user: ${{ secrets.HOSTINGER_USER }}
-          remote_key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          remote_host: ${{ secrets.DEPLOY_HOST }}
+          remote_port: ${{ secrets.DEPLOY_PORT || 22 }}
+          remote_user: ${{ secrets.DEPLOY_USER }}
+          remote_key: ${{ secrets.DEPLOY_SSH_KEY }}

@@ -1,0 +1,127 @@
+---
+title: "Spatial aggregation methods"
+output:
+  rmarkdown::html_vignette:
+    self_contained: true
+vignette: >
+  %\VignetteIndexEntry{Spatial aggregation methods}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+has_data <- requireNamespace("ggplot2", quietly = TRUE) &&
+  nzchar(system.file("extdata", "spatial_aggregation.rds", package = "varunayan"))
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>", eval = has_data,
+  fig.width = 7, fig.height = 6, fig.dpi = 150,
+  warning = FALSE, message = FALSE, out.width = "100%"
+)
+```
+
+ERA5 and IMD give data on regular grids. When we aggregate a grid to districts, a small district can contain no grid point. Then that district has no value.
+
+This article compares two methods of `aggregate_to_polygons()`:
+
+- Point-in-polygon (`point_in_polygon`): the mean of all grid points inside each district.
+- Nearest centroid (`nearest_centroid`): the value of the grid point nearest to a point inside each district.
+
+```{r libraries}
+library(varunayan)
+```
+
+## District boundaries and climate data
+
+`load_india_boundaries("district")` gives the LGD district boundaries from [geo.bharatviz.org](https://geo.bharatviz.org). The function downloads the file one time and keeps it in a cache.
+
+```{r boundaries}
+districts <- load_india_boundaries("district")
+head(sf::st_drop_geometry(districts))
+```
+
+We use two datasets for January 2023. The IMD 1° grid gives the mean daily maximum temperature (column `temperature`, °C). The ERA5 0.25° grid gives the mean 2 m temperature (column `value`, °C). The ERA5 download needs a CDS API key (see the quickstart). This article uses a cached copy of the two datasets.
+
+```{r download, eval = FALSE}
+imd <- imd_temperature_bbox(
+  "india_tmax_2023", 2023, 2023,
+  north = 37.5, south = 7.5, east = 97.5, west = 67.5,
+  var_type = "tmax", frequency = "monthly"
+)
+imd <- imd[imd$date == as.Date("2023-01-01"), ]
+
+era5 <- era5ify_geojson(
+  request_id = "era5_india_t2m_jan2023",
+  variables = "2m_temperature",
+  start_date = "2023-01-01", end_date = "2023-01-31",
+  json_file = "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson",
+  frequency = "monthly", resolution = 0.25
+)
+era5 <- era5[era5$month == 1, ]
+```
+
+```{r load_data}
+saved <- readRDS(system.file("extdata", "spatial_aggregation.rds", package = "varunayan"))
+imd <- saved$imd
+era5 <- saved$era5
+head(imd)
+```
+
+## Grid coverage
+
+`compare_grids()` draws the grid points of each dataset on the district boundaries.
+
+```{r grids}
+compare_grids(
+  ERA5 = era5, IMD = imd, colors = c(ERA5 = "#3498DB", IMD = "#E74C3C"),
+  point_size = 0.6, polygons = districts, title = "ERA5 and IMD grid points"
+)
+```
+
+`check_grid_coverage()` counts the grid points inside each district.
+
+```{r coverage}
+check_grid_coverage(imd, districts, c("state_name", "district_name"))$summary
+check_grid_coverage(era5, districts, c("state_name", "district_name"))$summary
+```
+
+## Aggregate IMD to districts with the two methods
+
+```{r aggregate}
+pip <- aggregate_to_polygons(imd, districts, c(pip = "temperature"),
+  method = "point_in_polygon",
+  polygon_id_cols = c("state_name", "district_name")
+)
+nearest <- aggregate_to_polygons(imd, districts, c(nearest = "temperature"),
+  method = "nearest_centroid",
+  polygon_id_cols = c("state_name", "district_name")
+)
+both <- merge(districts, merge(pip, nearest))
+colSums(!is.na(sf::st_drop_geometry(both)[c("pip", "nearest")]))
+```
+
+## Compare the maps
+
+Gray districts have no value.
+
+```{r maps, fig.height = 5}
+plot_map(both, c("pip", "nearest"),
+  cmap = "plasma", legend_title = "°C",
+  title = "IMD Tmax, January 2023"
+)
+```
+
+## Compare the values
+
+For districts with a value from both methods, the scatter plot shows the agreement.
+
+```{r scatter, fig.width = 5, fig.height = 5}
+plot_scatter(sf::st_drop_geometry(both), "pip", "nearest",
+  title = "Point-in-polygon vs nearest centroid (°C)"
+)
+```
+
+## Conclusion
+
+The 1° IMD grid is much coarser than the 0.25° ERA5 grid. Only 250 of the 783 districts (32 %) contain an IMD grid point. ERA5 grid points are in 751 districts (96 %).
+
+With the point-in-polygon method, 533 districts have no IMD value. The nearest-centroid method gives a value to all 783 districts. Where both methods give a value, they agree closely, because most of these districts contain only one IMD grid point. With `fill_empty = TRUE`, the point-in-polygon method uses the nearest grid point for a district that has no grid point.

@@ -17,6 +17,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Check the tag matches the Python and R versions
+      run: |
+        tag="${GITHUB_REF_NAME#v}"
+        py=$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' python/varunayan/__init__.py)
+        r=$(sed -n 's/^Version: *//p' R/DESCRIPTION)
+        echo "tag=$tag python=$py R=$r"
+        if [ "$tag" != "$py" ] || [ "$tag" != "$r" ]; then
+          echo "::error::tag $GITHUB_REF_NAME does not match python $py and R $r"
+          exit 1
+        fi
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -29,11 +39,12 @@ jobs:
         --user
     - name: Build a binary wheel and a source tarball
       run: python3 -m build
+      working-directory: python
     - name: Store the distribution packages
       uses: actions/upload-artifact@v4
       with:
         name: python-package-distributions
-        path: dist/
+        path: python/dist/
 
   publish-to-pypi:
     name: >-
@@ -76,7 +87,7 @@ jobs:
         name: python-package-distributions
         path: dist/
     - name: Sign the dists with Sigstore
-      uses: sigstore/gh-action-sigstore-python@v3.0.0
+      uses: sigstore/gh-action-sigstore-python@v2.1.1
       with:
         inputs: >-
           ./dist/*.tar.gz

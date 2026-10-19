@@ -1,0 +1,178 @@
+---
+title: "Heat stress indices"
+output:
+  rmarkdown::html_vignette:
+    self_contained: true
+vignette: >
+  %\VignetteIndexEntry{Heat stress indices}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+has_suggests <- requireNamespace("ggplot2", quietly = TRUE) &&
+  requireNamespace("tidyr", quietly = TRUE)
+has_data <- has_suggests && nzchar(system.file("extdata", "heat_stress_india.rds",
+  package = "varunayan"
+))
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#",
+  eval = has_suggests,
+  fig.width = 8,
+  fig.height = 4,
+  fig.dpi = 150,
+  warning = FALSE,
+  message = FALSE,
+  out.width = "100%"
+)
+```
+
+Air temperature alone does not give an accurate measure of heat stress. Humidity decreases the heat that the body loses by sweat. Wind and solar radiation also change the heat load. Thus, two days with the same temperature can have a different physiological risk.
+
+This article calculates the heat stress indices in `varunayan`, compares them, and gets them from ERA5 in one call.
+
+| Index | Inputs | Primary use |
+|-------|--------|-------------|
+| Temperature | T | Baseline |
+| Wet bulb ([Stull 2011](https://doi.org/10.1175/JAMC-D-11-0143.1)) | T + humidity | Physiological limit |
+| Heat index ([NWS Rothfusz](https://www.weather.gov/media/ffc/ta_htindx.PDF)) | T + RH | Public weather alerts |
+| WBGT (BoM closed form) | T + humidity | Workplace safety |
+| UTCI ([Bröde 2012](https://doi.org/10.1007/s00484-011-0454-1)) | T + Tmrt + wind + humidity | Climate and comfort research |
+| [Humidex](https://climate.weather.gc.ca/glossary_e.html#humidex) | T + dewpoint | Canadian weather |
+
+```{r setup}
+library(varunayan)
+```
+
+## The indices on a controlled grid
+
+This section changes the air temperature at three fixed relative humidity levels. `dewpoint_from_relative_humidity()` gives the dewpoint for each pair. `calc_heat_indices()` then gives the wet bulb, heat index, WBGT and humidex in one data frame. UTCI uses a wind speed of 2 m/s. The UTCI polynomial is valid only up to a vapor pressure of 5 kPa (approximately 34 °C at 90 % RH). Above this limit, `utci()` extrapolates the polynomial, so this section stops at 40 °C.
+
+```{r controlled_grid, fig.height = 5}
+grid <- expand.grid(temp_c = seq(20, 40, 0.5), rh = c(30, 60, 90))
+indices <- calc_heat_indices(grid$temp_c, dewpoint_from_relative_humidity(grid$temp_c, grid$rh))
+indices$air_temp <- indices$temp_c
+indices$utci <- utci(indices$temp_c, wind_speed = 2, dewpoint_c = indices$dewpoint_c)
+long <- tidyr::pivot_longer(indices, c(air_temp, wet_bulb, heat_index, wbgt, humidex, utci),
+  names_to = "index"
+)
+plot_series(long, "temp_c", "value",
+  by = "index", facet = "rh", ylabel = "Index value (°C)",
+  title = "Heat stress indices against air temperature at RH = 30, 60 and 90 %"
+)
+```
+
+- The wet bulb temperature is always below the air temperature, because water evaporates.
+- The heat index and the humidex increase above the air temperature when the humidity increases.
+- At low RH, the heat index is below the air temperature. Dry heat feels less severe than the thermometer value.
+- UTCI and WBGT put humidity (and, for UTCI, wind) into one effective temperature.
+
+## Risk categories
+
+Each index has a scale of risk categories: the NWS heat index categories (80, 90, 103 and 124 °F), the NWS/OSHA WBGT flag conditions (78, 82, 85 and 88 °F) and the 10-level UTCI assessment scale (Bröde 2012).
+
+```{r risk_table}
+sample <- calc_heat_indices(c(22, 28, 34, 40, 46), c(12, 20, 26, 30, 34))
+sample$utci <- round(utci(sample$temp_c, wind_speed = 2, dewpoint_c = sample$dewpoint_c), 1)
+cbind(sample,
+  hi_risk = heat_index_risk_category(sample$heat_index),
+  wbgt_risk = wbgt_risk_category(sample$wbgt),
+  utci_stress = utci_category(sample$utci)
+)
+```
+
+## From ERA5 in one call
+
+`GetERA5DailyHeatIndexData()` downloads temperature, dewpoint and wind for a region and returns all the indices and their categories. With `solar_load = TRUE`, it also downloads solar radiation and uses the mean radiant temperature in UTCI.
+
+This example uses India in May 2023 on a 0.5° grid. For each day, the R function uses the ERA5 values at 12:00 UTC (17:30 IST). You need a CDS API key (see the quickstart). This article uses a cached copy of the result.
+
+```{r download_era5, eval = FALSE}
+heat <- GetERA5DailyHeatIndexData(
+  request_id = "india_heat_may2023_solar",
+  start_date = "2023-05-01",
+  end_date = "2023-05-31",
+  json_file = "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson",
+  solar_load = TRUE,
+  resolution = 0.5
+)
+```
+
+```{r load_data, eval = has_data}
+heat <- readRDS(system.file("extdata", "heat_stress_india.rds", package = "varunayan"))
+head(heat)
+```
+
+```{r daily_indices, eval = has_data}
+daily <- tidyr::pivot_longer(heat, c(temp_c, wet_bulb, heat_index, wbgt, utci), names_to = "index")
+plot_series(spatial_mean(daily, "value", by = c("date", "index")), "date", "value",
+  by = "index",
+  ylabel = "Daily mean (°C)", title = "Heat stress indices in India, May 2023"
+)
+```
+
+```{r utci_stress, eval = has_data}
+table(heat$utci_stress)
+```
+
+The mean temperature over India increases from 25 °C on 1 May to 33 °C on 12 May. It stays near 33 °C until 23 May. The heat index is approximately 2 °C above the air temperature. UTCI stays near the air temperature. The wet bulb temperature is between 20 °C and 23 °C. Most grid-cell days are in the "Strong heat stress" UTCI category, then "Very strong heat stress" and "Moderate heat stress".
+
+## Solar load
+
+`mean_radiant_temperature()` (Thorsson 2007) adds the radiant load of the sun to the air temperature. This example keeps the air temperature at 38 °C and the dewpoint at 24 °C, and increases the solar radiation from 0 to 1000 W/m².
+
+```{r solar_load, fig.height = 3.5}
+sun <- data.frame(solar_radiation = seq(0, 1000, 20))
+sun$mean_radiant_temp <- mean_radiant_temperature(38, sun$solar_radiation)
+sun$utci_shade <- utci(38, wind_speed = 2, dewpoint_c = 24)
+sun$utci_sun <- utci(38, wind_speed = 2, dewpoint_c = 24, tmrt = sun$mean_radiant_temp)
+plot_series(tidyr::pivot_longer(sun, -solar_radiation, names_to = "series"),
+  "solar_radiation", "value",
+  by = "series", ylabel = "°C",
+  title = "Solar radiation increases the radiant load and UTCI"
+)
+```
+
+## Maps by district
+
+`aggregate_to_polygons()` gives the mean of the month for each district. `plot_map()` with a vector of columns makes one panel for each index on one color scale.
+
+```{r district_maps, eval = has_data, fig.height = 7}
+districts <- load_india_boundaries("district")
+heat_cols <- c("temp_c", "wet_bulb", "heat_index", "wbgt", "utci", "humidex")
+district_heat <- aggregate_to_polygons(heat, districts, c(heat_cols, "rh"),
+  polygon_id_cols = c("state_name", "district_name")
+)
+district_heat <- merge(districts, district_heat)
+plot_map(district_heat, heat_cols,
+  cmap = "Spectral", legend_title = "°C",
+  title = "Heat stress indices, May 2023"
+)
+```
+
+```{r district_rh, eval = has_data, fig.height = 5}
+plot_map(district_heat, "rh", legend_title = "RH (%)", title = "Mean relative humidity, May 2023")
+```
+
+The northwest has the highest air temperature and the lowest humidity. The coasts and the northeast have the highest humidity. Ladakh and the Himalaya are cold in all the indices.
+
+## Relationship between indices
+
+```{r correlation, eval = has_data, fig.width = 6, fig.height = 5}
+plot_heatmap(cor(heat[c(heat_cols, "rh", "wind_speed")]),
+  annotate = TRUE,
+  title = "Correlation between heat stress indices, India May 2023"
+)
+```
+
+Over all of India, the indices have a strong correlation with each other (r = 0.9 or more). The cause is that the data contains the cold Himalaya and the hot plains. The correlation is not perfect, because each index measures a different part of heat stress. Relative humidity has a negative correlation with the air temperature, because the hottest regions are the driest in May.
+
+## References
+
+- Stull (2011), J. Appl. Meteorol. Climatol. 50: 2267-2269. Wet bulb.
+- Rothfusz (1990), NWS SR/SSD 90-23. Heat index.
+- Bröde et al. (2012), Int. J. Biometeorol. 56: 481-494. UTCI.
+- Thorsson et al. (2007), Int. J. Climatol. 27: 1983-1993. Mean radiant temperature.
+- Masterson and Richardson (1979), Environment Canada. Humidex.
+- Australian Bureau of Meteorology. WBGT approximation.

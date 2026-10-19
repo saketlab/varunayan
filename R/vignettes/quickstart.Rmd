@@ -1,0 +1,157 @@
+---
+title: "Quickstart guide"
+output:
+  rmarkdown::html_vignette:
+    self_contained: true
+vignette: >
+  %\VignetteIndexEntry{Quickstart guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Varunayan = Varun + ayan. In Vedic mythology, Varun is the god of the sky, order, truth and water. In Sanskrit, ayan means path.
+
+The varunayan package downloads climate variables for any region of the globe from [ERA5](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels). ERA5 is a reanalysis. It combines models and historical observations to estimate many atmospheric, land and ocean variables from 1940 to the present. The package gets the data from the [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/) (CDS).
+
+```{r setup}
+library(varunayan)
+```
+
+## CDS credentials
+
+To get ERA5 data, you must have a [CDS API key](https://cds.climate.copernicus.eu/how-to-api). Save the key one time only.
+
+```{r era5-setup, eval = FALSE}
+setup_cds_credentials(key = "your-personal-access-token")
+```
+
+## Key arguments
+
+The three download functions share these arguments.
+
+| Argument | Meaning |
+|---|---|
+| `request_id` | Name of the request. Use a unique name for each request. |
+| `variables` | ERA5 variable names, for example `"2m_temperature"`. |
+| `start_date`, `end_date` | Dates as `"YYYY-MM-DD"`. |
+| `frequency` | `"hourly"` (default), `"daily"`, `"weekly"`, `"monthly"` or `"yearly"`. |
+| `resolution` | Grid size in degrees (default 0.25). |
+| `dataset_type`, `pressure_levels` | Use `"pressure"` and a vector such as `"850"` for pressure-level data. |
+
+## Data for a bounding box
+
+`era5ify_bbox()` gets the grid cells inside a box. Here we get daily temperature and precipitation for five days around Delhi.
+
+The output is in long format: one row for each time, grid cell and variable. The `variable` column holds the ERA5 short name (`t2m` is 2 m temperature, `tp` is total precipitation). Temperatures are in °C. Precipitation is in mm and is the total for each day.
+
+```{r era5-bbox, eval = FALSE}
+bbox <- era5ify_bbox(
+  request_id = "quickstart_bbox",
+  variables = c("2m_temperature", "total_precipitation"),
+  start_date = "2024-01-01",
+  end_date = "2024-01-05",
+  north = 29, south = 28, east = 78, west = 76.5,
+  frequency = "daily"
+)
+head(bbox)
+```
+
+## Data for a GeoJSON region
+
+`era5ify_geojson()` takes a path or URL of a GeoJSON file. Here we use the [LGD state boundaries of India](https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson). With `level = "feature"`, the output has one row for each state, with the mean of the grid cells inside it. The default `level = "union"` keeps each grid cell.
+
+```{r era5-geojson, eval = FALSE}
+states <- era5ify_geojson(
+  request_id = "quickstart_states",
+  variables = "2m_temperature",
+  start_date = "2024-01-01",
+  end_date = "2024-01-01",
+  json_file = "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson",
+  frequency = "daily",
+  level = "feature"
+)
+head(states)
+```
+
+## Data for a point
+
+`era5ify_point()` keeps the grid cell nearest to a latitude and longitude. Here we get the daily temperature and precipitation in Mumbai in the first week of August 2024, during the monsoon.
+
+```{r era5-point, eval = FALSE}
+mumbai <- era5ify_point(
+  request_id = "quickstart_point",
+  variables = c("2m_temperature", "total_precipitation"),
+  start_date = "2024-08-01",
+  end_date = "2024-08-07",
+  lat = 19.07, lon = 72.88,
+  frequency = "daily"
+)
+mumbai
+```
+
+## Data at pressure levels
+
+ERA5 also gives the atmosphere at 37 pressure levels, from 1000 hPa (near the surface) to 1 hPa. A lower pressure is a higher altitude: 850 hPa is approximately 1.5 km and 200 hPa is approximately 12 km. Set `dataset_type = "pressure"` and give the levels in `pressure_levels`. The output has a `pressure_level` column (hPa).
+
+Here we get the daily temperature at six levels over Delhi for three days. `spatial_mean()` with `by = "pressure_level"` gives the mean temperature at each level. The temperature decreases as the altitude increases.
+
+```{r era5-pressure, eval = FALSE}
+profile <- era5ify_bbox(
+  request_id = "quickstart_pressure",
+  variables = "temperature",
+  start_date = "2024-01-01",
+  end_date = "2024-01-03",
+  north = 29, south = 28, east = 78, west = 76.5,
+  dataset_type = "pressure",
+  pressure_levels = c("1000", "850", "700", "500", "300", "200"),
+  frequency = "daily"
+)
+head(profile)
+```
+
+```{r era5-pressure-plot, eval = FALSE}
+plot_series(spatial_mean(profile, "value", by = "pressure_level"),
+  x = "pressure_level", y = "value",
+  ylabel = "Temperature (°C)", title = "Temperature profile over Delhi, 1-3 January 2024"
+)
+```
+
+## Find a variable
+
+ERA5 has hundreds of variables. `search_variable()` finds the variables that match a word, in the single-level and pressure-level datasets.
+
+```{r search, message = FALSE}
+search_variable("temperature", dataset_type = "all")
+```
+
+## Describe variables
+
+`describe_variables()` gives a description and the unit of each variable.
+
+```{r describe, message = FALSE}
+describe_variables(
+  c("2m_temperature", "total_precipitation", "surface_pressure"),
+  dataset_type = "single"
+)
+```
+
+## IMD data
+
+The India Meteorological Department (IMD) gives gridded rainfall and temperature for India. You do not need credentials for IMD data.
+
+```{r imd, eval = FALSE}
+rain <- imd_rainfall_bbox(
+  request_id = "quickstart_imd_rain",
+  start_year = 2023, end_year = 2023,
+  north = 22, south = 16, east = 80, west = 73,
+  frequency = "monthly"
+)
+head(rain)
+```

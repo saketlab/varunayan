@@ -1,0 +1,199 @@
+url: https://varunayan.saketlab.org/R/
+
+development:
+  mode: release
+
+template:
+  bootstrap: 5
+  light-switch: true
+  preset: default
+  bslib:
+    primary: "#0071e3"
+    border-radius: "0.5rem"
+  opengraph:
+    image:
+      src: man/figures/og-card.png
+      alt: "varunayanR - ERA5, IMD, HadEX3, CRU TS climate data for R"
+    twitter:
+      card: summary_large_image
+      creator: "@saketkc"
+  includes:
+    in_header: |
+      <link rel="stylesheet" href="extra.css">
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-L78L5ESPGT"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-L78L5ESPGT');
+      </script>
+      <meta name="keywords" content="ERA5, IMD, HadEX3, CRU TS, climate data, R package, India weather, reanalysis, precipitation, temperature, NetCDF, heat stress, WBGT, UTCI, Copernicus, ECMWF, Indian Meteorological Department, gridded data, monsoon, rainfall, climate extremes, ETCCDI">
+      <meta name="author" content="Saket Choudhary">
+      <meta name="robots" content="index, follow">
+      <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+      <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "varunayanR",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Windows, macOS, Linux",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "R package for downloading and processing climate data from ERA5, IMD, HadEX3, and CRU TS for India. Supports bounding box, GeoJSON, and point extraction with heat stress indices.",
+        "author": {
+          "@type": "Person",
+          "name": "Saket Choudhary",
+          "url": "https://saketlab.org"
+        },
+        "url": "https://varunayan.saketlab.org/R/",
+        "downloadUrl": "https://github.com/saketlab/varunayan",
+        "softwareVersion": "0.1.1",
+        "programmingLanguage": "R"
+      }
+      </script>
+
+home:
+  title: "varunayanR - ERA5, IMD, HadEX3 & CRU TS Climate Data for R"
+  description: >
+    R package for downloading and processing climate reanalysis data from ERA5, IMD,
+    HadEX3, and CRU TS for India. Extract data via bounding boxes, GeoJSON, or points.
+    Calculate heat stress indices (WBGT, UTCI, Humidex, Wet Bulb).
+
+  links:
+  - text: Browse source code
+    href: https://github.com/saketlab/varunayan
+  - text: Report a bug
+    href: https://github.com/saketlab/varunayan/issues
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, tutorials, news]
+    right: [search, github, lightswitch]
+
+  components:
+    reference:
+      text: Reference
+      href: reference/index.html
+
+    articles:
+      text: Articles
+      menu:
+      - text: Quickstart
+        href: articles/quickstart.html
+      - text: Climate of India
+        href: articles/climate-of-india.html
+      - text: Comparing ERA5 with observed datasets
+        href: articles/comparing-datasets.html
+      - text: Spatial aggregation
+        href: articles/spatial-aggregation.html
+      - text: Heat stress
+        href: articles/heat-stress.html
+      - text: Climate and public interest
+        href: articles/public-interest.html
+
+    news:
+      text: Changelog
+      href: news/index.html
+
+    github:
+      icon: fab fa-github fa-lg
+      href: https://github.com/saketlab/varunayan
+      aria-label: GitHub
+
+reference:
+- title: "ERA5 data functions"
+  desc: "Download ERA5 reanalysis data from Copernicus climate data store"
+  contents:
+  - starts_with("era5ify")
+  - starts_with("ERA5ify")
+  - setup_cds_credentials
+
+- title: "HadEX3 climate extremes functions"
+  desc: "Download ETCCDI climate extremes from the Met Office HadEX3 dataset"
+  contents:
+  - starts_with("hadex3_")
+  - starts_with("HadEX3")
+  - list_hadex3_indices
+  - ListHadEX3Indices
+
+- title: "CRU TS gridded climate functions"
+  desc: "Download monthly gridded climate data from the CRU TS v4.07 dataset"
+  contents:
+  - starts_with("cru_ts_")
+  - starts_with("CRUTS")
+  - list_cru_ts_variables
+  - ListCRUTSVariables
+
+- title: "IMD data functions"
+  desc: "Download gridded climate data from Indian Meteorological Department"
+  contents:
+  - starts_with("imd_")
+  - starts_with("IMD")
+
+- title: "Heat exposure indicators"
+  desc: "Heatwaves, warm nights, Excess Heat Factor, WBGT and land-surface indices for heat-health studies"
+  contents:
+  - exposure_indicators
+  - heatwave_days
+  - warm_nights
+  - india_elevation
+  - excess_heat_factor
+  - wbgt
+  - wbgt_liljegren
+  - ndvi
+  - ndbi
+
+- title: "Analysis"
+  desc: "Summarize and compare the downloaded data. The Python package has the same functions."
+  contents:
+  - load_india_boundaries
+  - spatial_mean
+  - compare
+  - cross_correlation
+  - anomaly
+  - seasonal_cycle
+  - peak_month
+  - seasonal_stat
+  - regrid
+  - aggregate_to_polygons
+  - dewpoint_from_relative_humidity
+
+- title: "Plots"
+  desc: "ggplot2 plots for the analysis results. The Python package has the same functions."
+  contents:
+  - starts_with("plot_")
+
+- title: "Variable discovery"
+  desc: "Search and explore available climate variables"
+  contents:
+  - search_variable
+  - describe_variables
+  - list_available_variables
+
+- title: "Cache management"
+  desc: "Manage downloaded data cache"
+  contents:
+  - show_cache_info
+  - clear_cache
+
+- title: "All other functions"
+  contents:
+  - lacks_concepts(c("internal"))
+
+authors:
+  Saket Choudhary:
+    href: https://github.com/saketkc
+  Darakhshan Nehal:
+    href: https://github.com/darakhshannehal
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
+  components:
+    developed_by: "Developed by [Saket Lab](https://saketlab.org)"
+    built_with: "Built with [pkgdown](https://pkgdown.r-lib.org/)"

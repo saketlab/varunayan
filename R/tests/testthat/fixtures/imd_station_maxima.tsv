@@ -1,0 +1,13 @@
+station	latitude	longitude	date	tmax_c	bulletin	quote
+Phalodi	27.13	72.36	2024-05-26	49.8	https://internal.imd.gov.in/press_release/20240527_pr_3019.pdf	Yesterday, the highest maximum temperature of 49.8°C was reported at Phalodi (West Rajasthan) over the country
+Phalodi	27.13	72.36	2024-05-27	49.4	https://internal.imd.gov.in/press_release/20240528_pr_3025.pdf	Yesterday, the highest maximum temperature of 49.4°C was reported at Phalodi (West Rajasthan) over the country
+Churu	28.3	74.95	2024-05-28	50.5	https://internal.imd.gov.in/press_release/20240529_pr_3027.pdf	Yesterday, the highest maximum temperature of 50.5°C was reported at Churu (West Rajasthan) over the country
+Rohtak	28.9	76.58	2024-05-29	48.8	https://internal.imd.gov.in/press_release/20240530_pr_3031.pdf	Yesterday, the highest maximum temperature of 48.8°C was reported at Rohtak (Haryana) over the country
+Najafgarh	28.61	76.98	2024-05-20	47.4	https://internal.imd.gov.in/press_release/20240521_pr_3007.pdf	Yesterday, the highest maximum temperature of 47.4°C was reported at Najafgarh (Delhi) over the country
+Kalaikunda	22.34	87.22	2024-04-30	47.2	https://internal.imd.gov.in/press_release/20240501_pr_2974.pdf	Yesterday, the highest maximum temperature of 47.2°C was reported at Kalaikunda (Gangetic West Bengal)
+Nandyal	15.48	78.48	2024-05-02	46.2	https://internal.imd.gov.in/press_release/20240503_pr_2980.pdf	Yesterday, highest maximum temperature of 46.2°C was reported at Nandyal (Rayalaseema) over the country
+Prayagraj	25.44	81.73	2024-06-17	47.6	https://internal.imd.gov.in/press_release/20240618_pr_3056.pdf	The highest Maximum Temperature of 47.6°C was reported at Prayagraj (East Uttar Pradesh) over the country
+Barmer	25.75	71.39	2025-04-08	46.4	https://internal.imd.gov.in/press_release/20250409_pr_3874.pdf	Yesterday, the highest maximum temperature of 46.4°C was reported at Barmer (West Rajasthan) over the country
+Jharsuguda	21.86	84.01	2025-04-22	46.2	https://internal.imd.gov.in/press_release/20250423_pr_3911.pdf	Yesterday, the highest maximum temperature of 46.2°C was reported at Jharsuguda (Odisha) over the country
+Bhatinda	30.21	74.95	2025-06-10	47.6	https://internal.imd.gov.in/press_release/20250611_pr_4047.pdf	Yesterday, The highest maximum temperature of 47.6°C was reported at Bhatinda (Punjab)
+Sri Ganganagar	29.92	73.88	2025-06-11	48.0	https://internal.imd.gov.in/press_release/20250612_pr_4052.pdf	Yesterday, The highest maximum temperature of 48.0°C was reported at SRIGANGANAGAR(RAJASTHAN)

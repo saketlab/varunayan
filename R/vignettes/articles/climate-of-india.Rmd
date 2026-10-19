@@ -1,0 +1,218 @@
+---
+title: "Climate of India"
+output:
+  rmarkdown::html_vignette:
+    self_contained: true
+vignette: >
+  %\VignetteIndexEntry{Climate of India}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+has_data <- requireNamespace("ggplot2", quietly = TRUE) &&
+  nzchar(system.file("extdata", "climate_of_india.rds", package = "varunayan"))
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = has_data,
+  fig.width = 8,
+  fig.height = 4,
+  fig.dpi = 150,
+  warning = FALSE,
+  message = FALSE,
+  out.width = "100%"
+)
+```
+
+This article uses varunayan to look at four parts of the climate of India:
+
+- The temperature trend from 1941 to 2024, from [ERA5](https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5).
+- The monsoon: the month of peak rainfall and the annual rainfall in each grid cell, from ERA5.
+- Climate extremes: the hottest day (TXx) and the largest 1-day rainfall (Rx1day) of each year, from [HadEX3](https://www.metoffice.gov.uk/hadobs/hadex3/).
+- India among other countries: the 2024 seasonal cycle of India and seven other countries, from ERA5.
+
+ERA5 needs a CDS API key (see the quickstart). HadEX3 downloads without credentials. This article uses a cached copy of the results.
+
+```{r setup}
+library(varunayan)
+```
+
+```{r load_data, include = FALSE}
+extdata <- function(name) readRDS(system.file("extdata", name, package = "varunayan"))
+saved <- extdata("climate_of_india.rds")
+hadex3 <- extdata("india_hadex3.rds")
+temps <- extdata("country_temps.rds")
+states <- load_india_boundaries("state")
+```
+
+## Temperature trend
+
+`era5ify_geojson()` gets the yearly mean 2 m temperature (°C) for each grid cell inside India from 1941 to 2024. The [LGD state boundaries](https://geo.bharatviz.org/) give the region. `level = "union"` keeps all the grid cells inside the union of the states. Yearly data comes from the ERA5 monthly means.
+
+`spatial_mean()` averages the grid cells for each year. It weights each cell by the cosine of its latitude, so that each cell counts in proportion to its area.
+
+```{r t2m_download, eval = FALSE}
+era5 <- era5ify_geojson(
+  request_id = "india_t2m_yearly",
+  variables = "2m_temperature",
+  start_date = "1941-01-01",
+  end_date = "2024-12-31",
+  json_file = "https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson",
+  frequency = "yearly",
+  level = "union"
+)
+india <- spatial_mean(era5, "value", by = "year")
+names(india)[2] <- "t2m"
+```
+
+```{r t2m_cached}
+india <- saved$t2m_yearly
+head(india)
+```
+
+`anomaly()` subtracts the 1941-2024 mean from each year. A positive anomaly is a year warmer than the mean.
+
+```{r t2m_anomaly}
+india$anomaly <- anomaly(india, "t2m")
+plot_bars(india, "year", "anomaly", title = "Annual 2 m temperature anomaly in India (°C)")
+```
+
+Most years before 1980 are cooler than the mean (30 of 39 years). After 1990, 30 of 35 years are warmer than the mean. The warmest years are 2016 and 2024, approximately 1 °C above the mean. Over the full period, the temperature increases by approximately 0.14 °C in each decade.
+
+## Monsoon
+
+`era5ify_bbox()` gets the monthly total precipitation (mm) at 0.25° for a box around India, from 2000 to 2024. `peak_month()` averages each calendar month over all years. Then it gives the month with the largest mean and the sum of the 12 monthly means (`annual_total`) for each grid cell.
+
+```{r tp_download, eval = FALSE}
+rain <- era5ify_bbox(
+  request_id = "tp_india_2000_2024",
+  variables = "total_precipitation",
+  start_date = "2000-01-01",
+  end_date = "2024-12-31",
+  north = 37.1, south = 6.3, east = 97.4, west = 68.1,
+  frequency = "monthly",
+  resolution = 0.25
+)
+peak <- peak_month(rain, "value")
+```
+
+```{r tp_cached}
+peak <- saved$peak
+head(peak)
+```
+
+```{r peak_map, fig.height = 7}
+plot_map(peak, "peak_month", months = TRUE, boundaries = states, legend_title = "Peak month")
+```
+
+July is the month of peak rainfall in 70 % of the grid cells, and August in 14 %. On the coast of Tamil Nadu and in Sri Lanka, the peak is in October or November, from the northeast monsoon. North of 32° N, some cells have their peak in February or March, from western disturbances. Other cells there have their peak in July or August.
+
+```{r annual_map, fig.height = 7}
+plot_map(peak, "annual_total",
+  log = TRUE, boundaries = states,
+  legend_title = "Annual rainfall (mm)"
+)
+```
+
+The annual total changes from approximately 160 mm in the Thar Desert to more than 11 000 mm in Arunachal Pradesh. In 216 grid cells, the total is more than 3000 mm. Most of these cells are in the northeast, and most of the other cells are on the west coast. The map uses a log scale because the range is large.
+
+## Climate extremes
+
+[HadEX3](https://www.metoffice.gov.uk/hadobs/hadex3/) from the Met Office Hadley Centre gives 29 ETCCDI climate extreme indices on a 1.25° x 1.875° grid. The data is for 1901 to 2018 (Dunn et al. 2020, [doi:10.1029/2019JD032263](https://doi.org/10.1029/2019JD032263)). We use two indices:
+
+- TXx: the highest daily maximum temperature of each year (°C).
+- Rx1day: the largest rainfall total in one day of each year (mm).
+
+Each call downloads a gzipped NetCDF file (approximately 15 MB) one time and keeps it in a local cache. The number of grid cells with Rx1day data drops sharply after 2013, so the Rx1day series stops in 2013.
+
+```{r hadex3_download, eval = FALSE}
+txx <- hadex3_bbox(
+  index = "TXx", start_year = 1951, end_year = 2018, frequency = "annual",
+  north = 37, south = 6, east = 98, west = 68
+)
+rx1day <- hadex3_bbox(
+  index = "Rx1day", start_year = 1951, end_year = 2013, frequency = "annual",
+  north = 37, south = 6, east = 98, west = 68
+)
+```
+
+```{r hadex3_cached}
+txx <- hadex3$TXx_annual
+rx1day <- hadex3$Rx1day_annual[hadex3$Rx1day_annual$year <= 2013, ]
+head(txx)
+```
+
+`spatial_mean()` gives the area-weighted mean over the grid cells of India for each year. The LOWESS line shows the trend.
+
+```{r txx_trend}
+plot_series(spatial_mean(txx, "value", by = "year"), "year", "value",
+  smooth = "lowess", span = 0.3, ylabel = "TXx (°C)",
+  title = "India: annual maximum temperature (TXx), 1951-2018"
+)
+```
+
+The mean TXx over India does not increase. It is approximately 38.3 °C in 1951-1970, 37.1 °C in 1971-1990 and 37.7 °C in 1991-2018. The linear trend is approximately -0.1 °C in each decade.
+
+```{r rx1day_trend}
+plot_series(spatial_mean(rx1day, "value", by = "year"), "year", "value",
+  smooth = "lowess", span = 0.35, ylabel = "Rx1day (mm)",
+  title = "India: annual maximum 1-day rainfall (Rx1day), 1951-2013"
+)
+```
+
+The mean Rx1day is different in each year, between approximately 89 mm and 137 mm. The highest value is in 2006. The LOWESS line shows no clear trend from 1951 to 2013.
+
+The map shows the mean annual TXx in each grid cell for three periods: 1951-1970, 1971-1990 and 1991-2018. The three panels use one color scale.
+
+```{r txx_periods, fig.width = 10, fig.height = 4.5}
+txx$period <- cut(txx$year, c(1950, 1970, 1990, 2018),
+  labels = c("1951-1970", "1971-1990", "1991-2018")
+)
+periods <- aggregate(value ~ period + latitude + longitude, data = txx, FUN = mean)
+plot_map(periods, "value",
+  facet = "period", boundaries = states, cmap = "RdYlBu",
+  legend_title = "TXx (°C)", title = "India: mean annual TXx by period"
+)
+```
+
+From 1951-1970 to 1991-2018, TXx increases in the northeast, by up to 2.8 °C. TXx decreases in Nepal and in the south of Tibet, by up to 6 °C. Only 44 % of the cells are warmer in the last period than in the first period. HadEX3 has few stations in the Himalaya, so the values there are less reliable.
+
+## India among other countries
+
+`get_era5_country_temperature()` finds a country boundary in [Natural Earth](https://www.naturalearthdata.com/) data and downloads the monthly ERA5 2 m temperature (°C). It returns the national mean with cosine-latitude area weights. The function takes one country, so we call it for each country and join the results. We compare India with three South Asian and four European countries for 2024.
+
+```{r country_download, eval = FALSE}
+regions <- c(
+  France = "Europe", Germany = "Europe", Spain = "Europe", Norway = "Europe",
+  India = "South Asia", Pakistan = "South Asia", Bangladesh = "South Asia", Nepal = "South Asia"
+)
+temps <- do.call(rbind, lapply(names(regions), function(country) {
+  df <- get_era5_country_temperature(country, "2024-01-01", "2024-12-31")
+  cbind(df, country = country, region = regions[[country]])
+}))
+```
+
+```{r country_cached, include = FALSE}
+temps$region <- ifelse(temps$country %in% c("France", "Germany", "Spain", "Norway"),
+  "Europe", "South Asia"
+)
+```
+
+In the heat map, each row is a country and each column is a month.
+
+```{r country_heatmap}
+plot_heatmap(temps,
+  x = "month", y = "country", value = "temperature_mean",
+  title = "Mean monthly temperature, 2024 (°C)"
+)
+```
+
+```{r country_series, fig.height = 7}
+plot_series(temps,
+  x = "month", y = "temperature_mean", by = "country", facet = "region",
+  ylabel = "Temperature (°C)"
+)
+```
+
+The four European countries have a large seasonal cycle, with cold winters and a peak in July. Norway is the coldest country in all months. Bangladesh, India and Pakistan are warm all year and are hottest before the monsoon, in May and June. Nepal is much cooler than its neighbors, because a large part of the country is in the Himalaya.
