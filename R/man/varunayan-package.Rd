@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Download and process climate data for custom geographical regions defined by bounding boxes, 'GeoJSON' polygons, or point coordinates. Supports the fifth generation European Centre for Medium-Range Weather Forecasts atmospheric reanalysis ('ERA5'; Hersbach et al. (2020) \doi{10.1002/qj.3803}) from the 'Copernicus' Climate Data Store (CDS) \url{https://cds.climate.copernicus.eu/}, India Meteorological Department (IMD) gridded rainfall and temperature (Pai et al. (2014) \doi{10.54302/mausam.v65i1.851}), Hadley Centre global land climate extremes indices version 3 ('HadEX3'; Dunn et al. (2020) \doi{10.1029/2019JD032263}), and Climatic Research Unit gridded Time Series ('CRU TS'; Harris et al. (2020) \doi{10.1038/s41597-020-0453-3}). Also computes heat stress indices including heat index, wet-bulb temperature, outdoor wet-bulb globe temperature (Liljegren et al. (2008) \doi{10.1080/15459620802310770}) and the Universal Thermal Climate Index (Bröde et al. (2012) \doi{10.1007/s00484-011-0454-1}), and heat exposure indicators for health studies: heatwave and warm-night frequency and duration under India Meteorological Department and percentile definitions, the Excess Heat Factor (Nairn and Fawcett (2015) \doi{10.3390/ijerph120100227}) and diurnal temperature range.
+Download climate data for a bounding box, polygon or point and return tidy tables. Sources are the 'ERA5' reanalysis (Hersbach et al. (2020) \doi{10.1002/qj.3803}) from the 'Copernicus' Climate Data Store \url{https://cds.climate.copernicus.eu/}, India Meteorological Department (IMD) gridded rainfall and temperature (Pai et al. (2014) \doi{10.54302/mausam.v65i1.851}), 'HadEX3' climate extremes (Dunn et al. (2020) \doi{10.1029/2019JD032263}) and 'CRU TS' (Harris et al. (2020) \doi{10.1038/s41597-020-0453-3}). Computes heat stress indices, including wet-bulb globe temperature (Liljegren et al. (2008) \doi{10.1080/15459620802310770}) and the Universal Thermal Climate Index (Bröde et al. (2012) \doi{10.1007/s00484-011-0454-1}), and heatwave indicators, including the Excess Heat Factor (Nairn and Fawcett (2015) \doi{10.3390/ijerph120100227}).
 }
 \seealso{
 Useful links:
@@ -30,7 +30,7 @@ Authors:
 
 Other contributors:
 \itemize{
-  \item James C. Liljegren (Author of the original WBGT C code translated in R/wbgt_liljegren.R) [contributor]
+  \item James C. Liljegren (Author of the original WBGT C code) [contributor]
   \item UChicago Argonne, LLC (Copyright holder of the original WBGT C code) [copyright holder]
 }
 

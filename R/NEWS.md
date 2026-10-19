@@ -1,4 +1,6 @@
-# varunayan (development version)
+# varunayan 0.4.0
+
+* Initial CRAN submission.
 
 * New analysis functions: 
   `load_india_boundaries()`, `spatial_mean()`, `compare()`,
@@ -17,7 +19,3 @@
   12:00 for each day.
 * Shared test cases in `parity` check that R and Python give the same
   results.
-
-# varunayan 0.2.0
-
-* Initial CRAN submission.
