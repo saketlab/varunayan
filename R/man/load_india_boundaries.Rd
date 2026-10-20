@@ -18,7 +18,7 @@ Downloads the India LGD boundaries from geo.bharatviz.org once and keeps
 them in the package cache.
 }
 \examples{
-\dontrun{
+\donttest{
 states <- load_india_boundaries("state")
 }
 }

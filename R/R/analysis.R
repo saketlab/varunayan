@@ -39,7 +39,7 @@ mean_na <- function(x) mean(x, na.rm = TRUE)
 #'   districts)
 #' @export
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' states <- load_india_boundaries("state")
 #' }
 load_india_boundaries <- function(level = c("state", "district")) {
