@@ -1,0 +1,22 @@
+# varunayan
+
+> Python and R packages that download ERA5, IMD, HadEX3 and CRU TS climate data for a bounding box, polygon or point, return tidy long tables, and compute heat stress indices (UTCI, WBGT, Heat Index, Humidex). Both packages have the same functions and output.
+
+- Install: `pip install varunayan` (Python 3.10+) or `remotes::install_github("saketlab/varunayan", subdir = "R")` in R.
+- ERA5 downloads need a Copernicus Climate Data Store API key (https://cds.climate.copernicus.eu/how-to-api). Ask the user for it: set `CDS_API_KEY`, or call `setup_cds_credentials(key = ...)` in R. Never invent one.
+- IMD, HadEX3 and CRU TS downloads need no credentials.
+- Output is long format: `datetime, latitude, longitude, variable, value`, in °C and mm by default. Use `spatial_mean()` for a regional mean.
+
+## Python
+
+- [Python llms.txt](https://varunayan.saketlab.org/python/llms.txt): every public function with import lines and examples
+- [Python docs](https://varunayan.saketlab.org/python/)
+
+## R
+
+- [R llms.txt](https://varunayan.saketlab.org/R/llms.txt): README, function reference and articles
+- [R docs](https://varunayan.saketlab.org/R/): every page also has a Markdown copy (replace `.html` with `.md`)
+
+## Optional
+
+- [Source code](https://github.com/saketlab/varunayan)

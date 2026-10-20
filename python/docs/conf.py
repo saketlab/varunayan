@@ -149,10 +149,16 @@ smv_rename_latest_version = "latest"
 
 smv_prefer_remote_refs = True
 
-html_extra_path = ["llms.txt"]
 
 ogp_site_url = "https://varunayan.saketlab.org/python/"
 ogp_site_name = "varunayan"
 ogp_image = "https://varunayan.saketlab.org/python/_static/varunayan_og.png"
 ogp_description_length = 200
 ogp_type = "website"
+
+
+def setup(app):  # type: ignore[no-untyped-def]
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from llms_txt import write
+
+    app.connect("build-finished", write)
