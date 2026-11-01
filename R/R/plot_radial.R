@@ -73,7 +73,8 @@ utils::globalVariables(c("angle", "ring", "width", "hour", "value", "x", "y", "l
 #' @export
 #' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
 #' days <- seq(as.Date("2022-01-01"), as.Date("2024-12-31"), "day")
-#' df <- data.frame(date = days, t2m = 26 + 5 * sin(2 * pi * (as.numeric(format(days, "%j")) - 100) / 365))
+#' doy <- as.numeric(format(days, "%j"))
+#' df <- data.frame(date = days, t2m = 26 + 5 * sin(2 * pi * (doy - 100) / 365))
 #' plot_radial(df, "t2m", legend_title = "deg C")
 plot_radial <- function(data, value, time = "date", by = NULL, agg = NULL,
                         cmap = "RdYlBu", center = NULL, ncol = 2, title = NULL,

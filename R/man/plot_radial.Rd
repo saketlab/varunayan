@@ -55,7 +55,8 @@ Works for any quantity (temperature, precipitation, a heat index, ...).
 \examples{
 \dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 days <- seq(as.Date("2022-01-01"), as.Date("2024-12-31"), "day")
-df <- data.frame(date = days, t2m = 26 + 5 * sin(2 * pi * (as.numeric(format(days, "\%j")) - 100) / 365))
+doy <- as.numeric(format(days, "\%j"))
+df <- data.frame(date = days, t2m = 26 + 5 * sin(2 * pi * (doy - 100) / 365))
 plot_radial(df, "t2m", legend_title = "deg C")
 \dontshow{\}) # examplesIf}
 }

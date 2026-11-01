@@ -52,7 +52,10 @@ jobs:
       # TinyTeX lacks Courier (pcrr8t), which Rd.sty uses for \url, and makeindex,
       # which builds the index of the manual
       - name: Install LaTeX packages for the manual
-        run: tlmgr install inconsolata courier makeindex
+        # TinyTeX can ship a tlmgr older than its repository, which then refuses to install
+        run: |
+          tlmgr update --self
+          tlmgr install inconsolata courier makeindex
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
