@@ -29,6 +29,7 @@
 ^inst/extdata/climate_of_india\.rds$
 ^inst/extdata/comparing_datasets\.rds$
 ^inst/extdata/country_temps\.rds$
+^inst/extdata/diurnal_cycle\.rds$
 ^inst/extdata/heat_stress_india\.rds$
 ^inst/extdata/india_hadex3\.rds$
 ^inst/extdata/public_interest\.rds$

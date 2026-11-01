@@ -13,7 +13,6 @@ import xarray as xr
 from varunayan.core import (
     ProcessingParams,
     aggregate_and_save,
-    cleanup_temp_files,
     download_with_retry,
     era5ify_bbox,
     era5ify_geojson,
@@ -459,42 +458,6 @@ def test_validate_inputs_pressure_levels():
 
     # Should not raise any exceptions
     validate_inputs(params)
-
-
-@patch("os.path.exists", return_value=True)
-@patch("os.remove")
-@patch("shutil.rmtree")
-@patch("glob.glob")
-def test_cleanup_temp_files(
-    mock_glob: MagicMock,
-    mock_rmtree: MagicMock,
-    mock_remove: MagicMock,
-    mock_exists: MagicMock,
-):
-    """Test cleanup of temporary files"""
-
-    # Mock glob to return files for both patterns
-    def mock_glob_side_effect(pattern: str) -> Optional[List[str]]:
-        if "*test123*.zip" in pattern:
-            return ["/tmp/test123.zip"]
-        elif "*test123*.nc" in pattern:
-            return ["/tmp/test123.nc"]
-        else:
-            return []
-
-    mock_glob.side_effect = mock_glob_side_effect
-
-    cleanup_temp_files("test123", "/tmp/test123.json")
-
-    # Check that remove was called for the temp_geojson_file
-    mock_remove.assert_any_call("/tmp/test123.json")
-    # Check that remove was called for the glob files
-    mock_remove.assert_any_call("/tmp/test123.zip")
-    mock_remove.assert_any_call("/tmp/test123.nc")
-
-    # The function calls glob twice (once for *.zip, once for *.nc)
-    # So we expect 3 remove calls: temp_geojson_file + zip file + nc file
-    assert mock_remove.call_count == 3
 
 
 @patch("varunayan.core.aggregate_and_save")

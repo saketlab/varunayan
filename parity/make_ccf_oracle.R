@@ -7,8 +7,10 @@ lead <- function(n, k) {
 }
 make <- function(name, x, y, max_lag) {
   cc <- stats::ccf(x, y, lag.max = max_lag, plot = FALSE)
-  list(name = name, x = x, y = y, max_lag = max_lag,
-       lag = as.integer(cc$lag), r = as.numeric(cc$acf))
+  list(
+    name = name, x = x, y = y, max_lag = max_lag,
+    lag = as.integer(cc$lag), r = as.numeric(cc$acf)
+  )
 }
 seasonal <- sin(2 * pi * (1:120) / 12)
 cases <- list(

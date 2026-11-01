@@ -45,9 +45,9 @@ This article calculates the heat stress indices in `varunayan`, compares them, a
 library(varunayan)
 ```
 
-## The indices on a controlled grid
+## Indices on a controlled grid
 
-This section changes the air temperature at three fixed relative humidity levels. `dewpoint_from_relative_humidity()` gives the dewpoint for each pair. `calc_heat_indices()` then gives the wet bulb, heat index, WBGT and humidex in one data frame. UTCI uses a wind speed of 2 m/s. The UTCI polynomial is valid only up to a vapor pressure of 5 kPa (approximately 34 °C at 90 % RH). Above this limit, `utci()` extrapolates the polynomial, so this section stops at 40 °C.
+The grid changes the air temperature at three fixed relative humidity levels. `dewpoint_from_relative_humidity()` gives the dewpoint for each pair. `calc_heat_indices()` then gives the wet bulb, heat index, WBGT and humidex in one data frame. UTCI uses a wind speed of 2 m/s. The UTCI polynomial is valid only up to a vapor pressure of 5 kPa (approximately 34 °C at 90 % RH). Above this limit, `utci()` extrapolates the polynomial, so the grid stops at 40 °C.
 
 ```{r controlled_grid, fig.height = 5}
 grid <- expand.grid(temp_c = seq(20, 40, 0.5), rh = c(30, 60, 90))

@@ -170,11 +170,8 @@ plot_ccf(cross_correlation(disease_rain$rainfall_mm, disease_rain$`malaria sympt
 )
 ```
 
-For dengue, the largest correlation is at lag -2 and at lag +10 (r = 0.65 for both). The cycle repeats every 12 months, so the two lags show the same relation. Rainfall comes approximately two months before the peak in dengue searches. For malaria, the largest correlation is at lag -1 (r = 0.51). Rainfall comes approximately one month before the peak in malaria searches.
+For dengue, the largest correlation is at lag -2 and at lag +10 (r = 0.65 for both). The cycle repeats every 12 months, so the two lags show the same relation. Rainfall comes approximately two months before the peak in dengue searches. For malaria, the largest correlation is at lag -1 (r = 0.51). Rainfall comes approximately one month before the peak in malaria searches. This agrees with the time that mosquitoes need to breed after the rain.
 
-## Conclusion
-
-- Umbrella searches in India and sunscreen searches in California increase approximately one month before the rainfall or temperature peak.
-- Dengue and malaria searches in India increase one to two months after the rainfall peak. This agrees with the time that mosquitoes need to breed after the rain.
+## Other regions and variables
 
 The same steps work for other regions, variables and search terms or sales data.

@@ -112,6 +112,7 @@ Jupyter Notebooks
    notebooks/04_spatial_aggregation
    notebooks/05_heat_stress
    notebooks/06_public_interest
+   notebooks/07_diurnal_cycle
 
 API Reference
 =============

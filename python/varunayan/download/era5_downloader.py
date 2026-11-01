@@ -3,9 +3,12 @@ import logging
 import math
 import os
 import tempfile
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 import cdsapi  # pyright: ignore
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 sup_log: bool = False
 
@@ -209,3 +212,59 @@ def download_era5_pressure_lvl(
     client.retrieve(dataset, request, output_file)
 
     return output_file
+
+
+TIMESERIES_DATASET = "reanalysis-era5-single-levels-timeseries"
+
+
+def download_era5_timeseries(
+    variables: List[str],
+    start_date: dt.datetime,
+    end_date: dt.datetime,
+    lat: float,
+    lon: float,
+) -> "pd.DataFrame":
+    """Hourly single-level ERA5 at one point from the CDS time-series endpoint.
+
+    The endpoint returns the series of the nearest grid cell directly. The R
+    package uses the same endpoint.
+
+    Args:
+        variables: ERA5 variable names, such as ["2m_temperature"].
+        start_date: First day.
+        end_date: Last day (inclusive).
+        lat: Latitude of the point.
+        lon: Longitude of the point.
+
+    Returns:
+        Wide DataFrame with valid_time, latitude and longitude (of the grid
+        cell) and one column per variable (short names, ERA5 units).
+    """
+    import zipfile
+
+    import pandas as pd
+
+    request = {
+        "variable": list(variables),
+        "location": {"latitude": lat, "longitude": lon},
+        "date": [f"{start_date:%Y-%m-%d}/{end_date:%Y-%m-%d}"],
+        "data_format": "csv",
+    }
+    with tempfile.TemporaryDirectory() as tmp:
+        target = os.path.join(tmp, "timeseries.zip")
+        cdsapi.Client(quiet=sup_log).retrieve(TIMESERIES_DATASET, request, target)
+        if zipfile.is_zipfile(target):
+            with zipfile.ZipFile(target) as z:
+                name = next(n for n in z.namelist() if n.endswith(".csv"))
+                with z.open(name) as f:
+                    df = pd.read_csv(f)
+        else:
+            df = pd.read_csv(target)
+    df["valid_time"] = pd.to_datetime(df["valid_time"])
+    # ERA5 starts at 1940-01-01 07:00 UTC; CDS returns empty values before it
+    return df.dropna(
+        subset=[
+            c for c in df.columns if c not in ("valid_time", "latitude", "longitude")
+        ],
+        how="all",
+    )

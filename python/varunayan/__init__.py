@@ -119,6 +119,8 @@ from .plot import (
     plot_dual_axis,
     plot_heatmap,
     plot_map,
+    plot_radial,
+    plot_radial_hourly,
     plot_scatter,
     plot_series,
 )
@@ -224,6 +226,8 @@ __all__ = [
     "plot_scatter",
     "plot_bars",
     "plot_heatmap",
+    "plot_radial",
+    "plot_radial_hourly",
 ]
 
 __version__ = "0.4.0"

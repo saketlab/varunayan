@@ -2424,5 +2424,85 @@
    "title": "Heat",
    "ylabel": null
   }
+ },
+ {
+  "name": "radial_daily",
+  "function": "plot_radial",
+  "data": {
+   "date": [
+    "2023-01-01",
+    "2023-06-01",
+    "2024-01-01",
+    "2024-06-01"
+   ],
+   "hour": [
+    0,
+    6,
+    12,
+    18
+   ],
+   "city": [
+    "A",
+    "B",
+    "A",
+    "B"
+   ],
+   "t": [
+    20.0,
+    30.0,
+    21.0,
+    31.0
+   ]
+  },
+  "args": {
+   "value": "t",
+   "by": "city",
+   "title": "Radial"
+  },
+  "expected": {
+   "n_panels": 2,
+   "title": "Radial",
+   "ylabel": null
+  }
+ },
+ {
+  "name": "radial_hourly",
+  "function": "plot_radial_hourly",
+  "data": {
+   "date": [
+    "2023-01-01",
+    "2023-06-01",
+    "2024-01-01",
+    "2024-06-01"
+   ],
+   "hour": [
+    0,
+    6,
+    12,
+    18
+   ],
+   "city": [
+    "A",
+    "B",
+    "A",
+    "B"
+   ],
+   "t": [
+    20.0,
+    30.0,
+    21.0,
+    31.0
+   ]
+  },
+  "args": {
+   "value": "t",
+   "tz": "Asia/Kolkata",
+   "title": "Clock"
+  },
+  "expected": {
+   "n_panels": 1,
+   "title": "Clock",
+   "ylabel": null
+  }
  }
 ]

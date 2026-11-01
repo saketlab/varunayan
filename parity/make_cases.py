@@ -765,5 +765,28 @@ add_plot(
     "Heat",
 )
 
+radial = {
+    "date": ["2023-01-01", "2023-06-01", "2024-01-01", "2024-06-01"],
+    "hour": [0, 6, 12, 18],
+    "city": ["A", "B", "A", "B"],
+    "t": [20.0, 30.0, 21.0, 31.0],
+}
+add_plot(
+    "radial_daily",
+    "plot_radial",
+    radial,
+    {"value": "t", "by": "city", "title": "Radial"},
+    2,
+    "Radial",
+)
+add_plot(
+    "radial_hourly",
+    "plot_radial_hourly",
+    radial,
+    {"value": "t", "tz": "Asia/Kolkata", "title": "Clock"},
+    1,
+    "Clock",
+)
+
 (HERE / "plot_cases.json").write_text(json.dumps(plots, indent=1) + "\n")
 print(f"wrote {len(plots)} plot cases")

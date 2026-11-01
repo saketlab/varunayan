@@ -1,8 +1,5 @@
 #' Plots used by the vignettes
 #'
-#' Each function returns a ggplot object. The Python package has the same
-#' functions (matplotlib) with the same arguments.
-#'
 #' @name plot
 #' @noRd
 NULL
@@ -19,6 +16,20 @@ need_ggplot2 <- function() {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is necessary for plots: install.packages('ggplot2')")
   }
+}
+
+.BREWER_SEQUENTIAL <- c(
+  "Blues", "BuGn", "BuPu", "GnBu", "Greens", "Greys", "Oranges", "OrRd", "PuBu",
+  "PuBuGn", "PuRd", "Purples", "RdPu", "Reds", "YlGn", "YlGnBu", "YlOrBr", "YlOrRd"
+)
+
+.fill_scale <- function(cmap, ...) {
+  if (cmap %in% c("viridis", "plasma", "magma", "inferno", "cividis")) {
+    return(ggplot2::scale_fill_viridis_c(option = cmap, ...))
+  }
+  ggplot2::scale_fill_distiller(
+    palette = cmap, direction = if (cmap %in% .BREWER_SEQUENTIAL) 1 else -1, ...
+  )
 }
 
 theme_varunayan <- function() {
@@ -98,19 +109,12 @@ plot_map <- function(data, column, boundaries = NULL, facet = NULL, log = FALSE,
     )
   } else if (!is.null(center)) {
     lim <- max(abs(data$.fill - center), na.rm = TRUE)
-    p <- p + ggplot2::scale_fill_distiller(
-      palette = cmap, limits = center + c(-lim, lim),
-      name = legend, na.value = "lightgrey"
-    )
-  } else if (cmap %in% c("viridis", "plasma", "magma", "inferno", "cividis")) {
-    p <- p + ggplot2::scale_fill_viridis_c(
-      option = cmap, trans = if (log) "log10" else "identity",
-      name = legend, na.value = "lightgrey"
+    p <- p + .fill_scale(cmap,
+      limits = center + c(-lim, lim), name = legend, na.value = "lightgrey"
     )
   } else {
-    p <- p + ggplot2::scale_fill_distiller(
-      palette = cmap, trans = if (log) "log10" else "identity",
-      name = legend, na.value = "lightgrey"
+    p <- p + .fill_scale(cmap,
+      trans = if (log) "log10" else "identity", name = legend, na.value = "lightgrey"
     )
   }
   if (!is.null(facet)) p <- p + ggplot2::facet_wrap(ggplot2::vars(.data[[facet]]))
@@ -326,7 +330,7 @@ plot_bars <- function(data, x, y, horizontal = FALSE, sort = FALSE, cmap = "RdBu
   lim <- if (min(d[[y]]) < 0) c(-1, 1) * max(abs(d[[y]])) else range(d[[y]])
   p <- ggplot2::ggplot(d, ggplot2::aes(x = .data[[x]], y = .data[[y]], fill = .data[[y]])) +
     ggplot2::geom_col() +
-    ggplot2::scale_fill_distiller(palette = cmap, limits = lim, guide = "none") +
+    .fill_scale(cmap, limits = lim, guide = "none") +
     ggplot2::labs(title = title, x = NULL, y = y) +
     theme_varunayan()
   if (horizontal) {
@@ -373,7 +377,7 @@ plot_heatmap <- function(data, x = NULL, y = NULL, value = NULL, annotate = FALS
   }
   p <- ggplot2::ggplot(data, ggplot2::aes(x = .data[[x]], y = .data[[y]], fill = .data[[value]])) +
     ggplot2::geom_tile() +
-    ggplot2::scale_fill_distiller(palette = cmap, name = legend) +
+    .fill_scale(cmap, name = legend) +
     ggplot2::labs(title = title, x = NULL, y = NULL) +
     theme_varunayan() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))

@@ -1,0 +1,116 @@
+---
+title: "Daily comparison: Mumbai and Bengaluru"
+output:
+  rmarkdown::html_vignette:
+    self_contained: true
+vignette: >
+  %\VignetteIndexEntry{Daily comparison: Mumbai and Bengaluru}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+has_suggests <- requireNamespace("ggplot2", quietly = TRUE)
+has_data <- has_suggests && nzchar(system.file("extdata", "diurnal_cycle.rds",
+  package = "varunayan"
+))
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#",
+  eval = has_data,
+  fig.width = 10,
+  fig.height = 6.5,
+  fig.dpi = 150,
+  warning = FALSE,
+  message = FALSE,
+  out.width = "100%"
+)
+```
+
+In this vignette, we compare the daily cycle of temperature, rainfall and
+humidity in Mumbai (on the coast) and Bengaluru (on the Deccan plateau, 900 m).
+We use `plot_radial_hourly()`, which draws hourly data as a 24-hour clock.
+Midnight is at the top and the hours go clockwise. Each ring is a month, with
+January at the centre, and each cell is the mean of that hour in that month.
+
+```{r setup}
+library(varunayan)
+```
+
+## Load the data
+
+We downloaded hourly ERA5 for 2023 with `era5ify_point()`, at the CPCB stations
+in Powai (Mumbai) and RVCE-Mailasandra (Bengaluru). For hourly data at one
+point, `era5ify_point()` uses the CDS time-series endpoint.
+
+```{r download, eval = FALSE}
+mumbai <- era5ify_point(
+  request_id = "diurnal_mumbai_2023",
+  variables = c("2m_temperature", "2m_dewpoint_temperature", "total_precipitation"),
+  start_date = "2023-01-01", end_date = "2023-12-31",
+  lat = 19.1375, lon = 72.9151, frequency = "hourly"
+)
+```
+
+The package includes the data for both cities.
+
+```{r data}
+hourly <- readRDS(system.file("extdata", "diurnal_cycle.rds", package = "varunayan"))
+head(hourly)
+```
+
+## Temperature
+
+ERA5 times are in UTC, so we set `tz = "Asia/Kolkata"` to draw the hours in IST.
+
+```{r temperature}
+plot_radial_hourly(hourly, "temp_c",
+  time = "time", by = "city", tz = "Asia/Kolkata",
+  title = "2 m temperature, 2023", legend_title = "°C"
+)
+```
+
+Both cities are warmest at 14:00. In Bengaluru, the day is 6 to 13 °C warmer
+than the night in every month. In Mumbai, the difference is 9 to 15 °C in
+winter and only 2 °C in July, when the monsoon clouds stop the daily cycle.
+
+## Rainfall
+
+ERA5 rainfall at each time is the total of the hour before it, so we set
+`accumulated = TRUE`. In IST, each cell then covers half past one hour to half
+past the next.
+
+```{r rainfall}
+plot_radial_hourly(hourly, "precip_mm",
+  time = "time", by = "city", tz = "Asia/Kolkata", accumulated = TRUE, cmap = "Blues",
+  title = "Mean hourly rainfall, 2023", legend_title = "mm per hour"
+)
+```
+
+Mumbai gets rain from June to September, at all hours. Bengaluru gets rain in
+more months, mostly in the late afternoon: 16:30 to 17:30 in the monsoon, an
+hour earlier in October and November, and in the evening in April and May.
+
+To show each day, we use `plot_radial()` with `agg = "sum"`.
+
+```{r rain-calendar, fig.height = 6}
+plot_radial(hourly, "precip_mm",
+  time = "time", by = "city", agg = "sum", cmap = "Blues",
+  title = "Daily rainfall, 2023", legend_title = "mm"
+)
+```
+
+## Relative humidity
+
+```{r humidity}
+plot_radial_hourly(hourly, "rh",
+  time = "time", by = "city", tz = "Asia/Kolkata", cmap = "YlGnBu",
+  title = "Relative humidity, 2023", legend_title = "%"
+)
+```
+
+Humidity is lowest at 14:00 in both cities. In January, it falls from 91 % at
+05:00 to 35 % at 14:00 in Bengaluru. In July, Mumbai stays near 86 % all day.
+
+Both functions take any column. Use `center = 0` for anomalies and
+`rings = "day"` for one ring per day.

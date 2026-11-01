@@ -27,8 +27,8 @@ knitr::opts_chunk$set(
 
 This article uses varunayan to look at four parts of the climate of India:
 
-- The temperature trend from 1941 to 2024, from [ERA5](https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5).
-- The monsoon: the month of peak rainfall and the annual rainfall in each grid cell, from ERA5.
+- Temperature trend: the yearly mean temperature from 1941 to 2024, from [ERA5](https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5).
+- Monsoon: the month of peak rainfall and the annual rainfall in each grid cell, from ERA5.
 - Climate extremes: the hottest day (TXx) and the largest 1-day rainfall (Rx1day) of each year, from [HadEX3](https://www.metoffice.gov.uk/hadobs/hadex3/).
 - India among other countries: the 2024 seasonal cycle of India and seven other countries, from ERA5.
 
@@ -119,7 +119,7 @@ The annual total changes from approximately 160 mm in the Thar Desert to more th
 
 ## Climate extremes
 
-[HadEX3](https://www.metoffice.gov.uk/hadobs/hadex3/) from the Met Office Hadley Centre gives 29 ETCCDI climate extreme indices on a 1.25° x 1.875° grid. The data is for 1901 to 2018 (Dunn et al. 2020, [doi:10.1029/2019JD032263](https://doi.org/10.1029/2019JD032263)). We use two indices:
+[HadEX3](https://www.metoffice.gov.uk/hadobs/hadex3/) from the Met Office Hadley Centre gives 29 ETCCDI climate extreme indices on a 1.25° x 1.875° grid. The data is for 1901 to 2018 (Dunn et al. 2020, [doi:10.1029/2019JD032263](https://doi.org/10.1029/2019JD032263)). This article uses two indices:
 
 - TXx: the highest daily maximum temperature of each year (°C).
 - Rx1day: the largest rainfall total in one day of each year (mm).
@@ -180,7 +180,7 @@ From 1951-1970 to 1991-2018, TXx increases in the northeast, by up to 2.8 °C. T
 
 ## India among other countries
 
-`get_era5_country_temperature()` finds a country boundary in [Natural Earth](https://www.naturalearthdata.com/) data and downloads the monthly ERA5 2 m temperature (°C). It returns the national mean with cosine-latitude area weights. The function takes one country, so we call it for each country and join the results. We compare India with three South Asian and four European countries for 2024.
+`get_era5_country_temperature()` finds a country boundary in [Natural Earth](https://www.naturalearthdata.com/) data and downloads the monthly ERA5 2 m temperature (°C). It returns the national mean with cosine-latitude area weights. The function takes one country, so the code calls it for each country and joins the results. The comparison is India with three South Asian and four European countries for 2024.
 
 ```{r country_download, eval = FALSE}
 regions <- c(

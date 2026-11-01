@@ -10,7 +10,6 @@ logger = get_logger(level=logging.DEBUG)
 
 
 def set_v_data_agg(verbosity: int) -> None:
-
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
 

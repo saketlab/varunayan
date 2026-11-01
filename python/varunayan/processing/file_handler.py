@@ -9,7 +9,6 @@ logger = get_logger(level=logging.DEBUG)
 
 
 def set_v_file_han(verbosity: int) -> None:
-
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
 

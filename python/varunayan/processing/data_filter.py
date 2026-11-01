@@ -15,7 +15,6 @@ logger = get_logger(level=logging.DEBUG)
 
 
 def set_v_data_fil(verbosity: int) -> None:
-
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
 

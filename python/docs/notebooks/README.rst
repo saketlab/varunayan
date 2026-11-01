@@ -1,7 +1,7 @@
 Jupyter Notebooks
 =================
 
-These notebooks show how to use varunayan for real analyses.
+These notebooks show how to use varunayan.
 
 Available Notebooks
 -------------------
@@ -17,8 +17,10 @@ Available Notebooks
 5. :doc:`05_heat_stress`: Calculate and compare the heat stress indices.
 6. :doc:`06_public_interest`: Compare rainfall and temperature with Google Trends
    search interest.
+7. :doc:`07_diurnal_cycle`: Compare the daily cycle of temperature, rain and
+   humidity in Mumbai and Bengaluru with radial plots.
 
-The R package has the same six tutorials, with the same function calls.
+The R package has the same seven tutorials, with the same function calls.
 
 Running the Notebooks
 ---------------------
@@ -44,10 +46,10 @@ You can also see the notebooks on
 Common Issues
 -------------
 
-- **Download timeouts**: Use a shorter time range or a smaller region.
-- **CDS API errors**: Check the key in ``~/.cdsapirc``, accept the dataset
+- Download timeouts: use a shorter time range or a smaller region.
+- CDS API errors: check the key in ``~/.cdsapirc``, accept the dataset
   licence on the CDS website, and wait if the CDS is busy or in maintenance.
-- **Memory**: Use a smaller region or a coarser ``resolution``. varunayan
+- Memory errors: use a smaller region or a coarser ``resolution``. varunayan
   already splits long requests into smaller parts.
 
 Getting Help

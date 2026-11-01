@@ -4,6 +4,17 @@ Release History
 Unreleased
 ----------
 
+* New ``plot_radial`` (radial calendar) and ``plot_radial_hourly`` (24-hour
+  clock).
+* ``era5ify_point`` gets hourly single-level data from the CDS time-series
+  endpoint, as in R.
+* Temporary-file cleanup removes only the request's own files.
+* Plots use an installed font with a bold face (Arial on macOS).
+* New notebook ``07_diurnal_cycle``.
+
+v0.4.0 (2026-10-20)
+-------------------
+
 Breaking changes (the Python and R packages now give the same output):
 
 * ``era5ify_bbox``, ``era5ify_geojson`` and ``era5ify_point`` return the grid

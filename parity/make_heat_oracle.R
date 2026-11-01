@@ -11,8 +11,10 @@ wb <- c(20, 25.6, 26, 27.7, 28, 29.4, 30, 32.2, 33, 35)
 uv <- c(-50, -27, -13, 0, 9, 26, 28, 32, 38, 46, 50)
 
 case <- function(name, fn, args, tol = 1e-9) {
-  list(name = name, `function` = fn, args = args,
-       expected = do.call(fn, args), tol = tol)
+  list(
+    name = name, `function` = fn, args = args,
+    expected = do.call(fn, args), tol = tol
+  )
 }
 cases <- list(
   case("heat_rh_from_dewpoint", "relative_humidity_from_dewpoint", list(temp_c = temp, dewpoint_c = dew)),

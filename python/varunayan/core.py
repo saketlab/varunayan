@@ -1,8 +1,8 @@
 import datetime as dt
-import glob
 import logging
 import math
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -20,6 +20,7 @@ from .config import ensure_cdsapi_config, set_v_config
 from .download import (
     download_era5_pressure_lvl,
     download_era5_single_lvl,
+    download_era5_timeseries,
     set_v_downloader,
 )
 from .processing import (
@@ -70,7 +71,6 @@ class ProcessingParams:
 
 
 def set_verbosity(verbosity: int) -> None:
-
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
 
@@ -801,6 +801,7 @@ def era5ify_point(
     verbosity: int = 0,
     save_raw: bool = False,
     convert_units: bool = True,
+    use_timeseries_api: Optional[bool] = None,
 ) -> pd.DataFrame:
     """Download ERA5 data for the grid cell nearest to a point.
 
@@ -820,11 +821,36 @@ def era5ify_point(
         verbosity: 0 (quiet), 1 (info) or 2 (debug).
         save_raw: Also save the downloaded grid as a CSV file.
         convert_units: Return Celsius and mm in place of Kelvin and metres.
+        use_timeseries_api: Use the CDS time-series endpoint, which returns
+            the point series directly and is much faster for long hourly
+            requests. The default (None) uses it for hourly single-level
+            requests, the only ones it supports, and falls back to the
+            gridded download if it fails. As in the R package.
     """
     if not -90 <= lat <= 90:
         raise ValueError(f"Invalid latitude: {lat}. Must be between -90 and 90")
     if not -180 <= lon <= 180:
         raise ValueError(f"Invalid longitude: {lon}. Must be between -180 and 180")
+
+    supported = dataset_type.lower() == "single" and frequency == "hourly"
+    if use_timeseries_api and not supported:
+        raise ValueError(
+            "use_timeseries_api needs dataset_type='single' and frequency='hourly'"
+        )
+    if use_timeseries_api is None:
+        use_timeseries_api = supported
+    if use_timeseries_api:
+        set_verbosity(verbosity)
+        try:
+            wide = download_era5_timeseries(
+                variables, parse_date(start_date), parse_date(end_date), lat, lon
+            )
+        except Exception as e:  # any endpoint failure: use the gridded path
+            always_logger.warning(
+                f"The CDS time-series endpoint failed ({e}); using the gridded download"
+            )
+        else:
+            return to_long_grid(wide, "hourly", convert_units)
 
     # CDS aligns the output grid to the corner of the box, so snap the box to
     # the 0.25 degree grid: the nearest cell is then a true ERA5 grid point.
@@ -875,16 +901,17 @@ def parse_date(date_str: str) -> dt.datetime:
 
 
 def cleanup_temp_files(request_id: str, temp_geojson_file: str) -> None:
-    """Clean up temporary files"""
+    """Remove this request's temporary files; match whole names, not the ID alone."""
     if os.path.exists(temp_geojson_file):
         os.remove(temp_geojson_file)
 
+    own = re.compile(rf"{re.escape(request_id)}(_chunk\d+)?(\.zip|\.nc)?")
     temp_dir = tempfile.gettempdir()
-    for pattern in [f"*{request_id}*.zip", f"*{request_id}*.nc"]:
-        for file in glob.glob(os.path.join(temp_dir, pattern)):
-            if os.path.exists(file):
-                os.remove(file)
-
-    for item in glob.glob(os.path.join(temp_dir, f"*{request_id}*")):
-        if os.path.isdir(item):
-            shutil.rmtree(item)
+    for name in os.listdir(temp_dir):
+        if not own.fullmatch(name):
+            continue
+        path = os.path.join(temp_dir, name)
+        if os.path.isdir(path) and not os.path.islink(path):
+            shutil.rmtree(path, ignore_errors=True)
+        elif os.path.isfile(path):
+            os.remove(path)

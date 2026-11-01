@@ -32,7 +32,7 @@ To get ERA5 data, you must have a [CDS API key](https://cds.climate.copernicus.e
 setup_cds_credentials(key = "your-personal-access-token")
 ```
 
-## Key arguments
+## Shared arguments
 
 The three download functions share these arguments.
 
@@ -47,7 +47,7 @@ The three download functions share these arguments.
 
 ## Data for a bounding box
 
-`era5ify_bbox()` gets the grid cells inside a box. Here we get daily temperature and precipitation for five days around Delhi.
+`era5ify_bbox()` gets the grid cells inside a box. This example gets the daily temperature and precipitation around Delhi for five days.
 
 The output is in long format: one row for each time, grid cell and variable. The `variable` column holds the ERA5 short name (`t2m` is 2 m temperature, `tp` is total precipitation). Temperatures are in °C. Precipitation is in mm and is the total for each day.
 
@@ -65,7 +65,7 @@ head(bbox)
 
 ## Data for a GeoJSON region
 
-`era5ify_geojson()` takes a path or URL of a GeoJSON file. Here we use the [LGD state boundaries of India](https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson). With `level = "feature"`, the output has one row for each state, with the mean of the grid cells inside it. The default `level = "union"` keeps each grid cell.
+`era5ify_geojson()` takes a path or URL of a GeoJSON file. This example uses the [LGD state boundaries of India](https://geo.bharatviz.org/geojsons/admin/India-geodata-lgd-states.geojson). With `level = "feature"`, the output has one row for each state, with the mean of the grid cells inside it. The default `level = "union"` keeps each grid cell.
 
 ```{r era5-geojson, eval = FALSE}
 states <- era5ify_geojson(
@@ -82,7 +82,7 @@ head(states)
 
 ## Data for a point
 
-`era5ify_point()` keeps the grid cell nearest to a latitude and longitude. Here we get the daily temperature and precipitation in Mumbai in the first week of August 2024, during the monsoon.
+`era5ify_point()` keeps the grid cell nearest to a latitude and longitude. This example gets the daily temperature and precipitation in Mumbai for the first week of August 2024, during the monsoon.
 
 ```{r era5-point, eval = FALSE}
 mumbai <- era5ify_point(
@@ -100,7 +100,7 @@ mumbai
 
 ERA5 also gives the atmosphere at 37 pressure levels, from 1000 hPa (near the surface) to 1 hPa. A lower pressure is a higher altitude: 850 hPa is approximately 1.5 km and 200 hPa is approximately 12 km. Set `dataset_type = "pressure"` and give the levels in `pressure_levels`. The output has a `pressure_level` column (hPa).
 
-Here we get the daily temperature at six levels over Delhi for three days. `spatial_mean()` with `by = "pressure_level"` gives the mean temperature at each level. The temperature decreases as the altitude increases.
+This example gets the daily temperature at six levels over Delhi for three days. `spatial_mean()` with `by = "pressure_level"` gives the mean temperature at each level. The temperature decreases as the altitude increases.
 
 ```{r era5-pressure, eval = FALSE}
 profile <- era5ify_bbox(
@@ -123,7 +123,7 @@ plot_series(spatial_mean(profile, "value", by = "pressure_level"),
 )
 ```
 
-## Find a variable
+## Variable search
 
 ERA5 has hundreds of variables. `search_variable()` finds the variables that match a word, in the single-level and pressure-level datasets.
 
@@ -131,7 +131,7 @@ ERA5 has hundreds of variables. `search_variable()` finds the variables that mat
 search_variable("temperature", dataset_type = "all")
 ```
 
-## Describe variables
+## Variable descriptions
 
 `describe_variables()` gives a description and the unit of each variable.
 

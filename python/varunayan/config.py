@@ -9,7 +9,6 @@ logger = get_logger(level=logging.DEBUG)
 
 
 def set_v_config(verbosity: int) -> None:
-
     if verbosity == 0:
         logger.setLevel(logging.WARNING)
 

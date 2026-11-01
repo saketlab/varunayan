@@ -1,3 +1,10 @@
+# varunayan (development version)
+
+* Added `plot_radial()` and `plot_radial_hourly()` 
+* `plot_map()`, `plot_bars()` and `plot_heatmap()` draw sequential palettes
+  darkest at the highest value, as in Python.
+* New article "The daily cycle: Mumbai and Bengaluru".
+
 # varunayan 0.4.0
 
 * Initial CRAN submission.

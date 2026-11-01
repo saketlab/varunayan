@@ -104,7 +104,7 @@ In most states, ERA5 gives more rain than IMD (median bias +7.5 mm in each month
 
 ## Daily temperature extremes in Maharashtra: ERA5 and IMD (2020)
 
-ERA5 `mx2t` and `mn2t` are the maximum and the minimum temperature of the previous hour (°C). The daily maximum of `mx2t` and the daily minimum of `mn2t` give the daily extremes. We request hourly ERA5 at 0.25° in a box whose edges are on the edges of the IMD 1° cells. Then `regrid()` takes the mean of the 0.25° cells in each 1° cell. The 1° cell centers are at x.5°, the same as the IMD grid.
+ERA5 `mx2t` and `mn2t` are the maximum and the minimum temperature of the previous hour (°C). The daily maximum of `mx2t` and the daily minimum of `mn2t` give the daily extremes. The request is for hourly ERA5 at 0.25° in a box whose edges are on the edges of the IMD 1° cells. Then `regrid()` takes the mean of the 0.25° cells in each 1° cell. The 1° cell centers are at x.5°, the same as the IMD grid.
 
 ```{r temp_download, eval = FALSE}
 era5_temp <- era5ify_bbox(
@@ -128,7 +128,7 @@ era5_tmax <- regrid(era5_tmax, "era5", 1, by = "date")
 era5_tmin <- regrid(era5_tmin, "era5", 1, by = "date")
 ```
 
-`imd_temperature_bbox()` gives the IMD daily `tmax` or `tmin` (°C). We put the ERA5 daily maximum next to IMD `tmax`, and the ERA5 daily minimum next to IMD `tmin`.
+`imd_temperature_bbox()` gives the IMD daily `tmax` or `tmin` (°C). The comparison pairs the ERA5 daily maximum with IMD `tmax`, and the ERA5 daily minimum with IMD `tmin`.
 
 ```{r temp_merge, eval = FALSE}
 imd_tmax <- imd_temperature_bbox("imd_mh_tmax", 2020, 2020,
@@ -227,7 +227,7 @@ plot_map(cells, "bias",
 
 The two monthly series follow each other closely (r = 0.999), and ERA5 is approximately 0.9 °C colder than CRU TS. Over most of the plains, the difference is small. The largest differences are in the mountains, where the two datasets use different surface heights.
 
-## When to use which dataset
+## Choice of dataset
 
 | Feature | ERA5 | IMD gridded | CRU TS v4.07 |
 |---------|------|-------------|--------------|

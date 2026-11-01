@@ -92,6 +92,8 @@ navbar:
         href: articles/spatial-aggregation.html
       - text: Heat stress
         href: articles/heat-stress.html
+      - text: The daily cycle (radial plots)
+        href: articles/diurnal-cycle.html
       - text: Climate and public interest
         href: articles/public-interest.html
 

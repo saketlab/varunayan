@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-ERA5 and IMD give data on regular grids. When we aggregate a grid to districts, a small district can contain no grid point. Then that district has no value.
+ERA5 and IMD give data on regular grids. A small district can contain no grid point. Then the aggregation to districts gives no value for that district.
 
 This article compares two methods of `aggregate_to_polygons()`:
 
@@ -39,7 +39,7 @@ districts <- load_india_boundaries("district")
 head(sf::st_drop_geometry(districts))
 ```
 
-We use two datasets for January 2023. The IMD 1° grid gives the mean daily maximum temperature (column `temperature`, °C). The ERA5 0.25° grid gives the mean 2 m temperature (column `value`, °C). The ERA5 download needs a CDS API key (see the quickstart). This article uses a cached copy of the two datasets.
+This article uses two datasets for January 2023. The IMD 1° grid gives the mean daily maximum temperature (column `temperature`, °C). The ERA5 0.25° grid gives the mean 2 m temperature (column `value`, °C). The ERA5 download needs a CDS API key (see the quickstart). This article uses a cached copy of the two datasets.
 
 ```{r download, eval = FALSE}
 imd <- imd_temperature_bbox(
@@ -84,7 +84,7 @@ check_grid_coverage(imd, districts, c("state_name", "district_name"))$summary
 check_grid_coverage(era5, districts, c("state_name", "district_name"))$summary
 ```
 
-## Aggregate IMD to districts with the two methods
+## Aggregation of IMD to districts
 
 ```{r aggregate}
 pip <- aggregate_to_polygons(imd, districts, c(pip = "temperature"),
@@ -99,7 +99,7 @@ both <- merge(districts, merge(pip, nearest))
 colSums(!is.na(sf::st_drop_geometry(both)[c("pip", "nearest")]))
 ```
 
-## Compare the maps
+## Comparison of the maps
 
 Gray districts have no value.
 
@@ -110,7 +110,7 @@ plot_map(both, c("pip", "nearest"),
 )
 ```
 
-## Compare the values
+## Comparison of the values
 
 For districts with a value from both methods, the scatter plot shows the agreement.
 
@@ -120,7 +120,7 @@ plot_scatter(sf::st_drop_geometry(both), "pip", "nearest",
 )
 ```
 
-## Conclusion
+## Results
 
 The 1° IMD grid is much coarser than the 0.25° ERA5 grid. Only 250 of the 783 districts (32 %) contain an IMD grid point. ERA5 grid points are in 751 districts (96 %).
 
