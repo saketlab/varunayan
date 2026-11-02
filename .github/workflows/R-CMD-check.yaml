@@ -46,12 +46,14 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      # LaTeX for the PDF manual, which CRAN builds
       - uses: r-lib/actions/setup-tinytex@v2
+        if: runner.os != 'Windows'
 
       # TinyTeX lacks Courier (pcrr8t), which Rd.sty uses for \url, and makeindex,
       # which builds the index of the manual
       - name: Install LaTeX packages for the manual
+        if: runner.os != 'Windows'
+        timeout-minutes: 15
         # TinyTeX can ship a tlmgr older than its repository, which then refuses to install
         run: |
           tlmgr update --self
@@ -71,5 +73,5 @@ jobs:
           working-directory: R
           upload-snapshots: true
           build_args: 'character()'
-          args: 'c("--as-cran")'
+          args: ${{ runner.os == 'Windows' && 'c("--as-cran", "--no-manual")' || 'c("--as-cran")' }}
           error-on: '"warning"'
