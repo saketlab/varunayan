@@ -23,6 +23,18 @@
 
 # ERA5 data download functions that use ecmwfr
 
+.is_cds_auth_error <- function(message) {
+  grepl("\\b401\\b|unauthori[sz]ed|authentication", message, ignore.case = TRUE, perl = TRUE)
+}
+
+# wf_request() returns its request object on timeout
+.cds_result_path <- function(result) {
+  if (is.null(result) || is.character(result)) {
+    return(result)
+  }
+  stop("Timeout of the CDS request: the job did not finish in time.", call. = FALSE)
+}
+
 # If the error is related to size, signal the cds_request_too_large condition.
 # The function treats "Request has failed" as size-related only for ranges > 400 days.
 signal_if_too_large <- function(err_msg, start_date, end_date) {
@@ -130,7 +142,8 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
       end_date = end_date,
       area = area,
       resolution = resolution,
-      dataset_type = if (use_monthly_means) "single_monthly_means" else "single"
+      dataset_type = if (use_monthly_means) "single_monthly_means" else "single",
+      frequency = frequency
     )
 
     cached_file <- check_cache(cache_key)
@@ -218,7 +231,7 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
 
     downloaded_file <- tryCatch(
       {
-        if (requireNamespace("R.utils", quietly = TRUE)) {
+        result <- if (requireNamespace("R.utils", quietly = TRUE)) {
           R.utils::withTimeout(
             wf_request(
               request = request,
@@ -235,6 +248,7 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
             path = dirname(path = output_file)
           )
         }
+        .cds_result_path(result)
       },
       error = function(e) e
     )
@@ -246,7 +260,7 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
     if (!is.null(downloaded_file)) break
 
     if (!is.null(last_error)) {
-      if (grepl(pattern = "401|unauthorized|authentication", last_error$message, ignore.case = TRUE)) {
+      if (.is_cds_auth_error(last_error$message)) {
         .stop_cds_auth_failed()
       } else if (grepl(pattern = "rate.limit|429", last_error$message, ignore.case = TRUE)) {
         rate_limit_hits <- rate_limit_hits + 1
@@ -277,8 +291,13 @@ download_era5_single <- function(variables, start_date, end_date, area = NULL,
 
     if (failures > effective_retries) {
       if (use_monthly_means && !is.null(last_error)) {
-        message("The monthly-means request failed. The package uses the regular reanalysis dataset...")
+        warning(
+          "The monthly-means request failed. These values are daily 12:00 UTC samples ",
+          "from the reanalysis dataset, not monthly means. They are not cached.",
+          call. = FALSE
+        )
         use_monthly_means <- FALSE
+        use_cache <- FALSE
 
         date_seq <- seq(from = as.Date(x = start_date), to = as.Date(x = end_date), by = "day")
         request$product_type <- list("reanalysis")
@@ -351,7 +370,8 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
       area = area,
       resolution = resolution,
       dataset_type = "pressure",
-      pressure_levels = pressure_levels
+      pressure_levels = pressure_levels,
+      frequency = frequency
     )
 
     cached_file <- check_cache(cache_key)
@@ -409,14 +429,14 @@ download_era5_pressure <- function(variables, pressure_levels, start_date, end_d
 
   downloaded_file <- tryCatch(
     {
-      wf_request(
+      .cds_result_path(wf_request(
         request = request,
         transfer = TRUE,
         path = dirname(path = output_file)
-      )
+      ))
     },
     error = function(e) {
-      if (grepl(pattern = "401|unauthorized|authentication", e$message, ignore.case = TRUE)) {
+      if (.is_cds_auth_error(e$message)) {
         .stop_cds_auth_failed()
       }
 

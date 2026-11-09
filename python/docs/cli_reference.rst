@@ -1,7 +1,8 @@
 Command Line Interface Reference
 ================================
 
-The ``varunayan`` command has three modes, one for each type of region.
+The ``varunayan`` command has three ERA5 modes, one for each type of region,
+and ``live`` and ``historical`` commands for one place.
 
 .. code-block:: bash
 
@@ -10,6 +11,49 @@ The ``varunayan`` command has three modes, one for each type of region.
 - ``geojson``: a region from a GeoJSON or JSON file
 - ``bbox``: a bounding box
 - ``point``: the grid cell nearest to a point
+- ``live``: live weather for your location or any place
+- ``historical``: ERA5 history for your location or any place
+
+Historical weather
+------------------
+
+.. code-block:: bash
+
+   varunayan historical --start 2024-05-01 --end 2024-05-31
+   varunayan historical Zurich --start 2024-05-01 --end 2024-05-31 --freq hourly
+   varunayan historical Mumbai --start 2024-05-01 --end 2024-05-31 --path may.csv
+
+   varunayan historical Mumbai --start 2024-05-01 --end 2024-05-02 --source open-meteo
+
+The default source, ``era5``, needs CDS credentials, as the other ERA5 modes do.
+Its default variable is ``2m_temperature``; use ``--variables`` for others.
+``open-meteo`` needs no key, is always hourly, and returns temperature,
+humidity and wind.
+
+Live weather
+------------
+
+.. code-block:: bash
+
+   varunayan live                 # your location, approximated from your IP
+   varunayan live Zurich
+   varunayan live --lat 19.09 --lon 72.87
+   varunayan live Mumbai --source metar
+   varunayan live Mumbai --json
+
+The most local source available is used, in this order. The output says which
+source answered, what kind of reading it is, and how old it is.
+
+- ``weatherunion``: ground stations in India. Needs ``WEATHERUNION_API_KEY``.
+  Each call uses one request from the key's daily quota.
+- ``openweathermap``: global model estimate. Needs ``OPENWEATHERMAP_API_KEY``.
+- ``metar``: the nearest airport report under 90 minutes old. In the automatic
+  order it must be within 50 km. With ``--source metar`` it can be any distance,
+  and the output shows how far away it is.
+- ``open-meteo``: global model estimate, not a measurement.
+
+With no place, your IP address is sent to ipinfo.io. A place name is sent to
+Open-Meteo's geocoder.
 
 Common options
 --------------

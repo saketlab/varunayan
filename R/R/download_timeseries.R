@@ -79,8 +79,8 @@ download_era5_timeseries <- function(variables, start_date, end_date, lat, lon,
       error = function(e) NA_character_
     )
     if (identical(x = status, y = "successful")) break
-    if (identical(x = status, y = "failed")) {
-      stop("The CDS time-series request failed for job ", job_id)
+    if (isTRUE(status %in% c("failed", "dismissed"))) {
+      stop("The CDS time-series request ", status, " for job ", job_id)
     }
     if (as.numeric(x = difftime(Sys.time(), start_time, units = "secs")) > timeout) {
       stop("The request did not complete in ", timeout, " seconds")
@@ -98,7 +98,7 @@ download_era5_timeseries <- function(variables, start_date, end_date, lat, lon,
   }
 
   zip_file <- file.path(output_dir, sprintf(fmt = "era5_ts_%s.zip", job_id))
-  httr::GET(href, httr::write_disk(zip_file, overwrite = TRUE))
+  httr::stop_for_status(httr::GET(href, httr::write_disk(zip_file, overwrite = TRUE)))
   extract_dir <- file.path(output_dir, sprintf(fmt = "era5_ts_%s", job_id))
   dir.create(path = extract_dir, showWarnings = FALSE, recursive = TRUE)
   utils::unzip(zip_file, exdir = extract_dir)

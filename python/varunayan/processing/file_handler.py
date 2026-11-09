@@ -61,7 +61,8 @@ def extract_download(
     else:
         raise ValueError(f"Unsupported file type: {zip_or_file_path}")
 
-    nc_files = find_netcdf_files(extract_dir)
+    # this call's files only; the dir can hold leftovers from a crashed run
+    nc_files = [f for f in extracted_files if f.endswith(".nc")]
 
     if not nc_files:
         logger.warning(f"Warning: No NetCDF files found in {zip_or_file_path}")
@@ -72,23 +73,4 @@ def extract_download(
     for file in nc_files:
         logger.info(f"  - {file}")
 
-    return nc_files
-
-
-def find_netcdf_files(extraction_dir: str) -> List[str]:
-    """
-    Find all NetCDF files in the extraction directory,
-    including nested directories.
-
-    Args:
-        extraction_dir: Directory to search for NetCDF files
-
-    Returns:
-        List of full paths to NetCDF files
-    """
-    nc_files: List[str] = []
-    for root, _, files in os.walk(extraction_dir):
-        nc_files.extend(
-            [os.path.join(root, file) for file in files if file.endswith(".nc")]
-        )
     return nc_files

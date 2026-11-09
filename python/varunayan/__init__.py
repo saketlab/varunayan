@@ -1,4 +1,3 @@
-from .config import ensure_cdsapi_config
 from .core import era5ify_bbox, era5ify_geojson, era5ify_point
 
 from .search_and_desc import (
@@ -77,6 +76,9 @@ from .processing import (
 )
 
 from .imd_stations import get_imd_stations
+from .weatherunion import get_weatherunion_stations, get_weatherunion_weather
+from .live_sources import get_metar_observations, get_open_meteo_weather
+from .live_weather import get_current_weather, get_location
 
 from .imd import (
     aggregate_imd_by_frequency,
@@ -124,8 +126,6 @@ from .plot import (
     plot_scatter,
     plot_series,
 )
-
-ensure_cdsapi_config()
 
 __all__ = [
     "era5ify_geojson",
@@ -188,6 +188,12 @@ __all__ = [
     "categorize_variables",
     "get_aggregation_method",
     "get_imd_stations",
+    "get_weatherunion_stations",
+    "get_weatherunion_weather",
+    "get_metar_observations",
+    "get_open_meteo_weather",
+    "get_current_weather",
+    "get_location",
     "get_imd_grid_specs",
     "list_imd_datasets",
     "download_imd_rainfall",

@@ -25,7 +25,13 @@ alias_map <- c(
   CRUTSGeojson = "cru_ts_geojson",
   ListCRUTSVariables = "list_cru_ts_variables",
   CheckSystemReadiness = "check_system_readiness",
-  GetPackageInfo = "get_package_info"
+  GetPackageInfo = "get_package_info",
+  WeatherUnionStations = "weatherunion_stations",
+  WeatherUnionWeather = "weatherunion_weather",
+  MetarObservations = "metar_observations",
+  OpenMeteoWeather = "open_meteo_weather",
+  GetCurrentWeather = "get_current_weather",
+  GetLocation = "get_location"
 )
 
 test_that("every alias is exported and its target exists", {

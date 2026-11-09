@@ -74,8 +74,8 @@ test_that("read_imd_temperature treats 1900 and 2100 as common years", {
   expect_equal(length(unique(df$date)), 365L)
 })
 
-test_that("read_imd_temperature warns when a leap-year file has only 365 days", {
-  expect_warning(suppressMessages(read_imd_temperature(temp_2023, "tmax", 2024)), "Expected")
+test_that("read_imd_temperature refuses a leap-year file with only 365 days", {
+  expect_error(suppressMessages(read_imd_temperature(temp_2023, "tmax", 2024)), "Expected")
 })
 
 test_that("read_imd_temperature reads little-endian float32 only", {

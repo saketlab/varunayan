@@ -1,15 +1,19 @@
 """Run parity/cases.json; R's test-parity.R runs the same cases."""
 
+import hashlib
 import json
 import re
+import time
 from pathlib import Path
 from typing import Any, Dict, List
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
 import varunayan
+from varunayan import live_sources, live_weather
 from varunayan.processing.grid_output import to_long_grid
 
 CASES = Path(__file__).resolve().parents[2] / "parity" / "cases.json"
@@ -151,3 +155,88 @@ def test_version_matches_r() -> None:
     description = Path(__file__).resolve().parents[2] / "R" / "DESCRIPTION"
     match = re.search(r"^Version:\s*(\S+)", description.read_text(), re.M)
     assert match and varunayan.__version__ == match.group(1)
+
+
+LIVE: Dict[str, Any] = json.loads((CASES.parent / "live_cases.json").read_text())
+
+
+def _assert_close(got: Any, expected: List[Any], name: str) -> None:
+    np.testing.assert_allclose(
+        np.asarray(got, dtype=float),
+        np.array(_nan(expected), dtype=float),
+        rtol=1e-9,
+        atol=1e-9,
+        err_msg=name,
+    )
+
+
+def test_parity_metar_file() -> None:
+    case = LIVE["metar_file"]
+    out = live_sources._parse_metar(case["text"], case["prefixes"])
+    assert out["station_id"].tolist() == case["expected"]["station_id"]
+    times = out["observed_at"].dt.strftime("%Y-%m-%d %H:%M:%S").tolist()
+    assert times == case["expected"]["observed_at"]
+    for column, values in case["expected"].items():
+        if column not in ("station_id", "observed_at"):
+            _assert_close(out[column], values, column)
+
+
+def test_parity_open_meteo_block() -> None:
+    case = LIVE["open_meteo"]
+    out = live_sources._parse_open_meteo(case["block"], 19.0, 72.0)
+    for column, values in case["expected"].items():
+        _assert_close(out[column], values, column)
+
+
+def test_parity_nearest_airport() -> None:
+    case = LIVE["nearest_airport"]
+    now = int(time.time())
+    reports = [
+        {
+            **{k: v for k, v in r.items() if k != "age_minutes"},
+            "obsTime": now - r["age_minutes"] * 60,
+        }
+        for r in case["reports"]
+    ]
+    with patch.object(live_weather, "_get_json", return_value=reports):
+        got = live_weather._metar(live_weather.Place(**case["place"]))
+    expected = case["expected"]
+    assert got.site == expected["site"]
+    for field in ("distance_km", "temperature", "humidity", "wind_speed"):
+        _assert_close([getattr(got, field)], [expected[field]], field)
+    assert got.wind_direction is None
+
+
+def test_parity_place_names() -> None:
+    case = LIVE["place_names"]
+    hit = live_weather._choose_place(case["results"], case["query"])
+    assert hit["name"] == case["expected"]
+
+
+def test_station_lists_match_r() -> None:
+    root = Path(__file__).resolve().parents[2]
+    digests = {
+        hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in (
+            root / "python" / "varunayan" / "data" / "weatherunion_stations.csv",
+            root / "R" / "inst" / "extdata" / "weatherunion_stations.csv",
+        )
+    }
+    assert len(digests) == 1
+
+
+def test_parity_limits() -> None:
+    limits = LIVE["limits"]
+    assert live_weather._MAX_STATION_KM == limits["station_km"]
+    assert live_weather._MAX_STATION_TRIES == limits["station_tries"]
+    assert live_weather._MAX_AIRPORT_KM == limits["airport_km"]
+    assert (
+        live_weather._MAX_AIRPORT_AGE.total_seconds() / 60 == limits["airport_minutes"]
+    )
+    assert live_weather._HEAT_INDEX_MIN_C == limits["heat_index_min_c"]
+
+
+def test_parity_metar_bbox() -> None:
+    for case in LIVE["metar_bbox"]:
+        place = live_weather.Place(case["latitude"], case["longitude"], "x")
+        assert live_weather._metar_bbox(place) == case["expected"]

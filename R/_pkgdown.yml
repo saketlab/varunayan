@@ -114,6 +114,24 @@ reference:
   - starts_with("ERA5ify")
   - setup_cds_credentials
 
+- title: "Weather Union functions"
+  desc: "Current observations from Zomato Weather Union stations"
+  contents:
+  - starts_with("weatherunion_")
+  - starts_with("WeatherUnion")
+
+- title: "METAR and Open-Meteo functions"
+  desc: "Airport observations and model weather that need no API key"
+  contents:
+  - metar_observations
+  - MetarObservations
+  - open_meteo_weather
+  - OpenMeteoWeather
+  - get_current_weather
+  - GetCurrentWeather
+  - get_location
+  - GetLocation
+
 - title: "HadEX3 climate extremes functions"
   desc: "Download ETCCDI climate extremes from the Met Office HadEX3 dataset"
   contents:

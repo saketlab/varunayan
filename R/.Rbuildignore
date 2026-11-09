@@ -33,4 +33,5 @@
 ^inst/extdata/heat_stress_india\.rds$
 ^inst/extdata/india_hadex3\.rds$
 ^inst/extdata/public_interest\.rds$
+^inst/extdata/radial_years\.rds$
 ^inst/extdata/spatial_aggregation\.rds$

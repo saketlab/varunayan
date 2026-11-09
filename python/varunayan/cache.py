@@ -3,13 +3,14 @@
 import hashlib
 import json
 import os
-import shutil
-import time
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
+
+from ._geo_utils import atomic_open
 
 
 def get_cache_dir() -> Path:
@@ -55,15 +56,18 @@ def _load_cache_metadata() -> Dict[str, Any]:
     """Load cache metadata from file."""
     metadata_path = _get_cache_metadata_path()
     if metadata_path.exists():
-        with open(metadata_path, "r") as f:
-            return json.load(f)  # type: ignore[no-any-return]
+        try:
+            with open(metadata_path, "r") as f:
+                return json.load(f)  # type: ignore[no-any-return]
+        except json.JSONDecodeError:
+            warnings.warn(f"Ignoring a corrupt cache index: {metadata_path}")
     return {}
 
 
 def _save_cache_metadata(metadata: Dict[str, Any]) -> None:
     """Save cache metadata to file."""
     metadata_path = _get_cache_metadata_path()
-    with open(metadata_path, "w") as f:
+    with atomic_open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2, default=str)
 
 

@@ -31,7 +31,6 @@ from varunayan.core import (
 # Block ALL network calls
 sys.modules["cdsapi"] = MagicMock()
 sys.modules["urllib.request"] = MagicMock()
-sys.modules["requests"] = MagicMock()
 
 
 def test_processing_params_initialization(basic_params: ProcessingParams):

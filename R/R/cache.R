@@ -44,12 +44,13 @@ get_cache_dir <- function(create = TRUE) {
 #' @param dataset_type For ERA5: "single" or "pressure"
 #' @param var_type For IMD: "tmax", "tmin", or "rainfall"
 #' @param pressure_levels Pressure levels for ERA5 pressure data
+#' @param frequency Time step of the requested ERA5 data
 #' @return Character string with cache key
 #' @keywords internal
 generate_cache_key <- function(source, variables = NULL, start_date, end_date,
                                area = NULL, resolution = NULL,
                                dataset_type = NULL, var_type = NULL,
-                               pressure_levels = NULL) {
+                               pressure_levels = NULL, frequency = NULL) {
   components <- list(
     source = tolower(x = source),
     vars = if (!is.null(x = variables)) paste(sort(x = variables), collapse = "_") else NULL,
@@ -59,7 +60,8 @@ generate_cache_key <- function(source, variables = NULL, start_date, end_date,
     res = if (!is.null(x = resolution)) sprintf(fmt = "%.2f", resolution) else NULL,
     dtype = dataset_type,
     vtype = var_type,
-    plevels = if (!is.null(x = pressure_levels)) paste(sort(x = pressure_levels), collapse = "_") else NULL
+    plevels = if (!is.null(x = pressure_levels)) paste(sort(x = pressure_levels), collapse = "_") else NULL,
+    freq = frequency
   )
   components <- components[!vapply(X = components, FUN = is.null, FUN.VALUE = logical(1))]
 
@@ -98,7 +100,13 @@ save_to_cache <- function(file_path, cache_key) {
   cache_dir <- get_cache_dir(create = TRUE)
   ext <- file_ext(x = file_path)
   cache_file <- file.path(cache_dir, paste0(cache_key, ".", ext))
-  file.copy(from = file_path, to = cache_file, overwrite = TRUE)
+  # temp name: the cache file appears only when complete
+  tmp_file <- tempfile(tmpdir = cache_dir, fileext = ".tmp")
+  on.exit(unlink(tmp_file), add = TRUE)
+  if (!file.copy(from = file_path, to = tmp_file) || !file.rename(tmp_file, cache_file)) {
+    warning("Cannot write the cache file: ", cache_file, call. = FALSE)
+    return(invisible(NULL))
+  }
   message("Cached to: ", cache_file)
   cache_file
 }

@@ -6,6 +6,7 @@ import re
 import shutil
 import tempfile
 import time
+import warnings
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -68,6 +69,15 @@ class ProcessingParams:
     geojson_data: Optional[Dict[str, Any]] = None
     convert_units: bool = True
     level: str = "union"
+    failed_chunks: Optional[List[str]] = None
+
+
+class CDSAuthError(RuntimeError):
+    """CDS refused the credentials; retrying or moving on cannot help."""
+
+
+def _is_auth_error(message: str) -> bool:
+    return bool(re.search(r"\b401\b|unauthori[sz]ed|authentication", message, re.I))
 
 
 def set_verbosity(verbosity: int) -> None:
@@ -139,6 +149,12 @@ def download_with_retry(
                 f"  {Colors.RED}✗ Download attempt {attempt + 1} failed: {error_msg}{Colors.RESET}"
             )
 
+            if _is_auth_error(error_msg):
+                raise CDSAuthError(
+                    f"CDS refused the credentials: {error_msg}. Check CDS_API_KEY "
+                    "or ~/.cdsapirc."
+                ) from e
+
             if attempt < max_retries:
                 time.sleep(retry_delay)
             else:
@@ -173,6 +189,7 @@ def process_time_chunks(
 
     needs_chunking = total_units > max_per_chunk
     all_data: List[pd.DataFrame] = []
+    failed_chunks: List[str] = []
 
     if not needs_chunking:
         return process_func(params, 1, 1)
@@ -224,10 +241,13 @@ def process_time_chunks(
             )
             if chunk_data is not None:
                 all_data.append(chunk_data)
+        except CDSAuthError:
+            raise
         except Exception as e:
             logger.error(
                 f"  {Colors.RED}✗ Error processing chunk {chunk_number}: {e}{Colors.RESET}"
             )
+            failed_chunks.append(f"{current_date:%Y-%m-%d} to {chunk_end:%Y-%m-%d}")
 
         # Prepare for next chunk
         chunk_number += 1
@@ -238,6 +258,14 @@ def process_time_chunks(
 
     if not all_data:
         raise ValueError("No data was successfully processed from any chunk")
+
+    if failed_chunks:
+        params.failed_chunks = failed_chunks
+        warnings.warn(
+            f"The result is missing {len(failed_chunks)} of {total_chunks} chunks: "
+            + "; ".join(failed_chunks),
+            stacklevel=2,
+        )
 
     return pd.concat(all_data, ignore_index=True)
 
@@ -626,9 +654,15 @@ def print_processing_footer(
 
     dataset_type = "PRESSURE LEVEL" if params.pressure_levels else "SINGLE LEVEL"
     always_logger.info(f"\n{'=' * 60}")
-    always_logger.info(
-        f"{Colors.BLUE}ERA5 {dataset_type} PROCESSING COMPLETED SUCCESSFULLY{Colors.RESET}"
-    )
+    if params.failed_chunks:
+        always_logger.warning(
+            f"{Colors.RED}ERA5 {dataset_type} PROCESSING INCOMPLETE. MISSING: "
+            f"{'; '.join(params.failed_chunks)}{Colors.RESET}"
+        )
+    else:
+        always_logger.info(
+            f"{Colors.BLUE}ERA5 {dataset_type} PROCESSING COMPLETED SUCCESSFULLY{Colors.RESET}"
+        )
     always_logger.info(f"{'=' * 60}")
 
 
@@ -841,11 +875,14 @@ def era5ify_point(
         use_timeseries_api = supported
     if use_timeseries_api:
         set_verbosity(verbosity)
+        ensure_cdsapi_config()
         try:
             wide = download_era5_timeseries(
                 variables, parse_date(start_date), parse_date(end_date), lat, lon
             )
         except Exception as e:  # any endpoint failure: use the gridded path
+            if _is_auth_error(str(e)):
+                raise CDSAuthError(f"CDS refused the credentials: {e}") from e
             always_logger.warning(
                 f"The CDS time-series endpoint failed ({e}); using the gridded download"
             )

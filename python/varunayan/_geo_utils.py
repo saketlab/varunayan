@@ -4,14 +4,39 @@ from __future__ import annotations
 
 import gzip
 import logging
+import math
 import os
-from typing import Optional, Union
+from contextlib import contextmanager
+from typing import IO, Any, Iterator, Optional, Union
 
 import geopandas as gpd
 import pandas as pd
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Great-circle distance in km."""
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = p2 - p1, math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 6371.0 * 2 * math.asin(math.sqrt(a))
+
+
+@contextmanager
+def atomic_open(
+    path: Union[str, "os.PathLike[str]"], mode: str = "wb"
+) -> Iterator[IO[Any]]:
+    """Write beside path; path appears only if the whole block succeeds."""
+    tmp_path = f"{os.fspath(path)}.{os.getpid()}.tmp"
+    try:
+        with open(tmp_path, mode) as handle:
+            yield handle
+        os.replace(tmp_path, path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
 
 
 def download_and_decompress_gz(url: str, cache_dir: str) -> str:
@@ -33,7 +58,7 @@ def download_and_decompress_gz(url: str, cache_dir: str) -> str:
             f.write(chunk)
 
     logger.info("Decompressing %s ...", gz_name)
-    with gzip.open(gz_path, "rb") as fin, open(nc_path, "wb") as fout:
+    with gzip.open(gz_path, "rb") as fin, atomic_open(nc_path) as fout:
         while chunk := fin.read(65536):
             fout.write(chunk)
     os.unlink(gz_path)

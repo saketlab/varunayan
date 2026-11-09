@@ -84,3 +84,65 @@ for (case in plot_cases) {
     }
   })
 }
+
+live_cases <- jsonlite::fromJSON(
+  testthat::test_path("..", "..", "..", "parity", "live_cases.json"),
+  simplifyVector = FALSE
+)
+
+expect_close <- function(got, expected, label) {
+  expect_equal(as.numeric(got), na_from_null(expected), tolerance = 1e-9, ignore_attr = TRUE, info = label)
+}
+
+test_that("parity: METAR file", {
+  case <- live_cases$metar_file
+  out <- .parse_metar(case$text, unlist(case$prefixes))
+  expect_identical(out$station_id, unlist(case$expected$station_id))
+  expect_identical(format(out$observed_at, "%Y-%m-%d %H:%M:%S", tz = "UTC"), unlist(case$expected$observed_at))
+  for (column in setdiff(names(case$expected), c("station_id", "observed_at"))) {
+    expect_close(out[[column]], case$expected[[column]], column)
+  }
+})
+
+test_that("parity: Open-Meteo block", {
+  case <- live_cases$open_meteo
+  out <- .parse_open_meteo(case$block, 19, 72)
+  for (column in names(case$expected)) {
+    expect_close(out[[column]], case$expected[[column]], column)
+  }
+})
+
+test_that("parity: nearest airport", {
+  case <- live_cases$nearest_airport
+  now <- as.numeric(Sys.time())
+  reports <- lapply(case$reports, function(r) {
+    r$obsTime <- now - r$age_minutes * 60
+    r$age_minutes <- NULL
+    r
+  })
+  local_mocked_bindings(.live_get_json = function(url, query = list()) reports)
+  got <- .live_metar(case$place)
+  expected <- case$expected
+  expect_identical(got$site, expected$site)
+  for (field in c("distance_km", "temperature", "humidity", "wind_speed")) {
+    expect_close(got[[field]], list(expected[[field]]), field)
+  }
+  expect_true(is.na(got$wind_direction))
+})
+
+test_that("parity: place names", {
+  case <- live_cases$place_names
+  expect_identical(.choose_place(case$results, case$query)$name, case$expected)
+})
+
+test_that("parity: live limits", {
+  for (name in names(live_cases$limits)) {
+    expect_equal(.live_limits[[name]], live_cases$limits[[name]], info = name)
+  }
+})
+
+test_that("parity: METAR search box", {
+  for (case in live_cases$metar_bbox) {
+    expect_identical(.metar_bbox(list(latitude = case$latitude, longitude = case$longitude)), case$expected)
+  }
+})

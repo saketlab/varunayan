@@ -13,7 +13,8 @@ generate_cache_key(
   resolution = NULL,
   dataset_type = NULL,
   var_type = NULL,
-  pressure_levels = NULL
+  pressure_levels = NULL,
+  frequency = NULL
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ generate_cache_key(
 \item{var_type}{For IMD: "tmax", "tmin", or "rainfall"}
 
 \item{pressure_levels}{Pressure levels for ERA5 pressure data}
+
+\item{frequency}{Time step of the requested ERA5 data}
 }
 \value{
 Character string with cache key

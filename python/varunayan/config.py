@@ -103,6 +103,10 @@ def setup_cdsapi_config() -> None:
     _create_config_file(api_key)
 
 
+class CDSSetupError(RuntimeError):
+    """CDS credentials could not be set up."""
+
+
 def ensure_cdsapi_config() -> None:
     """
     Ensure CDS API configuration exists and is valid.
@@ -163,7 +167,7 @@ def ensure_cdsapi_config() -> None:
 
     except KeyboardInterrupt:
         logger.error("\nSetup cancelled by user.")
-        sys.exit(1)
+        raise
     except Exception as e:
         logger.error(f"\nError setting up CDS API configuration: {e}")
         logger.info("\nYou can manually create the configuration file:")
@@ -171,7 +175,7 @@ def ensure_cdsapi_config() -> None:
         logger.info("2. Add these two lines:")
         logger.info("   url: https://cds.climate.copernicus.eu/api")
         logger.info("   key: YOUR_API_KEY_HERE")
-        sys.exit(1)
+        raise CDSSetupError(f"CDS API setup failed: {e}") from e
 
 
 def _get_env_credentials() -> Optional[Tuple[str, str]]:

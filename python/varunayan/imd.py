@@ -13,6 +13,8 @@ import numpy as np
 import pandas as pd
 import requests
 
+from ._geo_utils import atomic_open
+
 logger = logging.getLogger(__name__)
 
 
@@ -129,12 +131,15 @@ def _download_imd_year(
             if len(resp.content) == 0:
                 raise ValueError(f"Empty response for {dataset} {year}")
             os.makedirs(output_dir, exist_ok=True)
-            with open(out_path, "wb") as f:
+            with atomic_open(out_path) as f:
                 f.write(resp.content)
             logger.info("Saved %s (%d bytes)", out_path, len(resp.content))
             return out_path
         except Exception as exc:
             logger.warning("Attempt %d failed: %s", attempt + 1, exc)
+            response = getattr(exc, "response", None)
+            if response is not None and response.status_code < 500:
+                raise  # client error; a retry cannot help
             if attempt < 2:
                 time.sleep(2 ** (attempt + 1))
             else:

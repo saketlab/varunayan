@@ -112,5 +112,21 @@ plot_radial_hourly(hourly, "rh",
 Humidity is lowest at 14:00 in both cities. In January, it falls from 91 % at
 05:00 to 35 % at 14:00 in Bengaluru. In July, Mumbai stays near 86 % all day.
 
+## Ten years
+
+`plot_radial()` draws one ring per year. Here is the daily mean temperature
+for 2015 to 2024.
+
+```{r years}
+daily <- readRDS(system.file("extdata", "radial_years.rds", package = "varunayan"))
+plot_radial(daily, "temp_c",
+  by = "city",
+  title = "Daily mean 2 m temperature, 2015 to 2024", legend_title = "°C"
+)
+```
+
+Bengaluru is warmest in April (27.8 °C) and Mumbai in May (31.0 °C). Mumbai
+has a second, smaller peak in October.
+
 Both functions take any column. Use `center = 0` for anomalies and
 `rings = "day"` for one ring per day.

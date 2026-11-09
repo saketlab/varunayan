@@ -8,7 +8,7 @@ from .data_filter import (
     get_unique_coordinates_in_polygon,
     set_v_data_fil,
 )
-from .file_handler import extract_download, find_netcdf_files, set_v_file_han
+from .file_handler import extract_download, set_v_file_han
 from .variable_lists import (
     categorize_variables,
     exclude_cols,
@@ -29,7 +29,6 @@ __all__ = [
     "filter_netcdf_by_shapefile",
     "get_unique_coordinates_in_polygon",
     "extract_download",
-    "find_netcdf_files",
     "sum_vars",
     "max_vars",
     "min_vars",

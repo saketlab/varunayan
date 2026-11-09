@@ -594,6 +594,9 @@ era5ify_point <- function(request_id, variables, start_date, end_date, lat, lon,
         verbose = verbose
       ),
       error = function(e) {
+        if (.is_cds_auth_error(conditionMessage(e))) {
+          .stop_cds_auth_failed()
+        }
         message(sprintf(
           fmt = "The time-series endpoint is not available (%s). The package uses the gridded download.",
           conditionMessage(e)

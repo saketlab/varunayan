@@ -4,11 +4,25 @@ Release History
 Unreleased
 ----------
 
+* New ``get_weatherunion_stations`` and ``get_weatherunion_weather`` for Zomato
+  Weather Union observations.
+* New ``get_metar_observations`` (airport observations worldwide) and
+  ``get_open_meteo_weather`` (current or hourly model weather). 
+* New ``get_current_weather`` and ``get_location``: live weather from the most
+  local source available, for a place or your IP location.
+* New ``varunayan live`` and ``varunayan historical`` commands for your
+  location (from your IP) or any place, as Rich tables or JSON. The ERA5
+  commands use Rich summaries.
+* ``import varunayan`` no longer sets up or prompts for CDS credentials; that
+  happens at the first ERA5 download.
+* HadEX3, CRU TS and IMD files are written atomically, so an interrupted
+  download cannot be reused as a complete file.
+* ERA5 extraction ignores files left by a crashed run, IMD downloads no longer
+  retry client errors, and a corrupt cache index no longer breaks the cache.
 * New ``plot_radial`` (radial calendar) and ``plot_radial_hourly`` (24-hour
   clock).
 * ``era5ify_point`` gets hourly single-level data from the CDS time-series
   endpoint, as in R.
-* Temporary-file cleanup removes only the request's own files.
 * Plots use an installed font with a bold face (Arial on macOS).
 * New notebook ``07_diurnal_cycle``.
 

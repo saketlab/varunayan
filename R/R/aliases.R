@@ -42,6 +42,30 @@ IMDTemperatureGeojson <- function(...) imd_temperature_geojson(...)
 #' @export
 IMDStations <- function(...) imd_stations(...)
 
+#' @rdname weatherunion_stations
+#' @export
+WeatherUnionStations <- function(...) weatherunion_stations(...)
+
+#' @rdname weatherunion_weather
+#' @export
+WeatherUnionWeather <- function(...) weatherunion_weather(...)
+
+#' @rdname metar_observations
+#' @export
+MetarObservations <- function(...) metar_observations(...)
+
+#' @rdname open_meteo_weather
+#' @export
+OpenMeteoWeather <- function(...) open_meteo_weather(...)
+
+#' @rdname get_current_weather
+#' @export
+GetCurrentWeather <- function(...) get_current_weather(...)
+
+#' @rdname get_location
+#' @export
+GetLocation <- function(...) get_location(...)
+
 #' @rdname imd_exposure_bbox
 #' @export
 IMDExposureBbox <- function(...) imd_exposure_bbox(...)

@@ -790,3 +790,120 @@ add_plot(
 
 (HERE / "plot_cases.json").write_text(json.dumps(plots, indent=1) + "\n")
 print(f"wrote {len(plots)} plot cases")
+
+
+def magnus_rh(temp: float, dewpoint: float) -> float:
+    a, b = 17.625, 243.04
+    return 100 * math.exp(a * dewpoint / (b + dewpoint) - a * temp / (b + temp))
+
+
+def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = p2 - p1, math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 6371.0 * 2 * math.asin(math.sqrt(a))
+
+
+KNOTS_TO_MS = 0.514444
+live_cases = {
+    "metar_file": {
+        "text": (
+            "raw_text,station_id,observation_time,latitude,longitude,temp_c,"
+            "dewpoint_c,wind_dir_degrees,wind_speed_kt\n"
+            "VABB 1,VABB,2026-11-09T09:00:00.000Z,19.1,72.8,30,20,VRB,10\n"
+            "VIDP 1,VIDP,2026-11-09T09:30:00Z,28.6,77.1,25,5,270,4\n"
+            "KJFK 1,KJFK,2026-11-09T09:00:00Z,40.6,-73.8,10,5,100,5\n"
+        ),
+        "prefixes": ["VA", "VI"],
+        "expected": {
+            "station_id": ["VABB", "VIDP"],
+            "observed_at": ["2026-11-09 09:00:00", "2026-11-09 09:30:00"],
+            "temperature": [30.0, 25.0],
+            "dewpoint": [20.0, 5.0],
+            "humidity": [magnus_rh(30, 20), magnus_rh(25, 5)],
+            "wind_speed": [10 * KNOTS_TO_MS, 4 * KNOTS_TO_MS],
+            "wind_direction": [None, 270.0],
+        },
+    },
+    "open_meteo": {
+        "block": {
+            "time": ["2024-01-01T00:00", "2024-01-01T01:00"],
+            "temperature_2m": [10.0, None],
+            "relative_humidity_2m": [60, 61],
+        },
+        "expected": {
+            "temperature": [10.0, None],
+            "humidity": [60.0, 61.0],
+            "wind_speed": [None, None],
+        },
+    },
+    "nearest_airport": {
+        "place": {"latitude": 19.09, "longitude": 72.87, "label": "Mumbai"},
+        "reports": [
+            {
+                "age_minutes": 200,
+                "temp": 40,
+                "dewp": 10,
+                "lat": 19.09,
+                "lon": 72.87,
+                "name": "Stale",
+            },
+            {
+                "age_minutes": 10,
+                "temp": 30,
+                "dewp": 20,
+                "wspd": 10,
+                "wdir": "VRB",
+                "lat": 19.2,
+                "lon": 72.9,
+                "name": "Near",
+            },
+            {
+                "age_minutes": 5,
+                "temp": 20,
+                "dewp": 10,
+                "lat": 19.4,
+                "lon": 72.9,
+                "name": "Far",
+            },
+        ],
+        "expected": {
+            "site": "Near",
+            "distance_km": haversine_km(19.09, 72.87, 19.2, 72.9),
+            "temperature": 30.0,
+            "humidity": magnus_rh(30, 20),
+            "wind_speed": 10 * KNOTS_TO_MS,
+            "wind_direction": None,
+        },
+    },
+    "limits": {
+        "station_km": 25.0,
+        "station_tries": 3,
+        "airport_km": 50.0,
+        "airport_minutes": 90.0,
+        "heat_index_min_c": 27.0,
+    },
+    "metar_bbox": [
+        {
+            "latitude": lat,
+            "longitude": lon,
+            "expected": (
+                f"{lat - 50 / 110:.2f},"
+                f"{lon - (50 / 110) / math.cos(math.radians(lat)):.2f},"
+                f"{lat + 50 / 110:.2f},"
+                f"{lon + (50 / 110) / math.cos(math.radians(lat)):.2f}"
+            ),
+        }
+        for lat, lon in ((19.09, 72.87), (47.37, 8.55), (-33.9, 151.2))
+    ],
+    "place_names": {
+        "results": [
+            {"name": "Le Havre", "latitude": 49.5, "longitude": 0.1},
+            {"name": "Leh", "latitude": 34.2, "longitude": 77.6, "country": "India"},
+        ],
+        "query": " leh ",
+        "expected": "Leh",
+    },
+}
+(HERE / "live_cases.json").write_text(json.dumps(live_cases, indent=1) + "\n")
+print("wrote live cases")

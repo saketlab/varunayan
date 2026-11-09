@@ -1,5 +1,16 @@
 # varunayan (development version)
 
+* Added `weatherunion_stations()` and `weatherunion_weather()` for Zomato
+  Weather Union observations.
+* Added `metar_observations()` (airport observations worldwide) and
+  `open_meteo_weather()` (current or hourly model weather). 
+* Added `get_current_weather()` and `get_location()`: live weather from the
+  most local source available, for a place or your IP location.
+* ERA5 cache keys now include the frequency, so daily data is no longer
+  returned for an hourly request. Existing ERA5 cache entries are downloaded
+  again.
+* When the monthly-means request fails, the fallback to daily 12:00 UTC samples
+  now gives a warning and is no longer cached as monthly means.
 * Added `plot_radial()` and `plot_radial_hourly()` 
 * `plot_map()`, `plot_bars()` and `plot_heatmap()` draw sequential palettes
   darkest at the highest value, as in Python.

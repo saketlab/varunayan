@@ -30,7 +30,8 @@ read_imd_temperature <- function(file_path, var_type, year) {
     raw_data <- readBin(con, "numeric", n = n_values, size = 4, endian = "little")
 
     if (length(x = raw_data) != n_values) {
-      warning(sprintf(fmt = "Expected %s values, but found %s", n_values, length(x = raw_data)), call. = FALSE)
+      # array() would recycle values into wrong temperatures
+      stop(sprintf(fmt = "Expected %s values, but found %s. The file is incomplete or is for another year.", n_values, length(x = raw_data)), call. = FALSE)
     }
   }, finally = {
     close(con)

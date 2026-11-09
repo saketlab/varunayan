@@ -1,12 +1,37 @@
 import argparse
 import datetime as dt
 import logging
-from typing import List, Union
+import time
+from typing import Any, List, Union
 
+import pandas as pd
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
+from . import live_cli, live_weather
+from .config import CDSSetupError
 from .core import era5ify_bbox, era5ify_geojson, era5ify_point
 from .util.logging_utils import get_logger
 
 logger = get_logger(level=logging.DEBUG)
+
+
+def _show_request(mode: str, variables: List[str], args: Any) -> None:
+    table = Table.grid(padding=(0, 2))
+    table.add_column(style="dim")
+    table.add_column()
+    table.add_row("Request", args.request_id)
+    table.add_row("Region", mode)
+    table.add_row("Variables", ", ".join(variables))
+    table.add_row("Dates", f"{args.start} to {args.end}")
+    table.add_row("Frequency", args.freq)
+    Console().print(Panel(table, title="varunayan", expand=False), highlight=False)
+
+
+def _show_result(result: Any, seconds: float) -> None:
+    rows = f"{len(result):,} rows, " if isinstance(result, pd.DataFrame) else ""
+    Console().print(f"[green]Done:[/green] {rows}{seconds:.0f} s", highlight=False)
 
 
 def parse_flexible_date(date_string: str) -> dt.datetime:
@@ -26,6 +51,14 @@ def parse_flexible_date(date_string: str) -> dt.datetime:
 
 
 def main() -> None:
+    try:
+        _main()
+    except CDSSetupError as err:
+        Console(stderr=True).print(str(err), style="red", markup=False, highlight=False)
+        raise SystemExit(1) from None
+
+
+def _main() -> None:
     parser = argparse.ArgumentParser(description="ERA5ify your climate data.")
 
     # Create subparsers for different modes
@@ -138,7 +171,63 @@ def main() -> None:
         "--lon", type=float, required=True, help="Longitude of the point"
     )
 
+    def add_place_args(subparser: argparse.ArgumentParser) -> None:
+        subparser.add_argument(
+            "place", nargs="?", help="Place name. Default: your location, from your IP"
+        )
+        subparser.add_argument("--lat", type=float, help="Latitude")
+        subparser.add_argument("--lon", type=float, help="Longitude")
+        subparser.add_argument(
+            "--json", action="store_true", help="Print JSON instead of a table"
+        )
+
+    live_parser = subparsers.add_parser(
+        "live", help="Live weather for your location or any place"
+    )
+    add_place_args(live_parser)
+    live_parser.add_argument(
+        "--source",
+        default="auto",
+        choices=["auto", *live_weather.SOURCES],
+        help="Data source. Default: the most local one available",
+    )
+
+    historical_parser = subparsers.add_parser(
+        "historical", help="ERA5 history for your location or any place"
+    )
+    add_place_args(historical_parser)
+    historical_parser.add_argument(
+        "--start", required=True, help="Start date (YYYY-MM-DD)"
+    )
+    historical_parser.add_argument("--end", required=True, help="End date (YYYY-MM-DD)")
+    historical_parser.add_argument(
+        "--variables",
+        default="2m_temperature",
+        help="Comma-separated ERA5 variables - default: 2m_temperature",
+    )
+    historical_parser.add_argument(
+        "--freq",
+        choices=["hourly", "daily", "weekly", "monthly", "yearly"],
+        help="Frequency - default: daily for ERA5; Open-Meteo is always hourly",
+    )
+    historical_parser.add_argument(
+        "--source",
+        default="era5",
+        choices=["era5", "open-meteo"],
+        help="era5 needs CDS credentials; open-meteo needs no key - default: era5",
+    )
+    historical_parser.add_argument("--path", help="Also save all rows to this CSV")
+
     args = parser.parse_args()
+
+    if args.mode in ("live", "historical"):
+        if (args.lat is None) != (args.lon is None):
+            parser.error("--lat and --lon must be used together")
+        run = live_cli.run_live if args.mode == "live" else live_cli.run_historical
+        code = run(args)
+        if code:
+            raise SystemExit(code)
+        return
 
     # Parse common arguments
     try:
@@ -156,10 +245,14 @@ def main() -> None:
     if args.pressure_levels and args.pressure_levels.strip():
         pressure_levels = [level.strip() for level in args.pressure_levels.split(",")]
 
+    _show_request(args.mode, variables, args)
+    started = time.time()
+    result: Any = None
+
     # Process based on mode
     if args.mode == "geojson":
         logger.info("Processing with GeoJSON/JSON file...")
-        era5ify_geojson(
+        result = era5ify_geojson(
             request_id=args.request_id,
             variables=variables,
             start_date=args.start,  # Pass as string to match function signature
@@ -176,7 +269,7 @@ def main() -> None:
 
     elif args.mode == "bbox":
         logger.info("Processing with bounding box coordinates...")
-        era5ify_bbox(
+        result = era5ify_bbox(
             request_id=args.request_id,
             variables=variables,
             start_date=args.start,  # Pass as string to match function signature
@@ -195,7 +288,7 @@ def main() -> None:
 
     elif args.mode == "point":
         logger.info("Processing for a single point location...")
-        era5ify_point(
+        result = era5ify_point(
             request_id=args.request_id,
             variables=variables,
             start_date=args.start,
@@ -208,3 +301,5 @@ def main() -> None:
             verbosity=args.verbosity,
             save_raw=args.save_raw,
         )
+
+    _show_result(result, time.time() - started)

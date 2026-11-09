@@ -73,10 +73,10 @@ test_that("read_imd_temperature handles leap years (366 days)", {
   expect_equal(unique(df$latitude), 37.5)
 })
 
-test_that("read_imd_temperature warns on truncated file and errors on missing file", {
+test_that("read_imd_temperature errors on truncated and missing files", {
   f <- tempfile(fileext = ".grd")
   imd_fx_write_temperature(f, 2023, n_days = 10L)
-  expect_warning(
+  expect_error(
     suppressMessages(read_imd_temperature(f, "tmax", 2023)),
     "Expected 350765 values, but found 9610"
   )
