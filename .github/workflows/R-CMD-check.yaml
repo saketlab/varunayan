@@ -15,6 +15,8 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    # terra does not build on Linux R-devel; a failure here leaves the badge green
+    continue-on-error: ${{ matrix.config.os == 'ubuntu-latest' && matrix.config.r == 'devel' }}
 
     strategy:
       fail-fast: false

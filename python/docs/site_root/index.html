@@ -27,6 +27,16 @@
     .card h2 { margin: 0 0 4px; font-size: 1.3rem; color: var(--accent); }
     .card code { font-size: 0.9rem; overflow-wrap: anywhere; }
     .card p { margin: 8px 0 0; color: var(--muted); font-size: 0.95rem; }
+    .cli { margin-top: 56px; }
+    .cli h2 { font-size: 1.5rem; margin: 0 0 8px; }
+    .cli p { color: var(--muted); margin: 0 0 20px; }
+    .cli p.note { font-size: 0.85rem; margin: 12px 0 0; }
+    .term { background: #1c1c1e; color: #e8e8ea; border-radius: 10px; overflow: hidden; }
+    .term-cmd, .term-body { margin: 0; padding: 0 16px; overflow-x: auto;
+      font: 12.5px/1.2 ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace; }
+    .term-cmd { padding-top: 16px; padding-bottom: 12px; color: #9fe870; }
+    .term-body { padding-bottom: 16px; }
+    .term-body .icon { display: inline-block; width: 2ch; }
   </style>
 </head>
 <body>
@@ -48,6 +58,33 @@
         <p>R package, with articles comparing ERA5 and IMD.</p>
       </a>
     </div>
+    <section class="cli">
+      <h2>Live weather in your terminal</h2>
+      <p>The Python package shows the most local reading available, and says what
+        kind of reading it is and how old it is. With no place named,
+        <code>varunayan live</code> uses your location, from your IP address.</p>
+      <div class="term">
+        <pre class="term-cmd">$ pip install varunayan
+$ varunayan live andheri</pre>
+<pre class="term-body">╭──────────────────── Andheri, India ────────────────────╮
+│ <span style="color: #777877; text-decoration-color: #777877">Temperature  </span><span style="color: #ff8700; text-decoration-color: #ff8700; font-weight: bold">32.0 °C</span>                                   │
+│ <span style="color: #777877; text-decoration-color: #777877">Heat index   </span><span style="color: #ff8700; text-decoration-color: #ff8700">32.4 °C</span>                                   │
+│ <span style="color: #777877; text-decoration-color: #777877">Humidity     </span><span style="color: #98a84b; text-decoration-color: #98a84b">40.7 %</span>                                    │
+│ <span style="color: #777877; text-decoration-color: #777877">Rainfall     None reported</span>                             │
+│ <span style="color: #777877; text-decoration-color: #777877">Wind         </span><span class="icon">💨</span> <span style="color: #98a84b; text-decoration-color: #98a84b">3.6 m/s</span> from 360°                      │
+│ <span style="color: #777877; text-decoration-color: #777877">             </span>                                          │
+│ <span style="color: #777877; text-decoration-color: #777877">Type         </span>Airport observation (METAR)               │
+│ <span style="color: #777877; text-decoration-color: #777877">From         </span>Mumbai/Shivaji Intl, MM, IN (3.5 km away) │
+│ <span style="color: #777877; text-decoration-color: #777877">Observed     </span>4 min ago                                 │
+│ <span style="color: #777877; text-decoration-color: #777877">Source       </span>metar                                     │
+╰────────────────────────────────────────────────────────╯
+</pre>
+      </div>
+      <p class="note">Real output from 9 November 2026. Also:
+        <code>varunayan live mumbai --source open-meteo</code>,
+        <code>varunayan live --lat 19.08 --lon 72.88</code>,
+        <code>varunayan live mumbai --json</code>.</p>
+    </section>
   </main>
 </body>
 </html>
