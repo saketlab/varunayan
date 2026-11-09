@@ -41,12 +41,23 @@
 }
 
 .live_reading <- function(source, kind, site, distance_km, temperature, humidity,
-                          wind_speed, wind_direction, observed_at) {
+                          wind_speed, wind_direction, observed_at,
+                          rainfall = NA_real_, rain_reported = NA) {
   list(
     source = source, kind = kind, site = site, distance_km = distance_km,
     temperature = temperature, humidity = humidity, wind_speed = wind_speed,
-    wind_direction = wind_direction, observed_at = observed_at
+    wind_direction = wind_direction, observed_at = observed_at,
+    rainfall = rainfall, rain_reported = rain_reported
   )
+}
+
+# only current-weather groups count
+.metar_reports_rain <- function(raw) {
+  if (!is.character(raw) || length(raw) != 1 || is.na(raw)) {
+    return(NA)
+  }
+  current <- sub("\\s(RMK|TEMPO|BECMG|NOSIG)\\b.*$", "", raw, perl = TRUE)
+  grepl("\\s[-+]?(SH|TS|FZ)?(SN|GR|GS|PL)?(RA|DZ)(SN|GR|GS|PL)?(?=\\s|$)", current, perl = TRUE)
 }
 
 .live_weatherunion <- function(place) {
@@ -62,7 +73,8 @@
     return(.live_reading(
       "weatherunion", "station", paste0(stations$name[index], ", ", stations$city[index]),
       distances[index], row$temperature, row$humidity, row$wind_speed, row$wind_direction,
-      as.POSIXct(NA, tz = "UTC")
+      as.POSIXct(NA, tz = "UTC"),
+      rainfall = .live_num(row$rain_intensity) * 60
     ))
   }
   .live_stop(sprintf("none of the %d nearest stations is reporting", length(nearby)))
@@ -80,7 +92,8 @@
     if (is.null(data$name) || !nzchar(data$name)) place$label else data$name,
     NA_real_, .live_num(data$main$temp), .live_num(data$main$humidity),
     .live_num(data$wind$speed), .live_num(data$wind$deg),
-    as.POSIXct(data$dt, origin = "1970-01-01", tz = "UTC")
+    as.POSIXct(data$dt, origin = "1970-01-01", tz = "UTC"),
+    rainfall = .live_num(data$rain$`1h` %||% 0) # absent when dry
   )
 }
 
@@ -116,7 +129,8 @@
     best_km, temperature,
     if (is.na(dewpoint)) NA_real_ else relative_humidity_from_dewpoint(temperature, dewpoint),
     .live_num(best$wspd) * .knots_to_ms, .live_num(best$wdir),
-    as.POSIXct(best$obsTime, origin = "1970-01-01", tz = "UTC")
+    as.POSIXct(best$obsTime, origin = "1970-01-01", tz = "UTC"),
+    rain_reported = .metar_reports_rain(best$rawOb)
   )
 }
 
@@ -136,7 +150,8 @@
   if (length(named) > 0 && !is.null(named[[1]]$name)) site <- named[[1]]$name
   .live_reading(
     "metar", "airport", site, distances[index], row$temperature, row$humidity,
-    row$wind_speed, row$wind_direction, row$observed_at
+    row$wind_speed, row$wind_direction, row$observed_at,
+    rain_reported = .metar_reports_rain(row$raw_text)
   )
 }
 
@@ -148,7 +163,8 @@
   row <- .live_try(open_meteo_weather(place$latitude, place$longitude))
   .live_reading(
     "open-meteo", "model", place$label, NA_real_, row$temperature[1], row$humidity[1],
-    row$wind_speed[1], row$wind_direction[1], row$datetime[1]
+    row$wind_speed[1], row$wind_direction[1], row$datetime[1],
+    rainfall = .live_num(row$rainfall[1])
   )
 }
 
@@ -233,8 +249,10 @@ get_location <- function(place = NULL, latitude = NULL, longitude = NULL) {
 #' @return A one-row `data.frame`: `place`, `latitude`, `longitude`, `source`,
 #'   `kind` (`"station"`, `"airport"` or `"model"`), `site`, `distance_km`,
 #'   `temperature` (degrees C), `humidity` (percent), `heat_index` (degrees C),
-#'   `wind_speed` (m/s), `wind_direction` (degrees) and `observed_at` (UTC). The
-#'   attribute `"skipped"` says why earlier sources were passed.
+#'   `wind_speed` (m/s), `wind_direction` (degrees), `observed_at` (UTC),
+#'   `rainfall` (mm/h, `NA` for METAR, which gives no amount) and `rain_reported`
+#'   (METAR only: whether the report has rain or drizzle). The attribute
+#'   `"skipped"` says why earlier sources were passed.
 #'
 #' @examples
 #' \donttest{

@@ -6,7 +6,7 @@ import argparse
 import json
 from dataclasses import asdict
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Dict, Optional, Sequence, Tuple
 
 import pandas as pd
 import requests
@@ -27,6 +27,41 @@ from .live_weather import (
 )
 
 _HISTORICAL_ROWS_SHOWN = 24
+_Bands = Sequence[Tuple[float, str]]  # (upper bound, style), ascending
+_ABOVE_ALL = float("inf")
+_TEMPERATURE_BANDS: _Bands = (
+    (10, "blue"),
+    (20, "cyan"),
+    (28, "green"),
+    (34, "dark_orange"),
+    (_ABOVE_ALL, "red"),
+)
+_HUMIDITY_BANDS: _Bands = (
+    (30, "yellow"),
+    (60, "green"),
+    (80, "cyan"),
+    (_ABOVE_ALL, "blue"),
+)
+# m/s; Beaufort 6 and 8
+_WIND_BANDS: _Bands = ((10.8, "green"), (17.2, "yellow"), (_ABOVE_ALL, "red"))
+
+
+def _styled(value: Optional[float], unit: str, bands: _Bands) -> str:
+    if value is None:
+        return "[dim]n/a[/dim]"
+    style = next(style for limit, style in bands if value < limit)
+    return f"[{style}]{value:.1f} {unit}[/{style}]"
+
+
+def _rain_text(reading: Reading) -> str:
+    if reading.rainfall is not None:
+        style = "blue" if reading.rainfall > 0 else "dim"
+        return f"[{style}]{reading.rainfall:.1f} mm/h[/{style}]"
+    if reading.rain_reported is None:
+        return "[dim]n/a[/dim]"
+    if reading.rain_reported:
+        return "[blue]Raining (amount not reported)[/blue]"
+    return "[dim]None reported[/dim]"
 
 
 def _age_text(reading: Reading) -> str:
@@ -49,18 +84,17 @@ def _kind_text(reading: Reading) -> str:
 def _render(
     console: Console, place: Place, reading: Reading, skipped: Dict[str, str]
 ) -> None:
-    def show(value: Optional[float], unit: str) -> str:
-        return "n/a" if value is None else f"{value:.1f} {unit}"
-
     table = Table.grid(padding=(0, 2))
     table.add_column(style="dim")
     table.add_column()
-    table.add_row("Temperature", f"[bold]{show(reading.temperature, '°C')}[/bold]")
+    temperature = _styled(reading.temperature, "°C", _TEMPERATURE_BANDS)
+    table.add_row("Temperature", f"[bold]{temperature}[/bold]")
     feels = heat_index_value(reading)
     if feels is not None:
-        table.add_row("Heat index", show(feels, "°C"))
-    table.add_row("Humidity", show(reading.humidity, "%"))
-    wind = show(reading.wind_speed, "m/s")
+        table.add_row("Heat index", _styled(feels, "°C", _TEMPERATURE_BANDS))
+    table.add_row("Humidity", _styled(reading.humidity, "%", _HUMIDITY_BANDS))
+    table.add_row("Rainfall", _rain_text(reading))
+    wind = f"💨 {_styled(reading.wind_speed, 'm/s', _WIND_BANDS)}"
     if reading.wind_direction is not None:
         wind += f" from {reading.wind_direction:.0f}°"
     table.add_row("Wind", wind)

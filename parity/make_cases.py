@@ -837,6 +837,20 @@ live_cases = {
             "wind_speed": [None, None],
         },
     },
+    "open_meteo_current": {
+        "block": {
+            "time": ["2024-01-01T00:00"],
+            "interval": [900],
+            "precipitation": [0.5],
+        },
+        "expected": {"rainfall": [2.0]},
+    },
+    "metar_rain": [
+        {"raw": "METAR VABB 091130Z 09006KT 5000 FU NSC 35/10 Q1012", "rain": False},
+        {"raw": "METAR VABB 091130Z 09006KT 3000 -RA BR 25/24 Q1008", "rain": True},
+        {"raw": "VIDP 091130Z 09006KT 2000 +TSRA 25/24 Q1008 NOSIG", "rain": True},
+        {"raw": "VIDP 091130Z 09006KT 8000 VCSH 25/24 Q1008 TEMPO -RA", "rain": False},
+    ],
     "nearest_airport": {
         "place": {"latitude": 19.09, "longitude": 72.87, "label": "Mumbai"},
         "reports": [
@@ -854,6 +868,7 @@ live_cases = {
                 "dewp": 20,
                 "wspd": 10,
                 "wdir": "VRB",
+                "rawOb": "METAR VABB 091130Z VRB10KT 3000 -RA 30/20 Q1008",
                 "lat": 19.2,
                 "lon": 72.9,
                 "name": "Near",
@@ -874,7 +889,51 @@ live_cases = {
             "humidity": magnus_rh(30, 20),
             "wind_speed": 10 * KNOTS_TO_MS,
             "wind_direction": None,
+            "rain_reported": True,
         },
+    },
+    "openweathermap_rain": [
+        {
+            "payload": {
+                "dt": 1794223800,
+                "name": "Here",
+                "main": {"temp": 30, "humidity": 50},
+                "wind": {"speed": 1, "deg": 10},
+                **extra,
+            },
+            "expected": expected,
+        }
+        for extra, expected in (({"rain": {"1h": 2.5}}, 2.5), ({}, 0.0))
+    ],
+    "weatherunion_rain": [
+        {"rain_intensity": 0.1, "expected": 6.0},
+        {"rain_intensity": None, "expected": None},
+    ],
+    "current_weather": {
+        "row": {
+            "temperature": 30.0,
+            "humidity": 50.0,
+            "wind_speed": 1.0,
+            "wind_direction": 10.0,
+            "rainfall": 2.0,
+        },
+        "columns": [
+            "place",
+            "latitude",
+            "longitude",
+            "source",
+            "kind",
+            "site",
+            "distance_km",
+            "temperature",
+            "humidity",
+            "heat_index",
+            "wind_speed",
+            "wind_direction",
+            "observed_at",
+            "rainfall",
+            "rain_reported",
+        ],
     },
     "limits": {
         "station_km": 25.0,

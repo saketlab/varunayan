@@ -31,8 +31,8 @@ dates or neither. With neither, the result is the current conditions.}
 }
 \value{
 A \code{data.frame} with \code{datetime} (UTC), \code{latitude}, \code{longitude},
-\code{temperature} (degrees C), \code{humidity} (percent), \code{wind_speed} (m/s) and
-\code{wind_direction} (degrees).
+\code{temperature} (degrees C), \code{humidity} (percent), \code{wind_speed} (m/s),
+\code{wind_direction} (degrees) and \code{rainfall} (mm/h).
 }
 \description{
 Gets the current conditions or hourly history for a point from Open-Meteo.

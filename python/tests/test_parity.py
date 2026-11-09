@@ -181,11 +181,17 @@ def test_parity_metar_file() -> None:
             _assert_close(out[column], values, column)
 
 
-def test_parity_open_meteo_block() -> None:
-    case = LIVE["open_meteo"]
+@pytest.mark.parametrize("name", ["open_meteo", "open_meteo_current"])
+def test_parity_open_meteo_block(name: str) -> None:
+    case = LIVE[name]
     out = live_sources._parse_open_meteo(case["block"], 19.0, 72.0)
     for column, values in case["expected"].items():
         _assert_close(out[column], values, column)
+
+
+@pytest.mark.parametrize("case", LIVE["metar_rain"], ids=lambda c: c["raw"])
+def test_parity_metar_rain(case: Dict[str, Any]) -> None:
+    assert live_weather._metar_reports_rain(case["raw"]) is case["rain"]
 
 
 def test_parity_nearest_airport() -> None:
@@ -205,6 +211,68 @@ def test_parity_nearest_airport() -> None:
     for field in ("distance_km", "temperature", "humidity", "wind_speed"):
         _assert_close([getattr(got, field)], [expected[field]], field)
     assert got.wind_direction is None
+    assert got.rain_reported is expected["rain_reported"]
+
+
+HERE = live_weather.Place(19.0, 72.0, "Here")
+
+
+@pytest.mark.parametrize("case", LIVE["openweathermap_rain"])
+def test_parity_openweathermap_rain(
+    case: Dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(live_weather.OPENWEATHERMAP_KEY_ENV, "k")
+    with patch.object(live_weather, "_get_json", return_value=case["payload"]):
+        got = live_weather._openweathermap(HERE)
+    _assert_close([got.rainfall], [case["expected"]], "rainfall")
+
+
+@pytest.mark.parametrize("case", LIVE["weatherunion_rain"])
+def test_parity_weatherunion_rain(
+    case: Dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(live_weather.API_KEY_ENV, "k")
+    stations = pd.DataFrame(
+        [
+            {
+                "station_id": "S1",
+                "city": "C",
+                "name": "N",
+                "latitude": 19.0,
+                "longitude": 72.0,
+            }
+        ]
+    )
+    weather = pd.DataFrame(
+        [
+            {
+                "temperature": 30.0,
+                "humidity": 50.0,
+                "wind_speed": 1.0,
+                "wind_direction": 10.0,
+                "rain_intensity": case["rain_intensity"],
+            }
+        ]
+    )
+    with (
+        patch.object(live_weather, "get_weatherunion_stations", return_value=stations),
+        patch.object(live_weather, "get_weatherunion_weather", return_value=weather),
+    ):
+        got = live_weather._weatherunion(HERE)
+    _assert_close([got.rainfall], [case["expected"]], "rainfall")
+
+
+def test_parity_current_weather_columns() -> None:
+    case = LIVE["current_weather"]
+    frame = pd.DataFrame(
+        [{"datetime": pd.Timestamp("2026-11-09 09:15", tz="UTC"), **case["row"]}]
+    )
+    with patch.object(live_weather, "get_open_meteo_weather", return_value=frame):
+        out = live_weather.get_current_weather(
+            latitude=19.0, longitude=72.0, source="open-meteo"
+        )
+    assert list(out.columns) == case["columns"]
+    _assert_close(out["rainfall"], [case["row"]["rainfall"]], "rainfall")
 
 
 def test_parity_place_names() -> None:

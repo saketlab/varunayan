@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 import requests
+from rich.console import Console
 
 from varunayan import cli, live_cli, live_weather
 from varunayan.live_weather import Place, get_live_weather
@@ -277,6 +278,29 @@ def test_cli_panel_labels_a_model_value(_, capsys):
     with patch.object(sys, "argv", argv):
         cli.main()
     assert "Model estimate" in capsys.readouterr().out
+
+
+def test_panel_shows_weather_colors_rain_and_wind_icon():
+    reading = live_weather.Reading(
+        source="metar",
+        kind="airport",
+        site="Mumbai",
+        distance_km=1.0,
+        temperature=38.0,
+        humidity=70.0,
+        wind_speed=3.0,
+        wind_direction=90.0,
+        observed_at=None,
+        rain_reported=True,
+    )
+    place = live_weather.Place(19.0, 72.0, "Mumbai")
+    console = Console(record=True, width=80, force_terminal=True)
+    live_cli._render(console, place, reading, {})
+    text = console.export_text()
+    assert "💨" in text and "Raining" in text and "70.0 %" in text
+    assert "[red]38.0 °C" in live_cli._styled(38.0, "°C", live_cli._TEMPERATURE_BANDS)
+    assert "[blue]5.0 °C" in live_cli._styled(5.0, "°C", live_cli._TEMPERATURE_BANDS)
+    assert live_cli._styled(None, "°C", live_cli._TEMPERATURE_BANDS) == "[dim]n/a[/dim]"
 
 
 def test_failure_exits_nonzero():

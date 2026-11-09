@@ -105,10 +105,17 @@ test_that("parity: METAR file", {
 })
 
 test_that("parity: Open-Meteo block", {
-  case <- live_cases$open_meteo
-  out <- .parse_open_meteo(case$block, 19, 72)
-  for (column in names(case$expected)) {
-    expect_close(out[[column]], case$expected[[column]], column)
+  for (case in live_cases[c("open_meteo", "open_meteo_current")]) {
+    out <- .parse_open_meteo(case$block, 19, 72)
+    for (column in names(case$expected)) {
+      expect_close(out[[column]], case$expected[[column]], column)
+    }
+  }
+})
+
+test_that("parity: METAR rain", {
+  for (case in live_cases$metar_rain) {
+    expect_identical(.metar_reports_rain(case$raw), case$rain, info = case$raw)
   }
 })
 
@@ -128,6 +135,47 @@ test_that("parity: nearest airport", {
     expect_close(got[[field]], list(expected[[field]]), field)
   }
   expect_true(is.na(got$wind_direction))
+  expect_identical(got$rain_reported, expected$rain_reported)
+})
+
+live_here <- list(latitude = 19, longitude = 72, label = "Here")
+
+test_that("parity: OpenWeatherMap rain", {
+  withr::local_envvar(OPENWEATHERMAP_API_KEY = "k")
+  for (case in live_cases$openweathermap_rain) {
+    local_mocked_bindings(.live_get_json = function(url, query = list()) case$payload)
+    got <- .live_openweathermap(live_here)
+    expect_close(got$rainfall, list(case$expected), "rainfall")
+  }
+})
+
+test_that("parity: Weather Union rain", {
+  withr::local_envvar(WEATHERUNION_API_KEY = "k")
+  for (case in live_cases$weatherunion_rain) {
+    local_mocked_bindings(
+      weatherunion_stations = function(...) {
+        data.frame(station_id = "S1", city = "C", name = "N", latitude = 19, longitude = 72)
+      },
+      weatherunion_weather = function(...) {
+        data.frame(
+          temperature = 30, humidity = 50, wind_speed = 1, wind_direction = 10,
+          rain_intensity = .live_num(case$rain_intensity)
+        )
+      }
+    )
+    got <- .live_weatherunion(live_here)
+    expect_close(got$rainfall, list(case$expected), "rainfall")
+  }
+})
+
+test_that("parity: current weather columns", {
+  case <- live_cases$current_weather
+  local_mocked_bindings(open_meteo_weather = function(...) {
+    do.call(data.frame, c(list(datetime = as.POSIXct("2026-11-09 09:15", tz = "UTC")), case$row))
+  })
+  out <- get_current_weather(latitude = 19, longitude = 72, source = "open-meteo")
+  expect_identical(names(out), unlist(case$columns))
+  expect_close(out$rainfall, list(case$row$rainfall), "rainfall")
 })
 
 test_that("parity: place names", {

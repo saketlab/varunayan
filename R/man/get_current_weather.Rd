@@ -29,8 +29,10 @@ get_current_weather(
 A one-row \code{data.frame}: \code{place}, \code{latitude}, \code{longitude}, \code{source},
 \code{kind} (\code{"station"}, \code{"airport"} or \code{"model"}), \code{site}, \code{distance_km},
 \code{temperature} (degrees C), \code{humidity} (percent), \code{heat_index} (degrees C),
-\code{wind_speed} (m/s), \code{wind_direction} (degrees) and \code{observed_at} (UTC). The
-attribute \code{"skipped"} says why earlier sources were passed.
+\code{wind_speed} (m/s), \code{wind_direction} (degrees), \code{observed_at} (UTC),
+\code{rainfall} (mm/h, \code{NA} for METAR, which gives no amount) and \code{rain_reported}
+(METAR only: whether the report has rain or drizzle). The attribute
+\code{"skipped"} says why earlier sources were passed.
 }
 \description{
 Sources are tried from the most local to the least: \code{"weatherunion"} (needs

@@ -21,6 +21,7 @@ _OPEN_METEO_FIELDS = {
     "relative_humidity_2m": "humidity",
     "wind_speed_10m": "wind_speed",
     "wind_direction_10m": "wind_direction",
+    "precipitation": "rainfall",
 }
 
 
@@ -111,6 +112,8 @@ def _parse_open_meteo(
     )
     for source, column in _OPEN_METEO_FIELDS.items():
         frame[column] = pd.to_numeric(pd.Series(block.get(source)), errors="coerce")
+    if "interval" in block:  # current rainfall is mm per interval
+        frame["rainfall"] *= 3600 / block["interval"][0]
     return frame
 
 
@@ -135,8 +138,8 @@ def get_open_meteo_weather(
 
     Returns:
         DataFrame with ``datetime`` (UTC), ``latitude``, ``longitude``,
-        ``temperature`` (°C), ``humidity`` (%), ``wind_speed`` (m/s) and
-        ``wind_direction`` (degrees).
+        ``temperature`` (°C), ``humidity`` (%), ``wind_speed`` (m/s),
+        ``wind_direction`` (degrees) and ``rainfall`` (mm/h).
 
     Raises:
         ValueError: if only one date is given.

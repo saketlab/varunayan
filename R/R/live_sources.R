@@ -77,7 +77,8 @@ metar_observations <- function(prefixes = NULL, timeout = 60) {
   temperature_2m = "temperature",
   relative_humidity_2m = "humidity",
   wind_speed_10m = "wind_speed",
-  wind_direction_10m = "wind_direction"
+  wind_direction_10m = "wind_direction",
+  precipitation = "rainfall"
 )
 
 .parse_open_meteo <- function(block, latitude, longitude) {
@@ -95,6 +96,8 @@ metar_observations <- function(prefixes = NULL, timeout = 60) {
       vapply(values, .live_num, numeric(1))
     }
   }
+  # current rainfall is mm per interval
+  if (!is.null(block$interval)) out$rainfall <- out$rainfall * 3600 / unlist(block$interval)[1]
   out
 }
 
@@ -112,8 +115,8 @@ metar_observations <- function(prefixes = NULL, timeout = 60) {
 #' @param ... Not used. This argument is necessary for compatibility with the aliases.
 #'
 #' @return A `data.frame` with `datetime` (UTC), `latitude`, `longitude`,
-#'   `temperature` (degrees C), `humidity` (percent), `wind_speed` (m/s) and
-#'   `wind_direction` (degrees).
+#'   `temperature` (degrees C), `humidity` (percent), `wind_speed` (m/s),
+#'   `wind_direction` (degrees) and `rainfall` (mm/h).
 #'
 #' @examples
 #' \donttest{

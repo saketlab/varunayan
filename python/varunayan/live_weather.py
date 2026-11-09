@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
@@ -34,6 +35,10 @@ _MAX_AIRPORT_KM = 50.0
 _MAX_AIRPORT_AGE = timedelta(minutes=90)
 _HEAT_INDEX_MIN_C = 27.0
 OPENWEATHERMAP_KEY_ENV = "OPENWEATHERMAP_API_KEY"
+_METAR_FORECAST = re.compile(r"\s(?:RMK|TEMPO|BECMG|NOSIG)\b")
+_METAR_RAIN = re.compile(
+    r"\s[-+]?(?:SH|TS|FZ)?(?:SN|GR|GS|PL)?(?:RA|DZ)(?:SN|GR|GS|PL)?(?=\s|$)"
+)
 
 
 class SourceUnavailable(RuntimeError):
@@ -58,6 +63,8 @@ class Reading:
     wind_speed: Optional[float]
     wind_direction: Optional[float]
     observed_at: Optional[datetime]  # None when the source gives no time
+    rainfall: Optional[float] = None  # mm/h
+    rain_reported: Optional[bool] = None  # METAR only; it gives no amount
 
 
 @contextmanager
@@ -94,9 +101,17 @@ def _number(value: Any) -> Optional[float]:
         return None
 
 
-def _row_values(row: pd.Series) -> Dict[str, Optional[float]]:
+def _row_values(row: pd.Series) -> Dict[str, Any]:
     fields = ("temperature", "humidity", "wind_speed", "wind_direction")
     return {field: _number(row[field]) for field in fields}
+
+
+def _metar_reports_rain(raw: Any) -> Optional[bool]:
+    """Whether a raw METAR has rain or drizzle now, or None without a report."""
+    if not isinstance(raw, str):
+        return None
+    current = _METAR_FORECAST.split(raw, maxsplit=1)[0]
+    return _METAR_RAIN.search(current) is not None
 
 
 def _weatherunion(place: Place) -> Reading:
@@ -114,12 +129,14 @@ def _weatherunion(place: Place) -> Reading:
             ).iloc[0]
         if _number(row["temperature"]) is None:
             continue
+        per_minute = _number(row.get("rain_intensity"))
         return Reading(
             source="weatherunion",
             kind="station",
             site=f"{station['name']}, {station['city']}",
             distance_km=float(station["distance_km"]),
             observed_at=None,
+            rainfall=None if per_minute is None else per_minute * 60,
             **_row_values(row),
         )
     raise SourceUnavailable(f"none of the {len(nearby)} nearest stations is reporting")
@@ -149,6 +166,7 @@ def _openweathermap(place: Place) -> Reading:
         wind_speed=_number(wind.get("speed")),
         wind_direction=_number(wind.get("deg")),
         observed_at=datetime.fromtimestamp(data["dt"], timezone.utc),
+        rainfall=_number(data.get("rain", {}).get("1h", 0.0)),  # absent when dry
     )
 
 
@@ -198,6 +216,7 @@ def _metar(place: Place) -> Reading:
         wind_speed=None if speed is None else speed * _KNOTS_TO_MS,
         wind_direction=_number(report.get("wdir")),
         observed_at=observed,
+        rain_reported=_metar_reports_rain(report.get("rawOb")),
     )
 
 
@@ -223,6 +242,7 @@ def _metar_any_distance(place: Place) -> Reading:
         site=site,
         distance_km=float(row["distance_km"]),
         observed_at=row["observed_at"].to_pydatetime(),
+        rain_reported=_metar_reports_rain(row.get("raw_text")),
         **_row_values(row),
     )
 
@@ -243,6 +263,7 @@ def _open_meteo(place: Place) -> Reading:
         site=place.label,
         distance_km=None,
         observed_at=row["datetime"].to_pydatetime(),
+        rainfall=_number(row.get("rainfall")),
         **_row_values(row),
     )
 
@@ -358,9 +379,11 @@ def get_current_weather(
         DataFrame with one row: ``place``, ``latitude``, ``longitude``,
         ``source``, ``kind`` (``"station"``, ``"airport"`` or ``"model"``),
         ``site``, ``distance_km``, ``temperature`` (°C), ``humidity`` (%),
-        ``heat_index`` (°C), ``wind_speed`` (m/s), ``wind_direction`` (degrees)
-        and ``observed_at`` (UTC). ``attrs["skipped"]`` says why earlier
-        sources were passed.
+        ``heat_index`` (°C), ``wind_speed`` (m/s), ``wind_direction`` (degrees),
+        ``observed_at`` (UTC), ``rainfall`` (mm/h, missing for METAR, which
+        gives no amount) and ``rain_reported`` (METAR only: whether the report
+        has rain or drizzle). ``attrs["skipped"]`` says why earlier sources
+        were passed.
 
     Raises:
         ValueError: if ``source`` is unknown.

@@ -66,6 +66,42 @@
    ]
   }
  },
+ "open_meteo_current": {
+  "block": {
+   "time": [
+    "2024-01-01T00:00"
+   ],
+   "interval": [
+    900
+   ],
+   "precipitation": [
+    0.5
+   ]
+  },
+  "expected": {
+   "rainfall": [
+    2.0
+   ]
+  }
+ },
+ "metar_rain": [
+  {
+   "raw": "METAR VABB 091130Z 09006KT 5000 FU NSC 35/10 Q1012",
+   "rain": false
+  },
+  {
+   "raw": "METAR VABB 091130Z 09006KT 3000 -RA BR 25/24 Q1008",
+   "rain": true
+  },
+  {
+   "raw": "VIDP 091130Z 09006KT 2000 +TSRA 25/24 Q1008 NOSIG",
+   "rain": true
+  },
+  {
+   "raw": "VIDP 091130Z 09006KT 8000 VCSH 25/24 Q1008 TEMPO -RA",
+   "rain": false
+  }
+ ],
  "nearest_airport": {
   "place": {
    "latitude": 19.09,
@@ -87,6 +123,7 @@
     "dewp": 20,
     "wspd": 10,
     "wdir": "VRB",
+    "rawOb": "METAR VABB 091130Z VRB10KT 3000 -RA 30/20 Q1008",
     "lat": 19.2,
     "lon": 72.9,
     "name": "Near"
@@ -106,8 +143,80 @@
    "temperature": 30.0,
    "humidity": 55.07749010874436,
    "wind_speed": 5.14444,
-   "wind_direction": null
+   "wind_direction": null,
+   "rain_reported": true
   }
+ },
+ "openweathermap_rain": [
+  {
+   "payload": {
+    "dt": 1794223800,
+    "name": "Here",
+    "main": {
+     "temp": 30,
+     "humidity": 50
+    },
+    "wind": {
+     "speed": 1,
+     "deg": 10
+    },
+    "rain": {
+     "1h": 2.5
+    }
+   },
+   "expected": 2.5
+  },
+  {
+   "payload": {
+    "dt": 1794223800,
+    "name": "Here",
+    "main": {
+     "temp": 30,
+     "humidity": 50
+    },
+    "wind": {
+     "speed": 1,
+     "deg": 10
+    }
+   },
+   "expected": 0.0
+  }
+ ],
+ "weatherunion_rain": [
+  {
+   "rain_intensity": 0.1,
+   "expected": 6.0
+  },
+  {
+   "rain_intensity": null,
+   "expected": null
+  }
+ ],
+ "current_weather": {
+  "row": {
+   "temperature": 30.0,
+   "humidity": 50.0,
+   "wind_speed": 1.0,
+   "wind_direction": 10.0,
+   "rainfall": 2.0
+  },
+  "columns": [
+   "place",
+   "latitude",
+   "longitude",
+   "source",
+   "kind",
+   "site",
+   "distance_km",
+   "temperature",
+   "humidity",
+   "heat_index",
+   "wind_speed",
+   "wind_direction",
+   "observed_at",
+   "rainfall",
+   "rain_reported"
+  ]
  },
  "limits": {
   "station_km": 25.0,
